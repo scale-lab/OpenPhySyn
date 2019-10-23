@@ -77,4 +77,16 @@ print_version()
                                PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH);
 }
 
+Database*
+get_database()
+{
+    return Phy::instance().database();
+}
+
+SteinerTree*
+create_steiner_tree(const char* pin_name)
+{
+    return nullptr;
+}
+
 } // namespace phy

@@ -29,25 +29,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_EXPORTS__
-#define __PHY_EXPORTS__
-#include <PhyKnight/SteinerTree/SteinerTree.hpp>
-#include "PhyLogger/PhyLogger.hpp"
+#include "Utils/DatabaseUtils.hpp"
 
 namespace phy
 {
-void version();
-void print_version();
-int  read_def(const char* def_path);
-int  read_lef(const char* def_path);
-int  read_lib(const char* def_path);
-int  write_def(const char* def_path);
-// int  transform(const char* transform_name, ...);
-int transform_internal(std::string              transform_name,
-                       std::vector<std::string> args);
-
-Database*    get_database();
-SteinerTree* create_steiner_tree(const char* pin_name);
+std::vector<odb::dbITerm*>
+connectedTerms(odb::dbNet* net)
+{
+    std::vector<odb::dbITerm*> terms;
+    return terms;
+}
 } // namespace phy
-
-#endif
