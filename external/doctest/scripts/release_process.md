@@ -1,0 +1,18 @@
+- update version in version.txt
+- run update_stuff.py from the scripts folder
+- regenerate test output by running cmake with -DTEST_MODE=COLLECT and then running ctest
+- run update_wandbox_link.py
+- commit in dev
+- merge dev in master and coverity_scan (and rebase them?)
+- push all branches (git push --all)
+- run update_changelog.py in master
+- commit in master and push
+- create github release with the same semver tag as the changelog
+- merge master in dev
+- update packages
+    - vcpkg https://github.com/Microsoft/vcpkg/tree/master/ports/doctest
+    - hunter
+        - https://github.com/ruslo/hunter/blob/master/cmake/configs/default.cmake
+        - https://github.com/ruslo/hunter/blob/master/cmake/projects/doctest/hunter.cmake
+    - conan
+        - https://github.com/bincrafters/conan-doctest

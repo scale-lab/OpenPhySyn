@@ -1,0 +1,24 @@
+.git
+Dockerfile
+.dockerignore
+
+# from .gitignore
+*.o
+*.a
+*.lo
+*.la
+*.gcov
+*.gcda
+*.gcno
+*.rej
+*.orig
+TAGS
+*~
+\#*#
+.~lock.*#
+.DS_Store
+Makefile
+
+/build
+/test/results
+
