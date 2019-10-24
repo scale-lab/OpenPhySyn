@@ -1,8 +1,8 @@
 [submodule "external/OpenSTA"]
 	path = external/OpenSTA
-	url = git@github.com:The-OpenROAD-Project/OpenSTA
+	url = https://github.com/The-OpenROAD-Project/OpenSTA.git
 	branch = master
 [submodule "external/OpenDB"]
 	path = external/OpenDB
 	url = https://github.com/The-OpenROAD-Project/OpenDB.git
-	branch = feature/add-sylib
+	branch = master

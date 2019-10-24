@@ -57,7 +57,14 @@ set(SPD_LOG_HOME
 
 # Add Flute
 add_subdirectory(external/flute)
+
+# Add OpenDB
 add_subdirectory(external/OpenDB)
+
+# Add OpenSTA
+add_subdirectory(external/OpenSTA)
+
+# Add spdlog
 add_subdirectory(external/spdlog)
 
 
