@@ -69,6 +69,7 @@ FileUtils::readFile(const char* path)
     std::ifstream infile{path};
     if (!infile.is_open())
     {
+        throw FileException();
     }
     std::string file_contents{std::istreambuf_iterator<char>(infile),
                               std::istreambuf_iterator<char>()};
