@@ -40,6 +40,7 @@
 #include "PhyException/FileException.hpp"
 #include "PhyException/NoTechException.hpp"
 #include "PhyException/TransformNotFoundException.hpp"
+#include "Transform/TransformHandler.hpp"
 #include "Utils/FileUtils.hpp"
 
 namespace phy

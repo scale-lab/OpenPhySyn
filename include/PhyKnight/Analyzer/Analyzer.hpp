@@ -31,7 +31,7 @@
 
 #ifndef __PHY_ANALYZER__
 #define __PHY_ANALYZER__
-#include <Database/Types.hpp>
+#include <PhyKnight/Database/Types.hpp>
 
 namespace phy
 {
