@@ -32,8 +32,8 @@
 #ifndef __PHY_PHY_LOGGER__
 #define __PHY_PHY_LOGGER__
 
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/spdlog.h"
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 namespace phy
 {
 class PhyLogger

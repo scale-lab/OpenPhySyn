@@ -31,7 +31,6 @@
 
 #ifndef __PHY_PHY_EXCEPTION__
 #define __PHY_PHY_EXCEPTION__
-#include <cstring>
 #include <exception>
 #include <string>
 #include "Error.hpp"

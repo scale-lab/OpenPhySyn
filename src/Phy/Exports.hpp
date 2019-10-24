@@ -32,7 +32,6 @@
 #ifndef __PHY_EXPORTS__
 #define __PHY_EXPORTS__
 #include <PhyKnight/SteinerTree/SteinerTree.hpp>
-#include "PhyLogger/PhyLogger.hpp"
 
 namespace phy
 {

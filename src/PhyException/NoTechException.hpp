@@ -31,8 +31,6 @@
 
 #ifndef __PHY_NO_TECH_EXCEPTION__
 #define __PHY_NO_TECH_EXCEPTION__
-#include <cstring>
-#include "Error.hpp"
 #include "PhyException.hpp"
 
 namespace phy

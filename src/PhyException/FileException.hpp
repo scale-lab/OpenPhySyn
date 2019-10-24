@@ -32,7 +32,6 @@
 #ifndef __PHY_FILE_EXCEPTION__
 #define __PHY_FILE_EXCEPTION__
 #include <cstring>
-#include "Error.hpp"
 #include "PhyException.hpp"
 
 namespace phy

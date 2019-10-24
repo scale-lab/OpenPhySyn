@@ -30,9 +30,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "Exports.hpp"
-#include <Phy/Phy.hpp>
+#include <PhyKnight/Phy/Phy.hpp>
 #include <config.hpp>
-#include <iostream>
+#include "PhyLogger/PhyLogger.hpp"
 
 namespace phy
 {

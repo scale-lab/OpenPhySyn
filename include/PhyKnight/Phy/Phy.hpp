@@ -31,24 +31,9 @@
 
 #ifndef __PHY_PHY__
 #define __PHY_PHY__
-
-#include <cstdarg>
-#include <cstddef>
-#include <cstdlib>
-#include <PhyKnight/SteinerTree/SteinerTree.hpp>
-#include <boost/algorithm/string.hpp>
-#include <config.hpp>
-#include <iostream>
-#include <tcl.h>
 #include <unordered_map>
 #include "Database/Types.hpp"
-#include "DefReader/DefReader.hpp"
-#include "DefWriter/DefWriter.hpp"
-#include "LefReader/LefReader.hpp"
-#include "Phy/Exports.hpp"
-#include "PhyException/TransformNotFoundException.hpp"
 #include "Transform/TransformHandler.hpp"
-#include "Utils/FileUtils.hpp"
 
 namespace phy
 {

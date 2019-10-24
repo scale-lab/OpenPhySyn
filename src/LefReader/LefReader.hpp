@@ -32,8 +32,6 @@
 #ifndef __PHY_LEF_READER__
 #define __PHY_LEF_READER__
 #include "Database/Types.hpp"
-#include "PhyLogger/PhyLogger.hpp"
-#include "PhyException/FileException.hpp"
 
 namespace phy
 {

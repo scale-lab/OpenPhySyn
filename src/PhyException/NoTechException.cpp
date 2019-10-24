@@ -30,6 +30,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "NoTechException.hpp"
+#include "Error.hpp"
+
 namespace phy
 {
 NoTechException::NoTechException()

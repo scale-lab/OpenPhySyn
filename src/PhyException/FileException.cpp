@@ -30,6 +30,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "FileException.hpp"
+#include "Error.hpp"
+
 namespace phy
 {
 FileException::FileException()

@@ -31,8 +31,6 @@
 
 #ifndef __PHY_TRANSFORM_NOT_FOUND_EXCEPTION__
 #define __PHY_TRANSFORM_NOT_FOUND_EXCEPTION__
-#include <cstring>
-#include "Error.hpp"
 #include "PhyException.hpp"
 
 namespace phy

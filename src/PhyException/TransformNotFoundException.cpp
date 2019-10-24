@@ -30,6 +30,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "TransformNotFoundException.hpp"
+#include "Error.hpp"
+
 namespace phy
 {
 TransformNotFoundException::TransformNotFoundException()

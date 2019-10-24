@@ -28,7 +28,19 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #include <Phy/Phy.hpp>
+#include <PhyKnight/PhyLogger/PhyLogger.hpp>
+#include <boost/algorithm/string.hpp>
+#include <config.hpp>
+#include <tcl.h>
+#include "DefReader/DefReader.hpp"
+#include "DefWriter/DefWriter.hpp"
+#include "LefReader/LefReader.hpp"
+#include "PhyException/FileException.hpp"
+#include "PhyException/NoTechException.hpp"
+#include "PhyException/TransformNotFoundException.hpp"
+#include "Utils/FileUtils.hpp"
 
 namespace phy
 {
