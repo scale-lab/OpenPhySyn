@@ -31,6 +31,7 @@
 %module phy
 %{
 #include "Phy/Exports.hpp"
+using namespace odb;
 using namespace phy;
 %}
 
@@ -62,4 +63,8 @@ using namespace phy;
      }
 }
 
+%include "external/OpenDB/src/swig/tcl/dbtypes.i"
+%include "external/OpenDB/include/opendb/db.h"
+%include "include/PhyKnight/Database/Types.hpp"
+%include "include/PhyKnight/Database/DatabaseHelper.hpp"
 %include "Phy/Exports.hpp"

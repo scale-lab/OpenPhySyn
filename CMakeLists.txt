@@ -82,13 +82,13 @@ set(PHY_SOURCES_NO_MAIN
     ${PHY_HOME}/src/Analyzer/Analyzer.cpp
     ${PHY_HOME}/src/SteinerTree/SteinerTree.cpp
     ${PHY_HOME}/src/PhyLogger/PhyLogger.cpp
+    ${PHY_HOME}/src/Database/DatabaseHelper.cpp
     ${PHY_HOME}/src/DefReader/DefReader.cpp
     ${PHY_HOME}/src/DefWriter/DefWriter.cpp
     ${PHY_HOME}/src/LefReader/LefReader.cpp
     ${PHY_HOME}/src/LibertyReader/LibertyReader.cpp
     ${PHY_HOME}/src/Transform/PhyTransform.cpp
     ${PHY_HOME}/src/Transform/TransformHandler.cpp
-    ${PHY_HOME}/src/Utils/DatabaseUtils.cpp
     ${PHY_HOME}/src/Utils/FileUtils.cpp
     ${PHY_HOME}/src/PhyException/Error.cpp
     ${PHY_HOME}/src/PhyException/FileException.cpp

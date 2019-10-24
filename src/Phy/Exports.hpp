@@ -31,6 +31,7 @@
 
 #ifndef __PHY_EXPORTS__
 #define __PHY_EXPORTS__
+#include <PhyKnight/Database/DatabaseHelper.hpp>
 #include <PhyKnight/SteinerTree/SteinerTree.hpp>
 
 namespace phy
@@ -50,10 +51,12 @@ int  set_log_pattern(const char* pattern);
 int  transform_internal(std::string              transform_name,
                         std::vector<std::string> args);
 
-Database&    get_database();
-Liberty&     get_liberty();
-SteinerTree* create_steiner_tree(const char* pin_name);
-int          print_liberty_cells();
+DatabaseHelper& get_helper();
+DatabaseHelper& get_database_helper();
+Database&       get_database();
+Liberty&        get_liberty();
+SteinerTree*    create_steiner_tree(const char* pin_name);
+int             print_liberty_cells();
 } // namespace phy
 
 #endif

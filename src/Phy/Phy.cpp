@@ -60,12 +60,15 @@ Phy::Phy()
       interp_(nullptr)
 {
     initializeDatabase();
+    db_helper_ = new DatabaseHelper(db_);
     sta::initSta();
 }
 
 Phy::~Phy()
 {
+    delete db_helper_;
     delete sta_network_;
+    delete db_;
 }
 
 int
@@ -153,6 +156,12 @@ ProgramOptions&
 Phy::programOptions()
 {
     return program_options_;
+}
+
+DatabaseHelper*
+Phy::helper() const
+{
+    return db_helper_;
 }
 
 Phy&

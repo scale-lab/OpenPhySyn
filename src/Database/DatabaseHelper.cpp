@@ -28,17 +28,17 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-
-#ifndef __PHY_DATABASE_UTILS__
-#define __PHY_DATABASE_UTILS__
-#include "Database/Types.hpp"
+#include "Database/DatabaseHelper.hpp"
 
 namespace phy
 {
-class DatabaseUtils
+DatabaseHelper::DatabaseHelper(Database* db) : db_(db)
 {
-public:
-    static std::vector<InstanceTerm*> connectedTerms(Net* net);
-};
+}
+std::vector<InstanceTerm*>
+DatabaseHelper::connectedTerms(Net* net)
+{
+    std::vector<InstanceTerm*> terms;
+    return terms;
+}
 } // namespace phy
-#endif

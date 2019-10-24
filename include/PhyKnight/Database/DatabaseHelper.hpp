@@ -29,14 +29,25 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "Utils/DatabaseUtils.hpp"
+#ifndef __PHY_HELPER__
+#define __PHY_HELPER__
+
+#include <PhyKnight/Database/Types.hpp>
+#include <vector>
 
 namespace phy
 {
-std::vector<InstanceTerm*>
-connectedTerms(Net* net)
+
+class DatabaseHelper
 {
-    std::vector<InstanceTerm*> terms;
-    return terms;
-}
+public:
+    DatabaseHelper(Database* db);
+
+    static std::vector<InstanceTerm*> connectedTerms(Net* net);
+
+private:
+    Database* db_;
+};
+
 } // namespace phy
+#endif

@@ -32,15 +32,18 @@
 #ifndef __PHY_PHY__
 #define __PHY_PHY__
 #include <OpenSTA/network/ConcreteNetwork.hh>
+#include <PhyKnight/Database/DatabaseHelper.hpp>
 #include <PhyKnight/Database/Types.hpp>
 #include <PhyKnight/Phy/ProgramOptions.hpp>
 #include <PhyKnight/PhyLogger/LogLevel.hpp>
 #include <PhyKnight/Transform/PhyTransform.hpp>
+
 #include <unordered_map>
 
 namespace phy
 {
 class sta::ConcreteNetwork;
+class DatabaseHelper;
 class Phy
 {
 public:
@@ -70,6 +73,8 @@ public:
     void processStartupProgramOptions();
     int  sourceTclScript(const char* script_path);
 
+    DatabaseHelper* helper() const;
+
     void printVersion(bool raw_str = false);
     void printUsage(bool raw_str = false);
     ~Phy();
@@ -79,6 +84,7 @@ private:
     Database*             db_;
     Liberty*              liberty_;
     sta::ConcreteNetwork* sta_network_;
+    DatabaseHelper*       db_helper_;
 
     int initializeDatabase();
 

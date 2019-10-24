@@ -119,6 +119,16 @@ set_log_pattern(const char* pattern)
 {
     return Phy::instance().setLogPattern(pattern);
 }
+DatabaseHelper&
+get_helper()
+{
+    return get_database_helper();
+}
+DatabaseHelper&
+get_database_helper()
+{
+    return *(Phy::instance().helper());
+}
 
 SteinerTree*
 create_steiner_tree(const char* pin_name)
