@@ -28,47 +28,33 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-
-#ifndef __PHY_PHY__
-#define __PHY_PHY__
-#include <OpenSTA/network/ConcreteNetwork.hh>
-#include <PhyKnight/Database/Types.hpp>
-#include <PhyKnight/Transform/PhyTransform.hpp>
-#include <unordered_map>
+#include "LibertyReader.hpp"
+#include <OpenSTA/liberty/Liberty.hh>
+#include <OpenSTA/liberty/LibertyReader.hh>
+#include <OpenSTA/network/Network.hh>
+#include <OpenSTA/util/Error.hh>
+#include "PhyException/FileException.hpp"
+#include "PhyException/ParseLibertyException.hpp"
 
 namespace phy
 {
-class Phy
+
+LibertyReader::LibertyReader(Database* db, sta::Network* network)
+    : db_(db), network_(network)
 {
-public:
-    static Phy& instance();
+}
 
-    Database* database();
-    Liberty*  liberty();
+Liberty*
+LibertyReader::read(const char* path)
+{
+    try
+    {
+        return sta::readLibertyFile(path, true, network_);
+    }
+    catch (sta::StaException& e)
+    {
+        throw ParseLibertyException(e.what());
+    }
+}
 
-    int readDef(const char* path);
-    int readLef(const char* path);
-    int readLib(const char* path);
-
-    int writeDef(const char* path);
-
-    int loadTransforms();
-    int runTransform(std::string transform_name, std::vector<std::string> args);
-
-    int setupInterpreter(Tcl_Interp* interp);
-    ~Phy();
-
-private:
-    Phy();
-    Database*             db_;
-    Liberty*              liberty_;
-    sta::ConcreteNetwork* sta_network_;
-
-    int initializeDatabase();
-    std::unordered_map<std::string, std::shared_ptr<PhyTransform>> transforms_;
-    std::unordered_map<std::string, std::string> transforms_versions_;
-    std::unordered_map<std::string, std::string> transforms_help_;
-    Tcl_Interp*                                  interp_;
-};
 } // namespace phy
-#endif

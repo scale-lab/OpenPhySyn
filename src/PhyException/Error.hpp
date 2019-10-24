@@ -46,7 +46,8 @@ enum File
 
 enum Parse
 {
-    ERR_NO_TECH
+    ERR_NO_TECH,
+    ERR_INVALID_LIBERTY
 };
 enum Transform
 {

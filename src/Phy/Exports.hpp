@@ -38,15 +38,18 @@ namespace phy
 void version();
 void print_version();
 int  read_def(const char* def_path);
-int  read_lef(const char* def_path);
-int  read_lib(const char* def_path);
+int  read_lef(const char* lef_path);
+int  read_lib(const char* lib_path); // Alias for read_liberty
+int  read_liberty(const char* lib_path);
 int  write_def(const char* def_path);
 // int  transform(const char* transform_name, ...);
 int transform_internal(std::string              transform_name,
                        std::vector<std::string> args);
 
-Database*    get_database();
+Database&    get_database();
+Liberty&     get_liberty();
 SteinerTree* create_steiner_tree(const char* pin_name);
+int          print_liberty_cells();
 } // namespace phy
 
 #endif

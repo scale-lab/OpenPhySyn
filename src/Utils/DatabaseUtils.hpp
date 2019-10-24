@@ -38,7 +38,7 @@ namespace phy
 class DatabaseUtils
 {
 public:
-    static std::vector<odb::dbITerm*> connectedTerms(odb::dbNet* net);
+    static std::vector<InstanceTerm*> connectedTerms(Net* net);
 };
 } // namespace phy
 #endif

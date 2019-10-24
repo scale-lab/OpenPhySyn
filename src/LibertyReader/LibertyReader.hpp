@@ -29,46 +29,23 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_PHY__
-#define __PHY_PHY__
-#include <OpenSTA/network/ConcreteNetwork.hh>
+#ifndef __PHY_LIBERTY_READER__
+#define __PHY_LIBERTY_READER__
+#include <OpenSTA/liberty/LibertyParser.hh>
 #include <PhyKnight/Database/Types.hpp>
-#include <PhyKnight/Transform/PhyTransform.hpp>
-#include <unordered_map>
 
 namespace phy
 {
-class Phy
+class LibertyReader
 {
 public:
-    static Phy& instance();
-
-    Database* database();
-    Liberty*  liberty();
-
-    int readDef(const char* path);
-    int readLef(const char* path);
-    int readLib(const char* path);
-
-    int writeDef(const char* path);
-
-    int loadTransforms();
-    int runTransform(std::string transform_name, std::vector<std::string> args);
-
-    int setupInterpreter(Tcl_Interp* interp);
-    ~Phy();
+    LibertyReader(Database* db, sta::Network* network);
+    Liberty* read(const char* path);
 
 private:
-    Phy();
-    Database*             db_;
-    Liberty*              liberty_;
-    sta::ConcreteNetwork* sta_network_;
-
-    int initializeDatabase();
-    std::unordered_map<std::string, std::shared_ptr<PhyTransform>> transforms_;
-    std::unordered_map<std::string, std::string> transforms_versions_;
-    std::unordered_map<std::string, std::string> transforms_help_;
-    Tcl_Interp*                                  interp_;
+    Liberty*      readLibertyFile(const char* filename, bool infer_latches);
+    Database*     db_;
+    sta::Network* network_;
 };
 } // namespace phy
 #endif

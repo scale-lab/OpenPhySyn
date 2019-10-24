@@ -29,6 +29,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+// Temproary fix for OpenSTA
+#define THROW_DCL throw()
+
+#include <OpenSTA/search/Sta.hh>
 #include <Phy/Phy.hpp>
 #include <PhyKnight/PhyLogger/PhyLogger.hpp>
 #include <boost/algorithm/string.hpp>
@@ -37,23 +41,29 @@
 #include "DefReader/DefReader.hpp"
 #include "DefWriter/DefWriter.hpp"
 #include "LefReader/LefReader.hpp"
+#include "LibertyReader/LibertyReader.hpp"
 #include "PhyException/FileException.hpp"
 #include "PhyException/NoTechException.hpp"
+#include "PhyException/ParseLibertyException.hpp"
 #include "PhyException/TransformNotFoundException.hpp"
 #include "Transform/TransformHandler.hpp"
 #include "Utils/FileUtils.hpp"
-
 namespace phy
 {
 
-Phy::Phy() : interp_(nullptr)
+Phy::Phy()
+    : interp_(nullptr),
+      liberty_(nullptr),
+      sta_network_(new sta::ConcreteNetwork)
 {
     initializeDatabase();
+    sta::initSta();
     loadTransforms();
 }
 
 Phy::~Phy()
 {
+    delete sta_network_;
 }
 
 int
@@ -79,7 +89,22 @@ Phy::readDef(const char* path)
 int
 Phy::readLib(const char* path)
 {
-    return 0;
+    LibertyReader reader(db_, sta_network_);
+    try
+    {
+        liberty_ = reader.read(path);
+        sta::LibertyCellIterator cell_iter(liberty_);
+        if (liberty_)
+        {
+            return 1;
+        }
+        return -1;
+    }
+    catch (PhyException& e)
+    {
+        PhyLogger::instance().error(e.what());
+        return -1;
+    }
 }
 
 int
@@ -90,14 +115,9 @@ Phy::readLef(const char* path)
     {
         return reader.read(path);
     }
-    catch (FileException& e)
+    catch (PhyException& e)
     {
         PhyLogger::instance().error(e.what());
-        return -1;
-    }
-    catch (odb::ZException& e)
-    {
-        PhyLogger::instance().error(e._msg);
         return -1;
     }
 }
@@ -110,7 +130,7 @@ Phy::writeDef(const char* path)
     {
         return writer.write(path);
     }
-    catch (FileException& e)
+    catch (PhyException& e)
     {
         PhyLogger::instance().error(e.what());
         return -1;
@@ -121,6 +141,11 @@ Database*
 Phy::database()
 {
     return db_;
+}
+Liberty*
+Phy::liberty()
+{
+    return liberty_;
 }
 
 Phy&
@@ -210,7 +235,7 @@ Phy::runTransform(std::string transform_name, std::vector<std::string> args)
             return transforms_[transform_name]->run(this, db_, args);
         }
     }
-    catch (TransformNotFoundException& e)
+    catch (PhyException& e)
     {
         PhyLogger::instance().error(e.what());
         return -1;

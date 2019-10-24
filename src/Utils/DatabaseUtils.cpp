@@ -33,10 +33,10 @@
 
 namespace phy
 {
-std::vector<odb::dbITerm*>
-connectedTerms(odb::dbNet* net)
+std::vector<InstanceTerm*>
+connectedTerms(Net* net)
 {
-    std::vector<odb::dbITerm*> terms;
+    std::vector<InstanceTerm*> terms;
     return terms;
 }
 } // namespace phy

@@ -49,9 +49,9 @@ DefReader::read(const char* path)
         throw FileException();
     }
     fclose(fp);
-    LibertySet            lib_set = db_->getLibs();
-    LibertySet::iterator  itr;
-    std::vector<Liberty*> libs;
+    LibrarySet            lib_set = db_->getLibs();
+    LibrarySet::iterator  itr;
+    std::vector<Library*> libs;
     for (itr = lib_set.begin(); itr != lib_set.end(); ++itr)
     {
         libs.push_back(*itr);

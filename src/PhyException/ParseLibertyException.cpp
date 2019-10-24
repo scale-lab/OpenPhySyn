@@ -29,46 +29,19 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_PHY__
-#define __PHY_PHY__
-#include <OpenSTA/network/ConcreteNetwork.hh>
-#include <PhyKnight/Database/Types.hpp>
-#include <PhyKnight/Transform/PhyTransform.hpp>
-#include <unordered_map>
+#include "ParseLibertyException.hpp"
+#include "Error.hpp"
 
 namespace phy
 {
-class Phy
+ParseLibertyException::ParseLibertyException(const char* message)
+    : PhyException(message, "ParseLibertyException",
+                   Error::Parse::ERR_INVALID_LIBERTY)
 {
-public:
-    static Phy& instance();
+}
+ParseLibertyException::ParseLibertyException(const std::string& message)
+    : ParseLibertyException(message.c_str())
+{
+}
 
-    Database* database();
-    Liberty*  liberty();
-
-    int readDef(const char* path);
-    int readLef(const char* path);
-    int readLib(const char* path);
-
-    int writeDef(const char* path);
-
-    int loadTransforms();
-    int runTransform(std::string transform_name, std::vector<std::string> args);
-
-    int setupInterpreter(Tcl_Interp* interp);
-    ~Phy();
-
-private:
-    Phy();
-    Database*             db_;
-    Liberty*              liberty_;
-    sta::ConcreteNetwork* sta_network_;
-
-    int initializeDatabase();
-    std::unordered_map<std::string, std::shared_ptr<PhyTransform>> transforms_;
-    std::unordered_map<std::string, std::string> transforms_versions_;
-    std::unordered_map<std::string, std::string> transforms_help_;
-    Tcl_Interp*                                  interp_;
-};
 } // namespace phy
-#endif

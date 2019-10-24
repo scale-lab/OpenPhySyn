@@ -43,19 +43,24 @@ read_def(const char* def_path)
     return Phy::instance().readDef(def_path);
 }
 int
-read_lef(const char* def_path)
+read_lef(const char* lef_path)
 {
-    return Phy::instance().readLef(def_path);
+    return Phy::instance().readLef(lef_path);
 }
 int
-read_lib(const char* def_path)
+read_lib(const char* lib_path)
 {
-    return Phy::instance().readLib(def_path);
+    return read_liberty(lib_path);
 }
 int
-write_def(const char* def_path)
+read_liberty(const char* lib_path)
 {
-    return Phy::instance().writeDef(def_path);
+    return Phy::instance().readLib(lib_path);
+}
+int
+write_def(const char* lib_path)
+{
+    return Phy::instance().writeDef(lib_path);
 }
 
 void
@@ -77,16 +82,40 @@ print_version()
                                PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH);
 }
 
-Database*
+Database&
 get_database()
 {
-    return Phy::instance().database();
+    return *(Phy::instance().database());
+}
+Liberty&
+get_liberty()
+{
+    return *(Phy::instance().liberty());
 }
 
 SteinerTree*
 create_steiner_tree(const char* pin_name)
 {
     return nullptr;
+}
+
+int
+print_liberty_cells()
+{
+    Liberty* liberty = Phy::instance().liberty();
+    if (!liberty)
+    {
+        PhyLogger::instance().error("Did not find any liberty files, use "
+                                    "read_liberty <file name> first.");
+        return -1;
+    }
+    sta::LibertyCellIterator cell_iter(liberty);
+    while (cell_iter.hasNext())
+    {
+        sta::LibertyCell* cell = cell_iter.next();
+        PhyLogger::instance().info("Cell: {}", cell->name());
+    }
+    return 1;
 }
 
 } // namespace phy

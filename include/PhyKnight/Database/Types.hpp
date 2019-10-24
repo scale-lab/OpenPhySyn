@@ -31,6 +31,11 @@
 
 #ifndef __PHY_TYPES__
 #define __PHY_TYPES__
+
+// Temproary fix for OpenSTA
+#define THROW_DCL throw()
+
+#include <OpenSTA/liberty/Liberty.hh>
 #include <opendb/db.h>
 #include <opendb/defin.h>
 #include <opendb/defout.h>
@@ -42,13 +47,15 @@ namespace phy
 typedef odb::dbDatabase     Database;
 typedef odb::dbChip         Chip;
 typedef odb::dbBlock        Block;
-typedef odb::dbLib          Liberty;
-typedef odb::dbSet<Liberty> LibertySet;
-typedef odb::dbTech         LibertyTechnology;
+typedef odb::dbITerm        InstanceTerm;
+typedef odb::dbLib          Library;
+typedef odb::dbSet<Library> LibrarySet;
+typedef odb::dbTech         LibraryTechnology;
 typedef odb::dbNet          Net;
 typedef odb::defin          DefParser;
 typedef odb::defout         DefOut;
 typedef odb::lefin          LefParser;
+typedef sta::LibertyLibrary Liberty;
 
 } // namespace phy
 #endif

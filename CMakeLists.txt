@@ -48,6 +48,9 @@ set(PHY_HOME
 set(OPENDB_HOME
   ${PROJECT_SOURCE_DIR}/external/OpenDB
 )
+set(OPENSTA_HOME
+  ${PROJECT_SOURCE_DIR}/external/OpenSTA
+)
 set(FLUTE_HOME
   ${PROJECT_SOURCE_DIR}/external/flute
 )
@@ -78,18 +81,20 @@ set(PHY_SOURCES_NO_MAIN
     ${PHY_HOME}/src/Analyzer/Analyzer.cpp
     ${PHY_HOME}/src/SteinerTree/SteinerTree.cpp
     ${PHY_HOME}/src/PhyLogger/PhyLogger.cpp
-    ${PHY_HOME}/src/LefReader/LefReader.cpp
     ${PHY_HOME}/src/DefReader/DefReader.cpp
     ${PHY_HOME}/src/DefWriter/DefWriter.cpp
+    ${PHY_HOME}/src/LefReader/LefReader.cpp
+    ${PHY_HOME}/src/LibertyReader/LibertyReader.cpp
     ${PHY_HOME}/src/Transform/PhyTransform.cpp
     ${PHY_HOME}/src/Transform/TransformHandler.cpp
     ${PHY_HOME}/src/Utils/DatabaseUtils.cpp
     ${PHY_HOME}/src/Utils/FileUtils.cpp
     ${PHY_HOME}/src/PhyException/Error.cpp
+    ${PHY_HOME}/src/PhyException/FileException.cpp
+    ${PHY_HOME}/src/PhyException/NoTechException.cpp
+    ${PHY_HOME}/src/PhyException/ParseLibertyException.cpp
     ${PHY_HOME}/src/PhyException/PhyException.cpp
     ${PHY_HOME}/src/PhyException/TransformNotFoundException.cpp
-    ${PHY_HOME}/src/PhyException/NoTechException.cpp
-    ${PHY_HOME}/src/PhyException/FileException.cpp
     ${PHY_WRAP}
 )
 set(PHY_SOURCES 
@@ -104,6 +109,10 @@ set(PHY_TESTFILES        # All .cpp files in tests/
 set(PHY_SWIG_FILES
   app/Phy.i
 )
+set(PHY_DEP_FILES
+  ${PHY_SWIG_FILES}
+  ${PHY_HOME}/src/Phy/Exports.cpp
+)
 set(LIBRARY_NAME ${PROJECT_NAME})  # Default name for the library built from src/*.cpp (change if you wish)
 # string(TOLOWER ${PROJECT_NAME} LIBRARY_NAME)
 
@@ -111,6 +120,7 @@ set(INCLUDE_DIRS
 ${PROJECT_SOURCE_DIR}/include
 ${PROJECT_SOURCE_DIR}/include/PhyKnight
 ${PROJECT_SOURCE_DIR}/src
+${PROJECT_SOURCE_DIR}/external
 ${TCL_INCLUDE_PATH}
 ${Boost_INCLUDE_DIR}
 ${SPD_LOG_HOME}/include
@@ -134,6 +144,8 @@ lef
 zlib
 zutil
 tm
+OpenSTA
+${ZLIB_LIBRARIES}
 ${TCL_LIBRARY}
 ${Boost_LIBRARIES}
 dl
@@ -177,3 +189,6 @@ add_custom_command(OUTPUT ${PHY_WRAP}
 install(TARGETS Phy DESTINATION bin)
 # Set up tests (see tests/CMakeLists.txt).
 # add_subdirectory(tests)
+set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
+  ${PHY_WRAP}
+)
