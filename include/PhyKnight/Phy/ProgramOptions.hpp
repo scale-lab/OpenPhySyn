@@ -29,37 +29,47 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_ERROR_
-#define __PHY_ERROR_
+#ifndef __PHY_POGRAM_OPTIONS__
+#define __PHY_POGRAM_OPTIONS__
+
+#include <string>
 
 namespace phy
 {
-typedef long ErrorCode;
-
-namespace Error
+class ProgramOptions
 {
+public:
+    explicit ProgramOptions(int argc = 0, char** argv = nullptr);
 
-enum File
-{
-    ERR_FILE_RW
+    std::string usage() const;
+
+    bool        help() const;
+    bool        version() const;
+    bool        quiet() const;
+    bool        verbose() const;
+    bool        hasFile() const;
+    std::string file() const;
+    bool        hasLogFile() const;
+    std::string logFile() const;
+    bool        hasLogLevel() const;
+    std::string logLevel() const;
+
+private:
+    int    argc_;
+    char** argv_;
+
+    std::string file_;
+    bool        has_file_;
+    std::string log_file_;
+    bool        has_log_file_;
+    std::string log_level_;
+    bool        has_log_level_;
+    bool        help_;
+    bool        version_;
+    bool        verbose_;
+    bool        quiet_;
+
+    std::string usage_;
 };
-
-enum Parse
-{
-    ERR_NO_TECH,
-    ERR_INVALID_LIBERTY
-};
-enum Transform
-{
-    ERR_NOT_FOUND
-};
-
-enum Common
-{
-    ERR_COMMON_UNRECOGNIZED,
-    ERR_PROGRAM_OPTIONS,
-};
-
-} // namespace Error
 } // namespace phy
 #endif

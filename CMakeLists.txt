@@ -33,7 +33,7 @@ find_package(TCL REQUIRED)
 
 # Add Boost Package
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost COMPONENTS log REQUIRED)
+find_package(Boost COMPONENTS log program_options filesystem REQUIRED)
 
 #Add SWIG Package
 cmake_policy(SET CMP0078 NEW)
@@ -78,6 +78,7 @@ set(PHY_MAIN ${PHY_HOME}/app/PhyMain.cpp)
 set(PHY_SOURCES_NO_MAIN
     ${PHY_HOME}/src/Phy/Phy.cpp
     ${PHY_HOME}/src/Phy/Exports.cpp
+    ${PHY_HOME}/src/Phy/ProgramOptions.cpp
     ${PHY_HOME}/src/Analyzer/Analyzer.cpp
     ${PHY_HOME}/src/SteinerTree/SteinerTree.cpp
     ${PHY_HOME}/src/PhyLogger/PhyLogger.cpp
@@ -94,6 +95,7 @@ set(PHY_SOURCES_NO_MAIN
     ${PHY_HOME}/src/PhyException/NoTechException.cpp
     ${PHY_HOME}/src/PhyException/ParseLibertyException.cpp
     ${PHY_HOME}/src/PhyException/PhyException.cpp
+    ${PHY_HOME}/src/PhyException/ProgramOptionsException.cpp
     ${PHY_HOME}/src/PhyException/TransformNotFoundException.cpp
     ${PHY_WRAP}
 )

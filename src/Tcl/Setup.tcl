@@ -13,11 +13,4 @@ print_version
 
 
 
-# Do all the logic  before this line..
-
-if {$tcl_interactive} {
-    package require tclreadline
-    ::tclreadline::Loop
-}
-
 )===<><>==="

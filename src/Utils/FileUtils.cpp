@@ -30,7 +30,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "FileUtils.hpp"
-
+#include <boost/filesystem.hpp>
+#include "PhyException/FileException.hpp"
 namespace phy
 {
 bool
@@ -66,8 +67,37 @@ std::string
 FileUtils::readFile(const char* path)
 {
     std::ifstream infile{path};
-    std::string   file_contents{std::istreambuf_iterator<char>(infile),
+    if (!infile.is_open())
+    {
+    }
+    std::string file_contents{std::istreambuf_iterator<char>(infile),
                               std::istreambuf_iterator<char>()};
     return file_contents;
+}
+std::string
+FileUtils::homePath()
+{
+    std::string home_path = std::getenv("HOME");
+    if (!home_path.length())
+    {
+        home_path = std::getenv("USERPROFILE");
+    }
+    if (!home_path.length())
+    {
+        home_path = std::getenv("HOMEDRIVE");
+    }
+    if (!home_path.length())
+    {
+        home_path = "/home/phyknight";
+    }
+    return home_path;
+}
+std::string
+FileUtils::joinPath(const char* first_path, const char* second_path)
+{
+    boost::filesystem::path base(first_path);
+    boost::filesystem::path appendee(second_path);
+    boost::filesystem::path full_path = base / appendee;
+    return full_path.generic_string();
 }
 } // namespace phy

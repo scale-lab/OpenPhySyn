@@ -30,6 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "FileException.hpp"
+#include <cstring>
 #include "Error.hpp"
 
 namespace phy

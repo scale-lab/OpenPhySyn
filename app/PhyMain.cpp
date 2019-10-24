@@ -30,21 +30,40 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <PhyLogger/PhyLogger.hpp>
-#include <config.hpp>
-#include <iostream>
-#include <opendb/logger.h>
 #include <tcl.h>
 #include "Phy/Phy.hpp"
+#include "PhyException/ProgramOptionsException.hpp"
 
 extern "C"
 {
     extern int Phy_Init(Tcl_Interp* interp);
 }
+
 int phyTclAppInit(Tcl_Interp* interp);
 
 int
 main(int argc, char* argv[])
 {
+    try
+    {
+        phy::Phy::instance().setProgramOptions(argc, argv);
+        if (phy::Phy::instance().programOptions().help())
+        {
+            phy::Phy::instance().printUsage(true);
+            return 0;
+        }
+        if (phy::Phy::instance().programOptions().version())
+        {
+            phy::Phy::instance().printVersion(true);
+            return 0;
+        }
+    }
+    catch (phy::ProgramOptionsException& e)
+    {
+        phy::PhyLogger::instance().error(e.what());
+        return -1;
+    }
+
     Tcl_Main(1, argv, phyTclAppInit);
     return 0;
 }
@@ -52,7 +71,6 @@ main(int argc, char* argv[])
 int
 phyTclAppInit(Tcl_Interp* interp)
 {
-    // odb::Logger::initLogger(interp);
     if (Tcl_Init(interp) == TCL_ERROR)
     {
         return TCL_ERROR;
@@ -62,8 +80,11 @@ phyTclAppInit(Tcl_Interp* interp)
     {
         return TCL_ERROR;
     }
-
+    phy::Phy::instance().loadTransforms();
     phy::Phy::instance().setupInterpreter(interp);
-
+    phy::Phy::instance().processStartupProgramOptions();
+    phy::Phy::instance().setupInterpreterReadline(); // This should be that last
+                                                     // initialization step
+                                                     // because of the RL loop
     return TCL_OK;
 }

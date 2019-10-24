@@ -45,6 +45,9 @@ public:
     static bool                     isDirectory(const char* path);
     static std::vector<std::string> readDir(const char* path);
     static std::string              readFile(const char* path);
+    static std::string              homePath();
+    static std::string              joinPath(const char* first_path,
+                                             const char* second_path);
 };
 } // namespace phy
 #endif

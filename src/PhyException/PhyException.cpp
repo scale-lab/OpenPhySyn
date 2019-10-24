@@ -43,7 +43,7 @@ PhyException::PhyException(const char* message, const char* name,
 
 PhyException::PhyException(const std::string& message, const char* name,
                            ErrorCode code)
-    : msg_(message), name_(name), code_(code)
+    : PhyException(message.c_str(), name, code)
 {
     setMessage(msg_);
 }

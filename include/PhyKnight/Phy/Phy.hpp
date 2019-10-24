@@ -33,11 +33,14 @@
 #define __PHY_PHY__
 #include <OpenSTA/network/ConcreteNetwork.hh>
 #include <PhyKnight/Database/Types.hpp>
+#include <PhyKnight/Phy/ProgramOptions.hpp>
+#include <PhyKnight/PhyLogger/LogLevel.hpp>
 #include <PhyKnight/Transform/PhyTransform.hpp>
 #include <unordered_map>
 
 namespace phy
 {
+class sta::ConcreteNetwork;
 class Phy
 {
 public:
@@ -45,6 +48,12 @@ public:
 
     Database* database();
     Liberty*  liberty();
+
+    ProgramOptions& programOptions();
+
+    int setLogLevel(const char* level);
+    int setLogPattern(const char* pattern);
+    int setLogLevel(LogLevel level);
 
     int readDef(const char* path);
     int readLef(const char* path);
@@ -55,7 +64,14 @@ public:
     int loadTransforms();
     int runTransform(std::string transform_name, std::vector<std::string> args);
 
-    int setupInterpreter(Tcl_Interp* interp);
+    int  setupInterpreter(Tcl_Interp* interp);
+    int  setupInterpreterReadline();
+    void setProgramOptions(int argc, char* argv[]);
+    void processStartupProgramOptions();
+    int  sourceTclScript(const char* script_path);
+
+    void printVersion(bool raw_str = false);
+    void printUsage(bool raw_str = false);
     ~Phy();
 
 private:
@@ -65,10 +81,12 @@ private:
     sta::ConcreteNetwork* sta_network_;
 
     int initializeDatabase();
+
     std::unordered_map<std::string, std::shared_ptr<PhyTransform>> transforms_;
     std::unordered_map<std::string, std::string> transforms_versions_;
     std::unordered_map<std::string, std::string> transforms_help_;
     Tcl_Interp*                                  interp_;
+    ProgramOptions                               program_options_;
 };
 } // namespace phy
 #endif

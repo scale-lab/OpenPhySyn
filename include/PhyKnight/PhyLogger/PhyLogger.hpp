@@ -32,6 +32,8 @@
 #ifndef __PHY_PHY_LOGGER__
 #define __PHY_PHY_LOGGER__
 
+#include <PhyKnight/PhyLogger/LogLevel.hpp>
+#include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 namespace phy
@@ -43,43 +45,63 @@ public:
     void
     trace(Args&&... args)
     {
-        spdlog::trace(args...);
+        logger_->trace(args...);
     }
     template<typename... Args>
     void
     debug(Args&&... args)
     {
-        spdlog::debug(args...);
+        logger_->debug(args...);
     }
     template<typename... Args>
     void
     info(Args&&... args)
     {
-        spdlog::info(args...);
+        logger_->info(args...);
+    }
+    template<typename... Args>
+    void
+    raw(Args&&... args)
+    {
+        std::string current_pattern = pattern_;
+        setPattern("%v");
+        logger_->info(args...);
+        setPattern(current_pattern);
     }
     template<typename... Args>
     void
     warn(Args&&... args)
     {
-        spdlog::warn(args...);
+        logger_->warn(args...);
     }
 
     template<typename... Args>
     void
     critical(Args&&... args)
     {
-        spdlog::critical(args...);
+        logger_->critical(args...);
     }
     template<typename... Args>
     void
     error(Args&&... args)
     {
-        spdlog::error(args...);
+        logger_->error(args...);
     }
     static PhyLogger& instance();
 
+    void resetDefaultPattern();
+    void setPattern(std::string pattern);
+    void setLevel(LogLevel level);
+    void setLogFile(std::string log_file);
+
 private:
     PhyLogger();
+    ~PhyLogger();
+    LogLevel                                             level_;
+    std::string                                          pattern_;
+    std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink_;
+    std::shared_ptr<spdlog::sinks::basic_file_sink_mt>   file_sink_;
+    std::shared_ptr<spdlog::logger>                      logger_;
 };
 } // namespace phy
 #endif //__PHY_DEMO__

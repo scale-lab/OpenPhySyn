@@ -31,7 +31,6 @@
 
 #include "Exports.hpp"
 #include <PhyKnight/Phy/Phy.hpp>
-#include <config.hpp>
 #include "PhyLogger/PhyLogger.hpp"
 
 namespace phy
@@ -74,12 +73,22 @@ transform_internal(std::string transform_name, std::vector<std::string> args)
 {
     return Phy::instance().runTransform(transform_name, args);
 }
+void
+help()
+{
+    print_usage();
+}
+
+void
+print_usage()
+{
+    Phy::instance().printUsage();
+}
 
 void
 print_version()
 {
-    PhyLogger::instance().info("PhyKnight: {}.{}.{}", PROJECT_VERSION_MAJOR,
-                               PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH);
+    Phy::instance().printVersion();
 }
 
 Database&
@@ -91,6 +100,24 @@ Liberty&
 get_liberty()
 {
     return *(Phy::instance().liberty());
+}
+
+int
+set_log(const char* level)
+{
+    return set_log_level(level);
+}
+
+int
+set_log_level(const char* level)
+{
+    return Phy::instance().setLogLevel(level);
+}
+
+int
+set_log_pattern(const char* pattern)
+{
+    return Phy::instance().setLogPattern(pattern);
 }
 
 SteinerTree*

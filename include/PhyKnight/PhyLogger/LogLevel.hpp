@@ -29,37 +29,20 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_ERROR_
-#define __PHY_ERROR_
+#ifndef __PHY_LOG_LEVEL__
+#define __PHY_LOG_LEVEL__
 
 namespace phy
 {
-typedef long ErrorCode;
-
-namespace Error
+enum class LogLevel
 {
-
-enum File
-{
-    ERR_FILE_RW
+    trace,
+    debug,
+    info,
+    warn,
+    error,
+    critical,
+    off
 };
-
-enum Parse
-{
-    ERR_NO_TECH,
-    ERR_INVALID_LIBERTY
-};
-enum Transform
-{
-    ERR_NOT_FOUND
-};
-
-enum Common
-{
-    ERR_COMMON_UNRECOGNIZED,
-    ERR_PROGRAM_OPTIONS,
-};
-
-} // namespace Error
 } // namespace phy
-#endif
+#endif //__PHY_DEMO__

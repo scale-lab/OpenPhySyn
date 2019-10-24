@@ -29,37 +29,19 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_ERROR_
-#define __PHY_ERROR_
+#include "ProgramOptionsException.hpp"
+#include "Error.hpp"
 
 namespace phy
 {
-typedef long ErrorCode;
-
-namespace Error
+ProgramOptionsException::ProgramOptionsException(const char* message)
+    : PhyException(message, "ProgramOptionsException",
+                   Error::Common::ERR_PROGRAM_OPTIONS)
 {
-
-enum File
+}
+ProgramOptionsException::ProgramOptionsException(const std::string& message)
+    : ProgramOptionsException(message.c_str())
 {
-    ERR_FILE_RW
-};
+}
 
-enum Parse
-{
-    ERR_NO_TECH,
-    ERR_INVALID_LIBERTY
-};
-enum Transform
-{
-    ERR_NOT_FOUND
-};
-
-enum Common
-{
-    ERR_COMMON_UNRECOGNIZED,
-    ERR_PROGRAM_OPTIONS,
-};
-
-} // namespace Error
 } // namespace phy
-#endif

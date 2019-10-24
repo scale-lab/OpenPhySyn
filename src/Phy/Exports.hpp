@@ -37,14 +37,18 @@ namespace phy
 {
 void version();
 void print_version();
+void help();
+void print_usage();
 int  read_def(const char* def_path);
 int  read_lef(const char* lef_path);
 int  read_lib(const char* lib_path); // Alias for read_liberty
 int  read_liberty(const char* lib_path);
 int  write_def(const char* def_path);
-// int  transform(const char* transform_name, ...);
-int transform_internal(std::string              transform_name,
-                       std::vector<std::string> args);
+int  set_log(const char* level);
+int  set_log_level(const char* level);
+int  set_log_pattern(const char* pattern);
+int  transform_internal(std::string              transform_name,
+                        std::vector<std::string> args);
 
 Database&    get_database();
 Liberty&     get_liberty();
