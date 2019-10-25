@@ -126,6 +126,11 @@ DatabaseHelper::isClocked(InstanceTerm* term) const
 {
     return term->isClocked();
 }
+bool
+DatabaseHelper::isPrimary(Net* net) const
+{
+    return net->getBTerms().size() > 0;
+}
 
 LibraryCell*
 DatabaseHelper::libraryCell(InstanceTerm* term) const
@@ -189,6 +194,55 @@ DatabaseHelper::filterPins(InstanceTermSet& terms, PinDirection direction) const
         }
     }
     return inst_terms;
+}
+
+void
+DatabaseHelper::del(Net* net) const
+{
+    Net::destroy(net);
+}
+int
+DatabaseHelper::disconnectAll(Net* net) const
+{
+    int             count   = 0;
+    InstanceTermSet net_set = net->getITerms();
+    for (InstanceTermSet::iterator itr = net_set.begin(); itr != net_set.end();
+         itr++)
+    {
+        InstanceTerm::disconnect(*itr);
+        count++;
+    }
+    return count;
+}
+
+void
+DatabaseHelper::connect(Net* net, InstanceTerm* term) const
+{
+    return InstanceTerm::connect(term, net);
+}
+
+void
+DatabaseHelper::disconnect(InstanceTerm* term) const
+{
+    InstanceTerm::disconnect(term);
+}
+
+Instance*
+DatabaseHelper::createInstance(const char* inst_name, LibraryCell* cell)
+{
+    return Instance::create(top(), cell, inst_name);
+}
+
+Net*
+DatabaseHelper::createNet(const char* net_name)
+{
+    return Net::create(top(), net_name);
+}
+
+InstanceTerm*
+DatabaseHelper::connect(Net* net, Instance* inst, LibraryTerm* port) const
+{
+    return InstanceTerm::connect(inst, net, port);
 }
 
 std::vector<Net*>

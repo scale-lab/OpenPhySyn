@@ -58,6 +58,16 @@ public:
     LibraryTerm* libraryPin(const char* cell_name, const char* pin_name) const;
     LibraryTerm* libraryPin(LibraryCell* cell, const char* pin_name) const;
     bool         isClocked(InstanceTerm* term) const;
+    bool         isPrimary(Net* net) const;
+
+    Instance* createInstance(const char* inst_name, LibraryCell* cell);
+    Net*      createNet(const char* net_name);
+
+    void          connect(Net* net, InstanceTerm* term) const;
+    InstanceTerm* connect(Net* net, Instance* inst, LibraryTerm* port) const;
+    void          disconnect(InstanceTerm* term) const;
+    int           disconnectAll(Net* net) const;
+    void          del(Net* net) const;
 
     unsigned int fanoutCount(Net* net) const; // Does not include top level pins
     std::vector<Net*>  nets() const;          // Get all database net objects

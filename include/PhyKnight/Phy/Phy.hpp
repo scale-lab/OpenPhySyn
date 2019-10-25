@@ -42,30 +42,29 @@
 
 namespace phy
 {
-class sta::ConcreteNetwork;
-class DatabaseHelper;
 class Phy
 {
 public:
     static Phy& instance();
 
-    Database* database();
-    Liberty*  liberty();
+    virtual Database* database();
+    virtual Liberty*  liberty();
 
-    ProgramOptions& programOptions();
+    virtual ProgramOptions& programOptions();
 
     int setLogLevel(const char* level);
     int setLogPattern(const char* pattern);
     int setLogLevel(LogLevel level);
 
-    int readDef(const char* path);
-    int readLef(const char* path);
-    int readLib(const char* path);
+    virtual int readDef(const char* path);
+    virtual int readLef(const char* path);
+    virtual int readLib(const char* path);
 
-    int writeDef(const char* path);
+    virtual int writeDef(const char* path);
 
-    int loadTransforms();
-    int runTransform(std::string transform_name, std::vector<std::string> args);
+    int         loadTransforms();
+    virtual int runTransform(std::string              transform_name,
+                             std::vector<std::string> args);
 
     int  setupInterpreter(Tcl_Interp* interp);
     int  setupInterpreterReadline();
@@ -73,10 +72,10 @@ public:
     void processStartupProgramOptions();
     int  sourceTclScript(const char* script_path);
 
-    DatabaseHelper* helper() const;
+    virtual DatabaseHelper* helper() const;
 
-    void printVersion(bool raw_str = false);
-    void printUsage(bool raw_str = false);
+    virtual void printVersion(bool raw_str = false);
+    virtual void printUsage(bool raw_str = false);
     ~Phy();
 
 private:
