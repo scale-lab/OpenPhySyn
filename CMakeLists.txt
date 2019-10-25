@@ -138,14 +138,6 @@ ${OPENDB_HOME}/src/defout
 set(PUBLIC_LIBRARIES
 flute
 opendb
-defin
-defout
-lefin
-lefout
-lef
-zlib
-zutil
-tm
 OpenSTA
 ${ZLIB_LIBRARIES}
 ${TCL_LIBRARY}

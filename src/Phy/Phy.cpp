@@ -68,7 +68,6 @@ Phy::~Phy()
 {
     delete db_helper_;
     delete sta_network_;
-    delete db_;
 }
 
 int
