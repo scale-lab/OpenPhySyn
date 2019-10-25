@@ -37,6 +37,7 @@
 
 #include <OpenSTA/liberty/Liberty.hh>
 #include <opendb/db.h>
+#include <opendb/dbTypes.h>
 #include <opendb/defin.h>
 #include <opendb/defout.h>
 #include <opendb/lefin.h>
@@ -47,15 +48,24 @@ namespace phy
 typedef odb::dbDatabase     Database;
 typedef odb::dbChip         Chip;
 typedef odb::dbBlock        Block;
-typedef odb::dbITerm        InstanceTerm;
+typedef odb::dbInst         Instance;
+typedef odb::dbITerm        InstanceTerm; // Instance pin
+typedef odb::dbMTerm        LibraryTerm;  // Library pin
+typedef odb::dbBTerm        BlockTerm;
+typedef odb::dbMaster       LibraryCell;
 typedef odb::dbLib          Library;
-typedef odb::dbSet<Library> LibrarySet;
 typedef odb::dbTech         LibraryTechnology;
 typedef odb::dbNet          Net;
 typedef odb::defin          DefParser;
 typedef odb::defout         DefOut;
 typedef odb::lefin          LefParser;
 typedef sta::LibertyLibrary Liberty;
+
+typedef odb::dbSet<Library>      LibrarySet;
+typedef odb::dbSet<Net>          NetSet;
+typedef odb::dbSet<BlockTerm>    BlockTermSet;
+typedef odb::dbSet<InstanceTerm> InstanceTermSet;
+typedef odb::dbIoType::Value     PinDirection;
 
 } // namespace phy
 #endif

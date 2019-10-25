@@ -37,13 +37,34 @@
 
 namespace phy
 {
-
 class DatabaseHelper
 {
 public:
     DatabaseHelper(Database* db);
 
-    static std::vector<InstanceTerm*> connectedTerms(Net* net);
+    std::vector<InstanceTerm*> inputPins(Instance* inst) const;
+    std::vector<InstanceTerm*> outputPins(Instance* inst) const;
+    std::vector<InstanceTerm*> filterPins(InstanceTermSet& terms,
+                                          PinDirection     direction) const;
+    std::vector<InstanceTerm*>
+                           fanoutPins(Net* net) const; // Does not include top level pins
+    std::vector<Instance*> fanoutInstances(Net* net) const;
+    std::vector<Instance*> driverInstances() const;
+    InstanceTerm*          faninPin(Net* net) const;
+    LibraryTerm*           libraryPin(InstanceTerm* term) const;
+    LibraryCell*           libraryCell(InstanceTerm* term) const;
+    LibraryCell*           libraryCell(Instance* inst) const;
+    LibraryCell*           libraryCell(const char* name) const;
+    LibraryTerm* libraryPin(const char* cell_name, const char* pin_name) const;
+    LibraryTerm* libraryPin(LibraryCell* cell, const char* pin_name) const;
+    bool         isClocked(InstanceTerm* term) const;
+
+    unsigned int fanoutCount(Net* net) const; // Does not include top level pins
+    std::vector<Net*>  nets() const;          // Get all database net objects
+    Block*             top() const;
+    Library*           library() const;
+    LibraryTechnology* technology() const;
+    std::string        topName() const;
 
 private:
     Database* db_;

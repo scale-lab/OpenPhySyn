@@ -42,7 +42,7 @@ read_def(const char* def_path)
     return Phy::instance().readDef(def_path);
 }
 int
-read_lef(const char* lef_path)
+read_lef(const char* lef_path, int ignore_routing_layers)
 {
     return Phy::instance().readLef(lef_path);
 }

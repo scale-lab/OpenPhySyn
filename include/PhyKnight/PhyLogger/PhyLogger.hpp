@@ -43,19 +43,19 @@ class PhyLogger
 public:
     template<typename... Args>
     void
-    trace(Args&&... args)
+    trace(Args&&... args) const
     {
         logger_->trace(args...);
     }
     template<typename... Args>
     void
-    debug(Args&&... args)
+    debug(Args&&... args) const
     {
         logger_->debug(args...);
     }
     template<typename... Args>
     void
-    info(Args&&... args)
+    info(Args&&... args) const
     {
         logger_->info(args...);
     }
@@ -70,20 +70,20 @@ public:
     }
     template<typename... Args>
     void
-    warn(Args&&... args)
+    warn(Args&&... args) const
     {
         logger_->warn(args...);
     }
 
     template<typename... Args>
     void
-    critical(Args&&... args)
+    critical(Args&&... args) const
     {
         logger_->critical(args...);
     }
     template<typename... Args>
     void
-    error(Args&&... args)
+    error(Args&&... args) const
     {
         logger_->error(args...);
     }

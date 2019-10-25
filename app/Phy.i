@@ -63,6 +63,11 @@ using namespace phy;
      }
 }
 
+%typemap(in) (uint) = (int);
+%typemap(in) (unsigned int) = (int);
+%typemap(in) (unsigned long) = (int);
+%typemap(in) (ulong) = (int);
+
 %include "external/OpenDB/src/swig/tcl/dbtypes.i"
 %include "external/OpenDB/include/opendb/db.h"
 %include "include/PhyKnight/Database/Types.hpp"
