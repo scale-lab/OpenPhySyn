@@ -76,56 +76,55 @@ ProgramOptions::ProgramOptions(int argc, char** argv)
                << "[file]" << std::endl
                << description;
         usage_ = stream.str();
-    }
 
-    po::variables_map vm;
-    try
-    {
+        po::variables_map vm;
+        try
+        {
+            po::store(po::command_line_parser(argc_, argv_)
+                          .options(description)
+                          .positional(p)
+                          .style(style)
+                          .run(),
+                      vm);
 
-        po::store(po::command_line_parser(argc_, argv_)
-                      .options(description)
-                      .positional(p)
-                      .style(style)
-                      .run(),
-                  vm);
+            po::notify(vm);
 
-        po::notify(vm);
-
-        if (vm.count("help"))
-        {
-            help_ = true;
+            if (vm.count("help"))
+            {
+                help_ = true;
+            }
+            if (vm.count("version"))
+            {
+                version_ = true;
+            }
+            if (vm.count("verbose"))
+            {
+                verbose_ = true;
+            }
+            if (vm.count("quiet"))
+            {
+                quiet_ = true;
+            }
+            if (vm.count("file"))
+            {
+                has_file_ = true;
+                file_     = vm["file"].as<std::string>();
+            }
+            if (vm.count("log-file"))
+            {
+                has_log_file_ = true;
+                log_file_     = vm["log-file"].as<std::string>();
+            }
+            if (vm.count("log-level"))
+            {
+                has_log_level_ = true;
+                log_level_     = vm["log-level"].as<std::string>();
+            }
         }
-        if (vm.count("version"))
+        catch (po::error& e)
         {
-            version_ = true;
+            throw ProgramOptionsException(e.what());
         }
-        if (vm.count("verbose"))
-        {
-            verbose_ = true;
-        }
-        if (vm.count("quiet"))
-        {
-            quiet_ = true;
-        }
-        if (vm.count("file"))
-        {
-            has_file_ = true;
-            file_     = vm["file"].as<std::string>();
-        }
-        if (vm.count("log-file"))
-        {
-            has_log_file_ = true;
-            log_file_     = vm["log-file"].as<std::string>();
-        }
-        if (vm.count("log-level"))
-        {
-            has_log_level_ = true;
-            log_level_     = vm["log-level"].as<std::string>();
-        }
-    }
-    catch (po::error& e)
-    {
-        throw ProgramOptionsException(e.what());
     }
 }
 std::string
