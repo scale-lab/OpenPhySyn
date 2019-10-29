@@ -1,6 +1,7 @@
 read_lef ../tests/data/tech.lef
 read_def ../tests/data/design.def
 puts "Read ok!"
-transform hello_transform buffer 2 BUF_X1 A Z clk
+transform buffer_fanout 2 BUF_X1 A Z clk
+write_def ./outputs/buffered.def
 puts "Bufer ok!"
 exit 0

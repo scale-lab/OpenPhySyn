@@ -10,8 +10,9 @@ Example:
 
 ```bash
 > mkdir build && cd build
-> cmake .. -DCMAKE_BUILD_TYPE=[Debug | Coverage | Release]
+> cmake .. -DCMAKE_INSTALL_PREFIX=${HOME}/apps/PhyKnight -DCMAKE_BUILD_TYPE=[Debug | Coverage | Release]
 > make
+> make install
 > ./phy
 > make test      # Makes and runs the tests.
 > make coverage  # Generate a coverage report.

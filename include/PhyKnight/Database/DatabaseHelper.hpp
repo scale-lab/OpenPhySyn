@@ -55,6 +55,8 @@ public:
     LibraryCell*           libraryCell(InstanceTerm* term) const;
     LibraryCell*           libraryCell(Instance* inst) const;
     LibraryCell*           libraryCell(const char* name) const;
+    Instance*              instance(const char* name) const;
+    Net*                   net(const char* name) const;
     LibraryTerm* libraryPin(const char* cell_name, const char* pin_name) const;
     LibraryTerm* libraryPin(LibraryCell* cell, const char* pin_name) const;
     bool         isClocked(InstanceTerm* term) const;

@@ -160,6 +160,27 @@ DatabaseHelper::libraryCell(const char* name) const
     return lib->findMaster(name);
 }
 
+Instance*
+DatabaseHelper::instance(const char* name) const
+{
+    Block* block = top();
+    if (!block)
+    {
+        return nullptr;
+    }
+    return block->findInst(name);
+}
+Net*
+DatabaseHelper::net(const char* name) const
+{
+    Block* block = top();
+    if (!block)
+    {
+        return nullptr;
+    }
+    return block->findNet(name);
+}
+
 LibraryTerm*
 DatabaseHelper::libraryPin(const char* cell_name, const char* pin_name) const
 {
