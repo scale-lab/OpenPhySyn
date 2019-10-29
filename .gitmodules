@@ -6,3 +6,9 @@
 	path = external/OpenDB
 	url = https://github.com/The-OpenROAD-Project/OpenDB.git
 	branch = develop
+[submodule "external/StandardTransforms/PhyKnightHelloTransform"]
+	path = external/StandardTransforms/PhyKnightHelloTransform
+	url = git@github.com:The-OpenROAD-Project/PhyKnightHelloTransform.git
+[submodule "external/StandardTransforms/BufferFanoutTransform"]
+	path = external/StandardTransforms/BufferFanoutTransform
+	url = git@github.com:The-OpenROAD-Project/BufferFanoutTransform.git

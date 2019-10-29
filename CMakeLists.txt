@@ -182,9 +182,16 @@ add_custom_command(OUTPUT ${PHY_WRAP}
   WORKING_DIRECTORY ${PHY_HOME}
   DEPENDS ${PHY_SWIG_FILES}
   )
+
 install(TARGETS Phy DESTINATION bin)
 # Set up tests (see tests/CMakeLists.txt).
 # add_subdirectory(tests)
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
   ${PHY_WRAP}
 )
+
+option(PHY_STANDARD_TRANSFORMS "Build PhyKnight Standard Transforms" ON)
+if(PHY_STANDARD_TRANSFORMS)
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/external/StandardTransforms")
+    include(Transforms)
+endif()

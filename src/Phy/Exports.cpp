@@ -84,6 +84,11 @@ print_usage()
 {
     Phy::instance().printUsage();
 }
+void
+print_transforms()
+{
+    Phy::instance().printTransforms();
+}
 
 void
 print_version()

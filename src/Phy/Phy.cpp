@@ -302,6 +302,26 @@ Phy::printUsage(bool raw_str)
     }
 }
 void
+Phy::printTransforms(bool raw_str)
+{
+    std::string transform_str;
+    for (auto it = transforms_.begin(); it != transforms_.end(); ++it)
+    {
+        transform_str = it->first;
+        transform_str += ": ";
+        transform_str += transforms_versions_[it->first];
+        if (raw_str)
+        {
+            PhyLogger::instance().raw(transform_str);
+        }
+        else
+        {
+            PhyLogger::instance().info(transform_str);
+        }
+    }
+
+} // namespace phy
+void
 Phy::processStartupProgramOptions()
 {
 

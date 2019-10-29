@@ -76,6 +76,7 @@ public:
 
     virtual void printVersion(bool raw_str = false);
     virtual void printUsage(bool raw_str = false);
+    virtual void printTransforms(bool raw_str = false);
     ~Phy();
 
 private:

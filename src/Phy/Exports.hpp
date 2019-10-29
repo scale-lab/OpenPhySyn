@@ -40,6 +40,7 @@ void version();
 void print_version();
 void help();
 void print_usage();
+void print_transforms();
 int  read_def(const char* def_path);
 int  read_lef(const char* lef_path, int ignore_routing_layers = true);
 int  read_lib(const char* lib_path); // Alias for read_liberty

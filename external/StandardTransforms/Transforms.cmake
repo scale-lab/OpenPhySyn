@@ -27,25 +27,23 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+set(ENV{PHY_HOME_PATH} ${PROJECT_SOURCE_DIR})
+
+if((defined ENV{PHY_TRANSFORM_PATH}) AND NOT (ENV{PHY_TRANSFORM_PATH} STREQUAL ""))
+set(PHY_TRANSFORM_PATH $ENV{PHY_TRANSFORM_PATH})
+else()
+set(PHY_TRANSFORM_PATH "$ENV{HOME}/.phyknight/transforms")
+endif()
 
 
-file(GLOB_RECURSE ALL_SOURCE_FILES *.cpp *.hpp *.h)
-foreach (SOURCE_FILE ${ALL_SOURCE_FILES})
-    string(FIND ${SOURCE_FILE} external PROJECT_TRDPARTY_DIR_FOUND)
-    if (NOT ${PROJECT_TRDPARTY_DIR_FOUND} EQUAL -1)
-        list(REMOVE_ITEM ALL_SOURCE_FILES ${SOURCE_FILE})
-    endif ()
-endforeach ()
+add_subdirectory(external/StandardTransforms/PhyKnightHelloTransform)
+install(
+  TARGETS hello_transform
+  DESTINATION ${PHY_TRANSFORM_PATH}
+)
 
-add_custom_target(
-        cppcheck
-        COMMAND /usr/bin/cppcheck
-        --enable=warning,performance,portability,information,missingInclude
-        --std=c++11
-        --library=qt.cfg
-        --template="[{severity}][{id}] {message} {callstack} \(On {file}:{line}\)"
-        --verbose
-        --quiet
-        --force
-        ${ALL_SOURCE_FILES}
+add_subdirectory(external/StandardTransforms/BufferFanoutTransform)
+install(
+  TARGETS hello_transform
+  DESTINATION ${PHY_TRANSFORM_PATH}
 )
