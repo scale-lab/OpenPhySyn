@@ -55,7 +55,8 @@ PhyKnight depends on the following libraries:
 -   [x] Integrate Liberty Parser
 -   [ ] Integrate OpenSTA
 -   [x] Support reading scripts from file
--   [ ] Add unit tests
+-   [x] Add unit tests
 -   [ ] Add API documentation
+-   [ ] Add Gate Cloning Transform
 -   [ ] Add Optimization Transforms
 -   [ ] Add Coding Guideline and Contribution Guide

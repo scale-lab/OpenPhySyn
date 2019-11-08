@@ -39,7 +39,7 @@ TEST_CASE("Should read LEF and DEF successfully")
     Phy& phy_inst = Phy::instance();
     try
     {
-        phy_inst.database()->clear();
+        phy_inst.helper()->clear();
         phy_inst.readLef("../tests/data/tech.lef");
         phy_inst.readDef("../tests/data/design.def");
         CHECK(phy_inst.database()->getChip() != nullptr);

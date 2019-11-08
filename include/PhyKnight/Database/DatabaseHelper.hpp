@@ -70,6 +70,7 @@ public:
     void          disconnect(InstanceTerm* term) const;
     int           disconnectAll(Net* net) const;
     void          del(Net* net) const;
+    void          clear() const;
 
     unsigned int fanoutCount(Net* net) const; // Does not include top level pins
     std::vector<Net*>  nets() const;          // Get all database net objects

@@ -330,4 +330,10 @@ DatabaseHelper::top() const
     Block* block = chip->getBlock();
     return block;
 }
+
+void
+DatabaseHelper::clear() const
+{
+    db_->clear();
+}
 } // namespace phy
