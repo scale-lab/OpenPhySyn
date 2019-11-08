@@ -84,5 +84,5 @@
 		"netfwd": "cpp",
 		"*.cuh": "cpp"
 	},
-	"editor.formatOnSave": false
+	"editor.formatOnSave": true
 }

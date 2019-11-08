@@ -25,6 +25,7 @@
 *.la
 *.a
 *.lib
+!tests/data/*.lib
 
 # Executables
 *.exe
@@ -34,3 +35,4 @@
 
 # Build directory
 build/
+tests/results

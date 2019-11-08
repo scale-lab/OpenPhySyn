@@ -43,13 +43,16 @@ namespace phy
 ProgramOptions::ProgramOptions(int argc, char** argv)
     : argc_(argc),
       argv_(argv),
+      file_(),
+      has_file_(false),
+      log_file_(),
+      has_log_file_(false),
+      log_level_(),
+      has_log_level_(false),
       help_(false),
       version_(false),
-      has_file_(false),
       verbose_(false),
-      quiet_(false),
-      has_log_level_(false),
-      has_log_file_(false)
+      quiet_(false)
 {
 
     po::command_line_style::style_t style = po::command_line_style::style_t(

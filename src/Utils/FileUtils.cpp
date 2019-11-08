@@ -53,8 +53,32 @@ FileUtils::isDirectory(const char* path)
     }
     return false;
 }
+bool
+FileUtils::createDirectory(const char* path)
+{
+    return std::filesystem::create_directory(path);
+}
+bool
+FileUtils::createDirectoryIfNotExists(const char* path)
+{
+    if (pathExists(path))
+    {
+        if (isDirectory(path))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        return createDirectory(path);
+    }
+}
 std::vector<std::string>
-FileUtils::readDir(const char* path)
+FileUtils::readDirectory(const char* path)
 {
     std::vector<std::string> paths;
     for (const auto& entry : std::filesystem::directory_iterator(path))

@@ -31,6 +31,6 @@
 #include "Transform/PhyTransform.hpp"
 namespace phy
 {
-PhyTransform::PhyTransform(){};
-PhyTransform::~PhyTransform(){};
+PhyTransform::PhyTransform(){}
+PhyTransform::~PhyTransform(){}
 } // namespace phy

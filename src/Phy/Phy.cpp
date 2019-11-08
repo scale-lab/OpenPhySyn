@@ -76,36 +76,7 @@ Phy::readDef(const char* path)
     DefReader reader(db_);
     try
     {
-        int  rc   = reader.read(path);
-        auto vias = db_->getChip()->getBlock()->getVias();
-        auto it = vias.begin();
-        auto via = odb::dbVia::create(db_->getChip()->getBlock(), "tvia");
-        odb::dbBox::create(via, *db_->getTech()->getLayers().begin(), 100, 100, 100, 100);
-        PhyLogger::instance().info("Via {} {}", via->getConstName(), via->hasParams());
-        auto p = new odb::dbViaParams;
-        // via->getViaParams(*p);
-        // p = new odb::dbViaParams(*p);
-        // p->setXCutSize(100);
-        // p->setYCutSize(100);
-        auto* bot = db_->getTech()->findLayer("metal1");
-        auto* cut = db_->getTech()->findLayer("via1");
-        auto* top = db_->getTech()->findLayer("metal2");
-
-        p->setTopLayer(top);
-        p->setBottomLayer(bot);
-        p->setCutLayer(cut);
-        p->setNumCutRows(3);
-        p->setNumCutCols(3);
-
-        // p.setCutLayer(via->getBottomLayer());
-        // PhyLogger::instance().info("LIM {}", via->getConstName());
-        // via->getViaParams(p);
-        PhyLogger::instance().info("LM {}", via->getConstName());
-        via->setViaParams(*p);
-        delete p;
-        p = NULL;
-        PhyLogger::instance().info("M {}", via->getConstName());
-        return rc;
+        return reader.read(path);
     }
     catch (FileException& e)
     {
@@ -126,7 +97,6 @@ Phy::readLib(const char* path)
     try
     {
         liberty_ = reader.read(path);
-        sta::LibertyCellIterator cell_iter(liberty_);
         if (liberty_)
         {
             return 1;
@@ -227,7 +197,7 @@ Phy::loadTransforms()
             continue;
         }
         std::vector<std::string> transforms_paths =
-            FileUtils::readDir(transform_parent_path.c_str());
+            FileUtils::readDirectory(transform_parent_path.c_str());
         for (auto& path : transforms_paths)
         {
             phy::PhyLogger::instance().debug("Reading transform {}", path);

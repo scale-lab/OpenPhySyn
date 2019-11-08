@@ -75,7 +75,7 @@ add_subdirectory(external/spdlog)
 set(PHY_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Phy_wrap.cc)
 
 set(PHY_MAIN ${PHY_HOME}/app/PhyMain.cpp)
-set(PHY_SOURCES_NO_MAIN
+set(PHY_SOURCES_NO_MAIN_NO_WRAP
     ${PHY_HOME}/src/Phy/Phy.cpp
     ${PHY_HOME}/src/Phy/Exports.cpp
     ${PHY_HOME}/src/Phy/ProgramOptions.cpp
@@ -97,6 +97,9 @@ set(PHY_SOURCES_NO_MAIN
     ${PHY_HOME}/src/PhyException/PhyException.cpp
     ${PHY_HOME}/src/PhyException/ProgramOptionsException.cpp
     ${PHY_HOME}/src/PhyException/TransformNotFoundException.cpp
+)
+set(PHY_SOURCES_NO_MAIN
+    ${PHY_SOURCES_NO_MAIN_NO_WRAP}
     ${PHY_WRAP}
 )
 set(PHY_SOURCES 
@@ -105,7 +108,11 @@ set(PHY_SOURCES
 )
 
 set(PHY_TESTFILES        # All .cpp files in tests/
-    tests/PhyDemo.cpp
+    ${PROJECT_SOURCE_DIR}/tests/ReadLefDef.cpp
+    ${PROJECT_SOURCE_DIR}/tests/WriteDef.cpp
+    ${PROJECT_SOURCE_DIR}/tests/ReadLiberty.cpp
+    ${PROJECT_SOURCE_DIR}/tests/BufferFanout.cpp
+    ${PROJECT_SOURCE_DIR}/tests/TestMain.cpp
 )
 
 set(PHY_SWIG_FILES
@@ -119,31 +126,31 @@ set(LIBRARY_NAME ${PROJECT_NAME})  # Default name for the library built from src
 # string(TOLOWER ${PROJECT_NAME} LIBRARY_NAME)
 
 set(INCLUDE_DIRS
-${PROJECT_SOURCE_DIR}/include
-${PROJECT_SOURCE_DIR}/include/PhyKnight
-${PROJECT_SOURCE_DIR}/src
-${PROJECT_SOURCE_DIR}/external
-${TCL_INCLUDE_PATH}
-${Boost_INCLUDE_DIR}
-${SPD_LOG_HOME}/include
-${FLUTE_HOME}/include
-${OPENDB_HOME}/include
-${OPENDB_HOME}/src
-${OPENDB_HOME}/src/db
-${OPENDB_HOME}/src/lefin
-${OPENDB_HOME}/src/defin
-${OPENDB_HOME}/src/defout
+  ${PROJECT_SOURCE_DIR}/include
+  ${PROJECT_SOURCE_DIR}/include/PhyKnight
+  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}/external
+  ${TCL_INCLUDE_PATH}
+  ${Boost_INCLUDE_DIR}
+  ${SPD_LOG_HOME}/include
+  ${FLUTE_HOME}/include
+  ${OPENDB_HOME}/include
+  ${OPENDB_HOME}/src
+  ${OPENDB_HOME}/src/db
+  ${OPENDB_HOME}/src/lefin
+  ${OPENDB_HOME}/src/defin
+  ${OPENDB_HOME}/src/defout
 )
 
 set(PUBLIC_LIBRARIES
-flute
-opendb
-OpenSTA
-${ZLIB_LIBRARIES}
-${TCL_LIBRARY}
-${Boost_LIBRARIES}
-dl
-# doctest
+  flute
+  opendb
+  OpenSTA
+  ${ZLIB_LIBRARIES}
+  ${TCL_LIBRARY}
+  ${Boost_LIBRARIES}
+  dl
+  doctest
 )
 
 # Compile all sources into a library.
@@ -154,12 +161,6 @@ target_include_directories(${LIBRARY_NAME} PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES}) 
 target_include_directories(Phy PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(Phy PUBLIC ${PUBLIC_LIBRARIES}) 
-
-
-# target_link_libraries(Phy 
-#   PRIVATE 
-#   ${LIBRARY_NAME}
-# )
 
 include_directories (
   ${INCLUDE_DIRS}
@@ -185,7 +186,7 @@ add_custom_command(OUTPUT ${PHY_WRAP}
 
 install(TARGETS Phy DESTINATION bin)
 # Set up tests (see tests/CMakeLists.txt).
-# add_subdirectory(tests)
+add_subdirectory(tests)
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
   ${PHY_WRAP}
 )

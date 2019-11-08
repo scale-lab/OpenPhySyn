@@ -28,11 +28,24 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "PhyDemo/PhyDemo.hpp"
+#include <PhyKnight/Phy/Phy.hpp>
+#include "PhyException/PhyException.hpp"
 #include "doctest.h"
 
-TEST_CASE("complicated integration tests could be here")
+using namespace phy;
+
+TEST_CASE("Should read LEF and DEF successfully")
 {
-    phy::PhyDemo d;
-    CHECK(d.doSomething() == true);
+    Phy& phy_inst = Phy::instance();
+    try
+    {
+        phy_inst.database()->clear();
+        phy_inst.readLef("../tests/data/tech.lef");
+        phy_inst.readDef("../tests/data/design.def");
+        CHECK(phy_inst.database()->getChip() != nullptr);
+    }
+    catch (PhyException& e)
+    {
+        FAIL(e.what());
+    }
 }

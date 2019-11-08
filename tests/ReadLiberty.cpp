@@ -28,28 +28,24 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#include "Phy/Phy.hpp"
+#include "PhyException/PhyException.hpp"
+#include "doctest.h"
 
-#ifndef __PHY_FILE_UTILS__
-#define __PHY_FILE_UTILS__
-#include <filesystem>
-#include <fstream>
-#include <sys/stat.h>
-#include <vector>
+using namespace phy;
 
-namespace phy
+TEST_CASE("Should read liberty file")
 {
-class FileUtils
-{
-public:
-    static bool pathExists(const char* path);
-    static bool isDirectory(const char* path);
-    static bool createDirectory(const char* path);
-    static bool createDirectoryIfNotExists(const char* path);
-    static std::vector<std::string> readDirectory(const char* path);
-    static std::string              readFile(const char* path);
-    static std::string              homePath();
-    static std::string              joinPath(const char* first_path,
-                                             const char* second_path);
-};
-} // namespace phy
-#endif
+    Phy& phy_inst = Phy::instance();
+    try
+    {
+        phy_inst.readLib("../tests/data/gscl45nm.lib");
+        Liberty*                 liberty = phy_inst.liberty();
+        sta::LibertyCellIterator cell_iter(liberty);
+        CHECK(cell_iter.hasNext());
+    }
+    catch (PhyException& e)
+    {
+        FAIL(e.what());
+    }
+}
