@@ -28,52 +28,34 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-%module phy
-%{
-#include "Phy/Exports.hpp"
-#include "db.h"
-#include "dbShape.h"
-#include "geom.h"
-using namespace odb;
-using namespace phy;
-%}
 
-%include <stl.i>
-%include <typemaps.i>
-%include <std_string.i>
-%include <std_vector.i>
-%include <std_pair.i>
-%template(vector_str) std::vector<std::string>;
+#include <PhyKnight/Database/DatabaseHelper.hpp>
+#include <PhyKnight/Database/Types.hpp>
+#include <PhyKnight/Phy/Phy.hpp>
+#include <PhyKnight/Transform/PhyTransform.hpp>
+#include <cstring>
 
-%typemap(in) char ** {
-     Tcl_Obj **listobjv;
-     int       nitems;
-     int       i;
-     if (Tcl_ListObjGetElements(interp, $input, &nitems, &listobjv) == TCL_ERROR) {
-        return TCL_ERROR;
-     }
-     $1 = (char **) malloc((nitems+1)*sizeof(char *));
-     for (i = 0; i < nitems; i++) {
-        $1[i] = Tcl_GetStringFromObj(listobjv[i],0);
-     }
-     $1[i] = 0;
-}
+class BufferFanoutTransform : public phy::PhyTransform
+{
+private:
+    bool isNumber(const std::string& s);
 
-// This gives SWIG some cleanup code that will get called after the function call
-%typemap(freearg) char ** {
-     if ($1) {
-        free($1);
-     }
-}
+public:
+    int buffer(phy::Phy* phy_inst, phy::Database* db, int max_fanout,
+               std::string buffer_cell, std::string buffer_in_port,
+               std::string buffer_out_port, std::string clock_port_name);
 
-%typemap(in) (uint) = (int);
-%typemap(in) (unsigned int) = (int);
-%typemap(in) (unsigned long) = (int);
-%typemap(in) (ulong) = (int);
+    int              run(phy::Phy* phy_inst, phy::Database* db,
+                         std::vector<std::string> args) override;
+    std::string      bufferName(int index);
+    std::string      bufferNetName(int index);
+    std::string      bufferName(std::vector<int> indices);
+    std::string      bufferNetName(std::vector<int> indices);
+    std::vector<int> nextBuffer(std::vector<int> current_buffer,
+                                int              max_fanout);
+};
 
-%include "external/OpenDB/src/swig/tcl/dbtypes.i"
-%include "external/OpenDB/include/opendb/geom.h"
-%include "external/OpenDB/include/opendb/db.h"
-%include "include/PhyKnight/Database/Types.hpp"
-%include "include/PhyKnight/Database/DatabaseHelper.hpp"
-%include "Phy/Exports.hpp"
+DEFINE_TRANSFORM(BufferFanoutTransform, "buffer_fanout", "1.0.0",
+                 "Usage: transform buffer_fanout "
+                 "<max_fanout> <buffer_cell> <buffer_in_port> "
+                 "<buffer_out_port> <clock_port>")
