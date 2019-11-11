@@ -97,6 +97,10 @@ set(PHY_SOURCES_NO_MAIN_NO_WRAP
     ${PHY_HOME}/src/PhyException/PhyException.cpp
     ${PHY_HOME}/src/PhyException/ProgramOptionsException.cpp
     ${PHY_HOME}/src/PhyException/TransformNotFoundException.cpp
+
+    ${PHY_HOME}/src/Sta/DatabaseSta.cpp
+    ${PHY_HOME}/src/Sta/DatabaseSdcNetwork.cpp
+    ${PHY_HOME}/src/Sta/DatabaseStaNetwork.cpp
 )
 set(PHY_SOURCES_NO_MAIN
     ${PHY_SOURCES_NO_MAIN_NO_WRAP}
