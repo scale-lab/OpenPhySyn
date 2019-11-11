@@ -9,3 +9,4 @@
 [submodule "external/StandardTransforms/PhyKnightHelloTransform"]
 	path = external/StandardTransforms/PhyKnightHelloTransform
 	url = git@github.com:The-OpenROAD-Project/PhyKnightHelloTransform.git
+	branch = master
