@@ -36,6 +36,7 @@
 #include <PhyKnight/Database/Types.hpp>
 #include <PhyKnight/Phy/ProgramOptions.hpp>
 #include <PhyKnight/PhyLogger/LogLevel.hpp>
+#include <PhyKnight/Sta/DatabaseSta.hpp>
 #include <PhyKnight/Transform/PhyTransform.hpp>
 
 #include <unordered_map>
@@ -81,10 +82,10 @@ public:
 
 private:
     Phy();
-    Database*             db_;
-    Liberty*              liberty_;
-    sta::ConcreteNetwork* sta_network_;
-    DatabaseHelper*       db_helper_;
+    Database*         db_;
+    Liberty*          liberty_;
+    sta::DatabaseSta* sta_;
+    DatabaseHelper*   db_helper_;
 
     int initializeDatabase();
 

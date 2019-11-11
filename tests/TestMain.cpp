@@ -28,8 +28,48 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+// #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#define DOCTEST_CONFIG_IMPLEMENT
+
+#include <tcl.h>
+#include "Phy/Phy.hpp"
 #include "doctest.h"
 
+int
+main(int argc, char** argv)
+{
+    doctest::Context context;
+
+    // !!! THIS IS JUST AN EXAMPLE SHOWING HOW DEFAULTS/OVERRIDES ARE SET !!!
+
+    // defaults
+    // context.addFilter("test-case-exclude", "*math*"); // exclude test cases
+    // with "math" in their name context.setOption("abort-after", 5); // stop
+    // test execution after 5 failed assertions context.setOption("order-by",
+    // "name");            // sort the test cases by their name
+
+    context.applyCommandLine(argc, argv);
+
+    // overrides
+    context.setOption(
+        "no-breaks",
+        false); // don't break in the debugger when assertions fail
+    Tcl_Interp* interp = Tcl_CreateInterp();
+    phy::Phy::instance().loadTransforms();
+    phy::Phy::instance().setupInterpreter(interp);
+
+    int res = context.run(); // run
+
+    if (context.shouldExit()) // important - query flags (and --exit) rely on
+                              // the user doing this
+        return res;           // propagate the result of the tests
+
+    int client_stuff_return_code = 0;
+    // your program - if the testing framework is integrated in your production
+    // code
+
+    return res + client_stuff_return_code; // the result from doctest is
+                                           // propagated here as well
+}
 // This is all that is needed to compile a test-runner executable.
 // More tests can be added here, or in a new tests/*.cpp file.

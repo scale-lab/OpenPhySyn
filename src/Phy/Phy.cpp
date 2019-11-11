@@ -53,21 +53,20 @@
 namespace phy
 {
 
-Phy::Phy()
-    : db_(nullptr),
-      liberty_(nullptr),
-      sta_network_(new sta::ConcreteNetwork),
-      interp_(nullptr)
+Phy::Phy() : db_(nullptr), liberty_(nullptr), interp_(nullptr)
 {
     initializeDatabase();
     db_helper_ = new DatabaseHelper(db_);
+    sta_       = new sta::DatabaseSta(db_);
     sta::initSta();
+    sta::Sta::setSta(sta_);
+    sta_->makeComponents();
 }
 
 Phy::~Phy()
 {
     delete db_helper_;
-    delete sta_network_;
+    delete sta_;
 }
 
 int
@@ -76,7 +75,9 @@ Phy::readDef(const char* path)
     DefReader reader(db_);
     try
     {
-        return reader.read(path);
+        int rc = reader.read(path);
+        sta_->readDbAfter();
+        return rc;
     }
     catch (FileException& e)
     {
@@ -93,10 +94,11 @@ Phy::readDef(const char* path)
 int
 Phy::readLib(const char* path)
 {
-    LibertyReader reader(db_, sta_network_);
+    LibertyReader reader(db_, sta_->network());
     try
     {
         liberty_ = reader.read(path);
+        sta_->network()->readLibertyAfter(liberty_);
         if (liberty_)
         {
             return 1;
@@ -265,7 +267,7 @@ Phy::setupInterpreter(Tcl_Interp* interp)
         PhyLogger::instance().warn("Multiple interpreter initialization!");
     }
     interp_ = interp;
-
+    sta_->setTclInterp(interp_);
     const char* tcl_setup =
 #include "Tcl/Setup.tcl"
         ;

@@ -53,7 +53,7 @@ PhyKnight depends on the following libraries:
 
 -   [ ] Integrate Steiner Tree
 -   [x] Integrate Liberty Parser
--   [ ] Integrate OpenSTA
+-   [x] Integrate OpenSTA
 -   [x] Support reading scripts from file
 -   [x] Add unit tests
 -   [ ] Add API documentation

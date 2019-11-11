@@ -49,7 +49,8 @@ LibertyReader::read(const char* path)
 {
     try
     {
-        return sta::readLibertyFile(path, true, network_);
+        Liberty* liberty = sta::readLibertyFile(path, true, network_);
+        return liberty;
     }
     catch (sta::StaException& e)
     {
