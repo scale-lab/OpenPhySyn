@@ -291,8 +291,44 @@ DatabaseHelper::topName() const
     {
         return "";
     }
-    return (block->getConstName());
+    return name(block);
 }
+std::string
+DatabaseHelper::name(Block* object) const
+{
+    return std::string(object->getConstName());
+}
+std::string
+DatabaseHelper::name(Net* object) const
+{
+    return std::string(object->getConstName());
+}
+std::string
+DatabaseHelper::name(Instance* object) const
+{
+    return std::string(object->getConstName());
+}
+std::string
+DatabaseHelper::name(BlockTerm* object) const
+{
+    return std::string(object->getConstName());
+}
+std::string
+DatabaseHelper::name(Library* object) const
+{
+    return std::string(object->getConstName());
+}
+std::string
+DatabaseHelper::name(LibraryCell* object) const
+{
+    return std::string(object->getConstName());
+}
+std::string
+DatabaseHelper::name(LibraryTerm* object) const
+{
+    return std::string(object->getConstName());
+}
+
 Library*
 DatabaseHelper::library() const
 {

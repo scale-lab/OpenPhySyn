@@ -77,6 +77,13 @@ public:
     Block*             top() const;
     Library*           library() const;
     LibraryTechnology* technology() const;
+    std::string        name(Block* object) const;
+    std::string        name(Net* object) const;
+    std::string        name(Instance* object) const;
+    std::string        name(BlockTerm* object) const;
+    std::string        name(Library* object) const;
+    std::string        name(LibraryCell* object) const;
+    std::string        name(LibraryTerm* object) const;
     std::string        topName() const;
 
 private:

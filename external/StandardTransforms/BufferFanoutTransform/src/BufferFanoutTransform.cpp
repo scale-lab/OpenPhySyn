@@ -77,7 +77,7 @@ BufferFanoutTransform::buffer(Phy* phy_inst, Database* db_, int max_fanout,
     logger.info("High fanout nets [{}]: ", high_fanout_nets.size());
     for (auto& net : high_fanout_nets)
     {
-        logger.info("Net: {} {}", net->getConstName(), helper.fanoutCount(net));
+        logger.info("Net: {} {}", helper.name(net), helper.fanoutCount(net));
     }
     // To-Do: Remove clock net..
     int create_buffer_count = 0;
@@ -88,7 +88,7 @@ BufferFanoutTransform::buffer(Phy* phy_inst, Database* db_, int max_fanout,
         InstanceTerm* source_pin = helper.faninPin(net);
         if (source_pin)
         {
-            logger.info("Buffering: {}", net->getConstName());
+            logger.info("Buffering: {}", helper.name(net));
             auto fanout_pins        = helper.fanoutPins(net);
             int  net_sink_pin_count = fanout_pins.size();
             logger.info("Sink count: {}", net_sink_pin_count);
