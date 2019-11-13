@@ -10,12 +10,9 @@ Example:
 
 ```bash
 > mkdir build && cd build
-> export PHY_HOME_PATH=<PhyKnight Source Code Path>
-> export PHY_LIB_PATH=<PhyKnight Built Library Directory>
-> export OPENDB_HOME_PATH=<OpenDB Source Code Directory>
-> export OPENDB_LIB_PATH=<OpenDB Built Library Directory>
-> export OPENDB_STA_PATH=<OpenSTA Source Code Directory>
-> cmake ..
+> cmake .. -DPHY_HOME=<PhyKnight Source Code Path> -DPHY_LIB=<PhyKnight Built Library Directory> \
+> -DOPENDB_HOME=<OpenDB Source Code Directory> -DOPENDB_LIB=<OpenDB Built Library Directory> \
+> -DOPENSTA_HOME=<OpenSTA Source Code Directory>
 > make
 > make install # Or sudo make install
 ```
@@ -29,4 +26,4 @@ Example:
 > write_def out.def
 ```
 
-Make sure to set `PHY_HOME_PATH` to PhyKnight source code path, `PHY_LIB_PATH` to the directory containing the built PhyKnight library file, `OPENDB_HOME_PATH` to [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) include path, `OPENDB_LIB_PATH` the directory containing the built [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) library files.
+Make sure to set `PHY_HOME` to PhyKnight source code path, `PHY_LIB` to the directory containing the built PhyKnight library file, `OPENDB_HOME` to [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) include path, `OPENDB_LIB` the directory containing the built [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) library files.

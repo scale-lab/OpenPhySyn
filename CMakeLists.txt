@@ -186,7 +186,7 @@ add_custom_command(OUTPUT ${PHY_WRAP}
   COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix phy -I${PROJECT_SOURCE_DIR}/src -o ${PHY_WRAP} ${PHY_SWIG_FILES}
   WORKING_DIRECTORY ${PHY_HOME}
   DEPENDS ${PHY_SWIG_FILES}
-  )
+)
 
 install(TARGETS Phy DESTINATION bin)
 # Set up tests (see tests/CMakeLists.txt).

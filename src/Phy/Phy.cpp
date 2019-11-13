@@ -177,25 +177,28 @@ Phy::loadTransforms()
 
     std::vector<phy::TransformHandler> handlers;
     std::vector<std::string>           transforms_dirs;
-    std::string                        transforms_paths(FileUtils::joinPath(
-        FileUtils::homePath().c_str(), ".phyknight/transforms"));
+    std::string                        transforms_paths(
+        FileUtils::joinPath(FileUtils::homePath().c_str(),
+                            ".phyknight/transforms") +
+        ":./transforms");
     const char* env_path   = std::getenv("PHY_TRANSFORM_PATH");
     int         load_count = 0;
 
     if (env_path)
     {
-        transforms_paths = std::string(env_path);
+        transforms_paths = transforms_paths + ":" + std::string(env_path);
     }
 
     boost::split(transforms_dirs, transforms_paths, boost::is_any_of(":"));
 
     for (auto& transform_parent_path : transforms_dirs)
     {
+        if (!transform_parent_path.length())
+        {
+            continue;
+        }
         if (!FileUtils::isDirectory(transform_parent_path.c_str()))
         {
-            phy::PhyLogger::instance().warn(
-                "{} is not a directory, skipping transforms under this path.",
-                transform_parent_path);
             continue;
         }
         std::vector<std::string> transforms_paths =
@@ -209,17 +212,26 @@ Phy::loadTransforms()
         PhyLogger::instance().debug("Found {} transforms under {}.",
                                     transforms_paths.size(),
                                     transform_parent_path);
-
-        for (auto tr : handlers)
-        {
-            auto transform                  = tr.load();
-            transforms_[tr.name()]          = transform;
-            transforms_versions_[tr.name()] = tr.version();
-            transforms_help_[tr.name()]     = tr.help();
-            load_count++;
-        }
     }
 
+    for (auto tr : handlers)
+    {
+        std::string tr_name(tr.name());
+        if (!transforms_.count(tr_name))
+        {
+            auto transform                = tr.load();
+            transforms_[tr_name]          = transform;
+            transforms_versions_[tr_name] = tr.version();
+            transforms_help_[tr_name]     = tr.help();
+            load_count++;
+        }
+        else
+        {
+            PhyLogger::instance().debug(
+                "Transform {} was already loaded, discarding subsequent loads",
+                tr_name);
+        }
+    }
     phy::PhyLogger::instance().info("Loaded {} transforms.", load_count);
 
     return load_count;

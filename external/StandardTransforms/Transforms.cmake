@@ -27,23 +27,27 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-set(ENV{PHY_HOME_PATH} ${PROJECT_SOURCE_DIR})
 
-if((defined ENV{PHY_TRANSFORM_PATH}) AND NOT (ENV{PHY_TRANSFORM_PATH} STREQUAL ""))
-set(PHY_TRANSFORM_PATH $ENV{PHY_TRANSFORM_PATH})
-else()
-set(PHY_TRANSFORM_PATH "$ENV{HOME}/.phyknight/transforms")
-endif()
+SUBDIRLIST(TRANSFORMS_DIRS ${CMAKE_SOURCE_DIR}/external/StandardTransforms)
+set(TRANSFORMS_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/transforms")
 
+file(MAKE_DIRECTORY ${TRANSFORMS_BUILD_DIR})
+
+
+# option(PHY_TRANSFORM_INSTALL_PATH "Default path for transforms installation" $ENV{HOME}/.phyknight/transforms)
+
+set(PHY_HOME ${CMAKE_CURRENT_SOURCE_DIR} CACHE FILEPATH "The path to PhyKnight includes")
+set(PHY_TRANSFORM_INSTALL_PATH "$ENV{HOME}/.phyknight/transforms" CACHE FILEPATH "Default path for transforms installation")
 
 add_subdirectory(external/StandardTransforms/PhyKnightHelloTransform)
 install(
   TARGETS hello_transform
-  DESTINATION ${PHY_TRANSFORM_PATH}
+  DESTINATION ${PHY_TRANSFORM_INSTALL_PATH}
 )
+
 
 add_subdirectory(external/StandardTransforms/BufferFanoutTransform)
 install(
-  TARGETS hello_transform
-  DESTINATION ${PHY_TRANSFORM_PATH}
+  TARGETS buffer_fanout
+  DESTINATION ${PHY_TRANSFORM_INSTALL_PATH}
 )

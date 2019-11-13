@@ -10,43 +10,32 @@ find_package(TCL REQUIRED)
 set(Boost_USE_STATIC_LIBS ON)
 
 
+set(PHY_HOME "/usr/include/phyknight" CACHE FILEPATH "The path to PhyKnight includes")
 
-if(DEFINED ENV{PHY_HOME_PATH})
-set(PHY_HOME_PATH $ENV{PHY_HOME_PATH})
-else()
-set(PHY_HOME_PATH "/usr/include/phyknight")
+IF(NOT EXISTS ${PHY_HOME})
+message( FATAL_ERROR "Cannot find PhyKnight headers, set PHY_HOME option." )
 endif()
 
-IF(NOT EXISTS ${PHY_HOME_PATH})
-message( FATAL_ERROR "Cannot find PhyKnight headers, set PHY_HOME_PATH variable." )
-endif()
+set(OPEDNDB_HOME ${PHY_HOME}/external/OpenDB CACHE FILEPATH "The path to OpenDB includes")
 
-if(DEFINED ENV{OPENDB_HOME_PATH})
-set(OPEDNDB_HOME $ENV{OPENDB_HOME_PATH})
-else()
-set(OPEDNDB_HOME ${PHY_HOME_PATH}/external/OpenDB)
-endif()
-
-if(DEFINED ENV{OPENSTA_HOME_PATH})
-set(OPENSTA_HOME $ENV{OPENSTA_HOME_PATH})
-else()
-set(OPENSTA_HOME ${PHY_HOME_PATH}/external/OpenSTA)
-endif()
+option(OPENSTA_HOME "The path to OpenSTA" ${PHY_HOME}/external/OpenSTA)
 
 IF(NOT EXISTS ${OPEDNDB_HOME})
-message( FATAL_ERROR "Cannot find OpenDB headers, set OPENDB_HOME_PATH variable." )
+message( FATAL_ERROR "${OPEDNDB_HOME} -- ${PHY_HOME} Cannot find OpenDB headers, set OPEDNDB_HOME option." )
 endif()
 IF(NOT EXISTS ${OPENSTA_HOME})
-message( FATAL_ERROR "Cannot find OpenSTA headers, set OPENSTA_HOME_PATH variable." )
+message( FATAL_ERROR "Cannot find OpenSTA headers, set OPENSTA_HOME option." )
 endif()
 
-if(DEFINED ENV{PHY_LIB_PATH})
-set(PHY_LIB_PATH $ENV{PHY_LIB_PATH})
+set(PHY_LIB_PATH "" CACHE STRING "Set PhyKnight built library path" 0)
+
+if(NOT PHY_LIB_PATH STREQUAL 0)
 link_directories(${PHY_LIB_PATH})
 endif()
 
-if(DEFINED ENV{OPENDB_LIB_PATH})
-set(OPENDB_LIB_PATH $ENV{OPENDB_LIB_PATH})
+set(OPENDB_LIB_PATH "" CACHE STRING "Set OpenDB built library path" 0)
+
+if(NOT OPENDB_LIB_PATH STREQUAL "")
 link_directories(${OPENDB_LIB_PATH})
 link_directories(${OPENDB_LIB_PATH}/src)
 link_directories(${OPENDB_LIB_PATH}/src/db)
@@ -61,8 +50,8 @@ endif()
 
 include_directories(
   src/
-  ${PHY_HOME_PATH}/include/
-  ${PHY_HOME_PATH}/external/spdlog/include
+  ${PHY_HOME}/include/
+  ${PHY_HOME}/external/spdlog/include
   ${OPEDNDB_HOME}/include
   ${OPEDNDB_HOME}/src
   ${OPEDNDB_HOME}/src/db
@@ -88,21 +77,26 @@ ${TCL_LIBRARY}
 dl
 PhyKnight
 )
+if (DEFINED "TRANSFORMS_BUILD_DIR")
+set_target_properties(${TRANSFORM_NAME}
+    PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${TRANSFORMS_BUILD_DIR}"
+)
+endif()
 target_compile_features(${TRANSFORM_NAME} PRIVATE cxx_range_for cxx_auto_type)
 target_compile_options(${TRANSFORM_NAME} PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
 set_property(TARGET ${TRANSFORM_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+set(PHY_TRANSFORM_INSTALL_PATH "$ENV{HOME}/.phyknight/transforms" CACHE STRING "Default path for transforms installation")
 
-if((defined ENV{PHY_TRANSFORM_PATH}) AND NOT (ENV{PHY_TRANSFORM_PATH} STREQUAL ""))
-set(PHY_TRANSFORM_PATH $ENV{PHY_TRANSFORM_PATH})
-else()
-set(PHY_TRANSFORM_PATH "$ENV{HOME}/.phyknight/transforms")
-endif()
 
 install(
   TARGETS ${TRANSFORM_NAME}
-  DESTINATION ${PHY_TRANSFORM_PATH}
+  DESTINATION ${PHY_TRANSFORM_INSTALL_PATH}
 )
+
+
+
 
 
 
