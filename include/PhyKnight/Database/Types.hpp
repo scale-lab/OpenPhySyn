@@ -44,7 +44,8 @@
 
 namespace phy
 {
-
+class OpenDBHelper;
+#ifdef USE_OPENDB_DB_HELPER
 typedef odb::dbDatabase     Database;
 typedef odb::dbChip         Chip;
 typedef odb::dbBlock        Block;
@@ -66,6 +67,31 @@ typedef odb::dbSet<Net>          NetSet;
 typedef odb::dbSet<BlockTerm>    BlockTermSet;
 typedef odb::dbSet<InstanceTerm> InstanceTermSet;
 typedef odb::dbIoType::Value     PinDirection;
+typedef OpenDBHelper             DatabaseHelper;
+#else
+// Default is OpenSTA helper
+typedef odb::dbDatabase     Database;
+typedef odb::dbChip         Chip;
+typedef odb::dbBlock        Block;
+typedef odb::dbInst         Instance;
+typedef odb::dbITerm        InstanceTerm; // Instance pin
+typedef odb::dbMTerm        LibraryTerm;  // Library pin
+typedef odb::dbBTerm        BlockTerm;
+typedef odb::dbMaster       LibraryCell;
+typedef odb::dbLib          Library;
+typedef odb::dbTech         LibraryTechnology;
+typedef odb::dbNet          Net;
+typedef odb::defin          DefParser;
+typedef odb::defout         DefOut;
+typedef odb::lefin          LefParser;
+typedef sta::LibertyLibrary Liberty;
+
+typedef odb::dbSet<Library>      LibrarySet;
+typedef odb::dbSet<Net>          NetSet;
+typedef odb::dbSet<BlockTerm>    BlockTermSet;
+typedef odb::dbSet<InstanceTerm> InstanceTermSet;
+typedef odb::dbIoType::Value     PinDirection;
+#endif
 
 } // namespace phy
 #endif

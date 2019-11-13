@@ -11,7 +11,23 @@ option(ENABLE_DOCTESTS "Include tests in the library. Setting this to OFF will r
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ltcl -lz -lm -ldl -Wno-error -Wall -Wextra -Wno-unused-parameter")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Include stuff. No change needed.
+
+# Tool build configuration
+option(OPENROAD_BUILD "Indicates if the tool is being built as a module in the top level application" OFF)
+set(DATABASE_HELPER "OpenDB" CACHE STRING "Specify the database helper type, can be OpenDB or OpenSTA")
+
+if (${DATABASE_HELPER} STREQUAL "OpenDB")
+  add_definitions(-DUSE_OPENDB_DB_HELPER)
+else()
+  add_definitions(-DUSE_OPENSTA_DB_HELPER)
+  endif()
+  
+if (${OPENROAD_BUILD})
+  add_definitions(-DOPENROAD_BUILD)
+endif()
+
+
+# Include stuff.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 include(ConfigSafeGuards)
 include(Colors)
@@ -82,7 +98,7 @@ set(PHY_SOURCES_NO_MAIN_NO_WRAP
     ${PHY_HOME}/src/Analyzer/Analyzer.cpp
     ${PHY_HOME}/src/SteinerTree/SteinerTree.cpp
     ${PHY_HOME}/src/PhyLogger/PhyLogger.cpp
-    ${PHY_HOME}/src/Database/DatabaseHelper.cpp
+    ${PHY_HOME}/src/Database/OpenDBHelper.cpp
     ${PHY_HOME}/src/DefReader/DefReader.cpp
     ${PHY_HOME}/src/DefWriter/DefWriter.cpp
     ${PHY_HOME}/src/LefReader/LefReader.cpp

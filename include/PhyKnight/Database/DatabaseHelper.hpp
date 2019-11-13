@@ -28,67 +28,8 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-
-#ifndef __PHY_HELPER__
-#define __PHY_HELPER__
-
-#include <PhyKnight/Database/Types.hpp>
-#include <vector>
-
-namespace phy
-{
-class DatabaseHelper
-{
-public:
-    DatabaseHelper(Database* db);
-
-    std::vector<InstanceTerm*> inputPins(Instance* inst) const;
-    std::vector<InstanceTerm*> outputPins(Instance* inst) const;
-    std::vector<InstanceTerm*> filterPins(InstanceTermSet& terms,
-                                          PinDirection     direction) const;
-    std::vector<InstanceTerm*>
-                           fanoutPins(Net* net) const; // Does not include top level pins
-    std::vector<Instance*> fanoutInstances(Net* net) const;
-    std::vector<Instance*> driverInstances() const;
-    InstanceTerm*          faninPin(Net* net) const;
-    LibraryTerm*           libraryPin(InstanceTerm* term) const;
-    LibraryCell*           libraryCell(InstanceTerm* term) const;
-    LibraryCell*           libraryCell(Instance* inst) const;
-    LibraryCell*           libraryCell(const char* name) const;
-    Instance*              instance(const char* name) const;
-    Net*                   net(const char* name) const;
-    LibraryTerm* libraryPin(const char* cell_name, const char* pin_name) const;
-    LibraryTerm* libraryPin(LibraryCell* cell, const char* pin_name) const;
-    bool         isClocked(InstanceTerm* term) const;
-    bool         isPrimary(Net* net) const;
-
-    Instance* createInstance(const char* inst_name, LibraryCell* cell);
-    Net*      createNet(const char* net_name);
-
-    void          connect(Net* net, InstanceTerm* term) const;
-    InstanceTerm* connect(Net* net, Instance* inst, LibraryTerm* port) const;
-    void          disconnect(InstanceTerm* term) const;
-    int           disconnectAll(Net* net) const;
-    void          del(Net* net) const;
-    void          clear() const;
-
-    unsigned int fanoutCount(Net* net) const; // Does not include top level pins
-    std::vector<Net*>  nets() const;          // Get all database net objects
-    Block*             top() const;
-    Library*           library() const;
-    LibraryTechnology* technology() const;
-    std::string        name(Block* object) const;
-    std::string        name(Net* object) const;
-    std::string        name(Instance* object) const;
-    std::string        name(BlockTerm* object) const;
-    std::string        name(Library* object) const;
-    std::string        name(LibraryCell* object) const;
-    std::string        name(LibraryTerm* object) const;
-    std::string        topName() const;
-
-private:
-    Database* db_;
-};
-
-} // namespace phy
+#ifdef USE_OPENDB_DB_HELPER
+#include <PhyKnight/Database/OpenDBHelper.hpp>
+#else
+#include <PhyKnight/Database/OpenStaHelper.hpp>
 #endif

@@ -82,7 +82,8 @@
 		"typeindex": "cpp",
 		"variant": "cpp",
 		"netfwd": "cpp",
-		"*.cuh": "cpp"
+		"*.cuh": "cpp",
+		"*.in": "cpp"
 	},
 	"editor.formatOnSave": true
 }
