@@ -34,7 +34,8 @@
 
 namespace phy
 {
-OpenStaHandler::OpenStaHandler(Database* db) : db_(db)
+OpenStaHandler::OpenStaHandler(sta::DatabaseSta* sta)
+    : sta_(sta), db_(sta->db())
 {
 }
 

@@ -45,7 +45,7 @@
 namespace phy
 {
 class OpenDBHandler;
-#ifdef USE_OPENDB_DB_HELPER
+#ifdef USE_OPENDB_DB_HANDLER
 typedef odb::dbDatabase     Database;
 typedef odb::dbChip         Chip;
 typedef odb::dbBlock        Block;

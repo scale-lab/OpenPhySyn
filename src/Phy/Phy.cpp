@@ -56,8 +56,8 @@ namespace phy
 Phy::Phy() : db_(nullptr), liberty_(nullptr), interp_(nullptr)
 {
     initializeDatabase();
-    db_handler_ = new DatabaseHandler(db_);
     sta_        = new sta::DatabaseSta(db_);
+    db_handler_ = new DatabaseHandler(sta_);
     sta::initSta();
     sta::Sta::setSta(sta_);
     sta_->makeComponents();

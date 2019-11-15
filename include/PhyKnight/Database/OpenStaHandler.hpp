@@ -29,10 +29,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_OPEN_STA_HELPER__
-#define __PHY_OPEN_STA_HELPER__
+#ifndef __PHY_OPEN_STA_HANDLER__
+#define __PHY_OPEN_STA_HANDLER__
 
 #include <PhyKnight/Database/Types.hpp>
+#include <PhyKnight/Sta/DatabaseSta.hpp>
 #include <vector>
 
 namespace phy
@@ -40,12 +41,13 @@ namespace phy
 class OpenStaHandler
 {
 public:
-    OpenStaHandler(Database* db);
+    OpenStaHandler(sta::DatabaseSta* sta);
 
 #include <PhyKnight/Database/DatabaseHandler.in>
 
 private:
-    Database* db_;
+    sta::DatabaseSta* sta_;
+    Database*         db_;
 };
 
 } // namespace phy

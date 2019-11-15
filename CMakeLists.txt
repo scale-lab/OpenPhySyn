@@ -14,17 +14,18 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Tool build configuration
 option(OPENROAD_BUILD "Indicates if the tool is being built as a module in the top level application" OFF)
-set(DATABASE_HELPER "OpenDB" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
+set(DATABASE_HANDLER "OpenDB" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
 
-if (${DATABASE_HELPER} STREQUAL "OpenDB")
-  add_definitions(-DUSE_OPENDB_DB_HELPER)
+if (${DATABASE_HANDLER} STREQUAL "OpenDB")
+  add_definitions(-DUSE_OPENDB_DB_HANDLER)
 else()
-  add_definitions(-DUSE_OPENSTA_DB_HELPER)
-  endif()
+  add_definitions(-DUSE_OPENSTA_DB_HANDLER)
+endif()
   
 if (${OPENROAD_BUILD})
   add_definitions(-DOPENROAD_BUILD)
 endif()
+message("Database handler: ${DATABASE_HANDLER}")
 
 
 # Include stuff.

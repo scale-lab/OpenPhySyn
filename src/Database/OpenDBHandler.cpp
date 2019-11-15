@@ -34,7 +34,7 @@
 
 namespace phy
 {
-OpenDBHandler::OpenDBHandler(Database* db) : db_(db)
+OpenDBHandler::OpenDBHandler(sta::DatabaseSta* sta) : sta_(sta), db_(sta->db())
 {
 }
 
