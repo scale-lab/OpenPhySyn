@@ -75,5 +75,5 @@ using namespace phy;
 %include "external/OpenDB/include/opendb/geom.h"
 %include "external/OpenDB/include/opendb/db.h"
 %include "include/PhyKnight/Database/Types.hpp"
-%include "include/PhyKnight/Database/DatabaseHelper.hpp"
+%include "include/PhyKnight/Database/DatabaseHandler.hpp"
 %include "Phy/Exports.hpp"

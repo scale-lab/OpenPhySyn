@@ -29,20 +29,20 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_OPEN_STA_HELPER__
-#define __PHY_OPEN_STA_HELPER__
+#ifndef __PHY_OPEN_DB_HELPER__
+#define __PHY_OPEN_DB_HELPER__
 
 #include <PhyKnight/Database/Types.hpp>
 #include <vector>
 
 namespace phy
 {
-class OpenStaHelper
+class OpenDBHandler
 {
 public:
-    OpenStaHelper(Database* db);
+    OpenDBHandler(Database* db);
 
-#include <PhyKnight/Database/DatabaseHelper.in>
+#include <PhyKnight/Database/DatabaseHandler.in>
 
 private:
     Database* db_;

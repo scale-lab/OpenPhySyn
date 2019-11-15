@@ -28,39 +28,39 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <PhyKnight/Database/OpenDBHelper.hpp>
+#include <PhyKnight/Database/OpenDBHandler.hpp>
 #include <PhyKnight/PhyLogger/PhyLogger.hpp>
 #include <set>
 
 namespace phy
 {
-OpenDBHelper::OpenDBHelper(Database* db) : db_(db)
+OpenDBHandler::OpenDBHandler(Database* db) : db_(db)
 {
 }
 
 std::vector<InstanceTerm*>
-OpenDBHelper::inputPins(Instance* inst) const
+OpenDBHandler::inputPins(Instance* inst) const
 {
     InstanceTermSet terms = inst->getITerms();
     return filterPins(terms, PinDirection::OUTPUT);
 }
 
 std::vector<InstanceTerm*>
-OpenDBHelper::outputPins(Instance* inst) const
+OpenDBHandler::outputPins(Instance* inst) const
 {
     InstanceTermSet terms = inst->getITerms();
     return filterPins(terms, PinDirection::INPUT);
 }
 
 std::vector<InstanceTerm*>
-OpenDBHelper::fanoutPins(Net* net) const
+OpenDBHandler::fanoutPins(Net* net) const
 {
     InstanceTermSet terms = net->getITerms();
     return filterPins(terms, PinDirection::INPUT);
 }
 
 InstanceTerm*
-OpenDBHelper::faninPin(Net* net) const
+OpenDBHandler::faninPin(Net* net) const
 {
     InstanceTermSet terms = net->getITerms();
     for (InstanceTermSet::iterator itr = terms.begin(); itr != terms.end();
@@ -80,7 +80,7 @@ OpenDBHelper::faninPin(Net* net) const
 }
 
 std::vector<Instance*>
-OpenDBHelper::fanoutInstances(Net* net) const
+OpenDBHandler::fanoutInstances(Net* net) const
 {
     std::vector<Instance*>     insts;
     std::vector<InstanceTerm*> pins = fanoutPins(net);
@@ -92,7 +92,7 @@ OpenDBHelper::fanoutInstances(Net* net) const
 }
 
 std::vector<Instance*>
-OpenDBHelper::driverInstances() const
+OpenDBHandler::driverInstances() const
 {
     std::set<Instance*> insts_set;
     for (auto& net : nets())
@@ -111,29 +111,29 @@ OpenDBHelper::driverInstances() const
 }
 
 unsigned int
-OpenDBHelper::fanoutCount(Net* net) const
+OpenDBHandler::fanoutCount(Net* net) const
 {
     return fanoutPins(net).size();
 }
 
 LibraryTerm*
-OpenDBHelper::libraryPin(InstanceTerm* term) const
+OpenDBHandler::libraryPin(InstanceTerm* term) const
 {
     return term->getMTerm();
 }
 bool
-OpenDBHelper::isClocked(InstanceTerm* term) const
+OpenDBHandler::isClocked(InstanceTerm* term) const
 {
     return term->isClocked();
 }
 bool
-OpenDBHelper::isPrimary(Net* net) const
+OpenDBHandler::isPrimary(Net* net) const
 {
     return net->getBTerms().size() > 0;
 }
 
 LibraryCell*
-OpenDBHelper::libraryCell(InstanceTerm* term) const
+OpenDBHandler::libraryCell(InstanceTerm* term) const
 {
     LibraryTerm* lterm = libraryPin(term);
     if (lterm)
@@ -144,13 +144,13 @@ OpenDBHelper::libraryCell(InstanceTerm* term) const
 }
 
 LibraryCell*
-OpenDBHelper::libraryCell(Instance* inst) const
+OpenDBHandler::libraryCell(Instance* inst) const
 {
     return inst->getMaster();
 }
 
 LibraryCell*
-OpenDBHelper::libraryCell(const char* name) const
+OpenDBHandler::libraryCell(const char* name) const
 {
     auto lib = library();
     if (!lib)
@@ -161,7 +161,7 @@ OpenDBHelper::libraryCell(const char* name) const
 }
 
 Instance*
-OpenDBHelper::instance(const char* name) const
+OpenDBHandler::instance(const char* name) const
 {
     Block* block = top();
     if (!block)
@@ -171,7 +171,7 @@ OpenDBHelper::instance(const char* name) const
     return block->findInst(name);
 }
 Net*
-OpenDBHelper::net(const char* name) const
+OpenDBHandler::net(const char* name) const
 {
     Block* block = top();
     if (!block)
@@ -182,7 +182,7 @@ OpenDBHelper::net(const char* name) const
 }
 
 LibraryTerm*
-OpenDBHelper::libraryPin(const char* cell_name, const char* pin_name) const
+OpenDBHandler::libraryPin(const char* cell_name, const char* pin_name) const
 {
     LibraryCell* cell = libraryCell(cell_name);
     if (!cell)
@@ -192,13 +192,13 @@ OpenDBHelper::libraryPin(const char* cell_name, const char* pin_name) const
     return libraryPin(cell, pin_name);
 }
 LibraryTerm*
-OpenDBHelper::libraryPin(LibraryCell* cell, const char* pin_name) const
+OpenDBHandler::libraryPin(LibraryCell* cell, const char* pin_name) const
 {
     return cell->findMTerm(top(), pin_name);
 }
 
 std::vector<InstanceTerm*>
-OpenDBHelper::filterPins(InstanceTermSet& terms, PinDirection direction) const
+OpenDBHandler::filterPins(InstanceTermSet& terms, PinDirection direction) const
 {
     std::vector<InstanceTerm*> inst_terms;
     for (InstanceTermSet::iterator itr = terms.begin(); itr != terms.end();
@@ -218,12 +218,12 @@ OpenDBHelper::filterPins(InstanceTermSet& terms, PinDirection direction) const
 }
 
 void
-OpenDBHelper::del(Net* net) const
+OpenDBHandler::del(Net* net) const
 {
     Net::destroy(net);
 }
 int
-OpenDBHelper::disconnectAll(Net* net) const
+OpenDBHandler::disconnectAll(Net* net) const
 {
     int             count   = 0;
     InstanceTermSet net_set = net->getITerms();
@@ -237,37 +237,37 @@ OpenDBHelper::disconnectAll(Net* net) const
 }
 
 void
-OpenDBHelper::connect(Net* net, InstanceTerm* term) const
+OpenDBHandler::connect(Net* net, InstanceTerm* term) const
 {
     return InstanceTerm::connect(term, net);
 }
 
 void
-OpenDBHelper::disconnect(InstanceTerm* term) const
+OpenDBHandler::disconnect(InstanceTerm* term) const
 {
     InstanceTerm::disconnect(term);
 }
 
 Instance*
-OpenDBHelper::createInstance(const char* inst_name, LibraryCell* cell)
+OpenDBHandler::createInstance(const char* inst_name, LibraryCell* cell)
 {
     return Instance::create(top(), cell, inst_name);
 }
 
 Net*
-OpenDBHelper::createNet(const char* net_name)
+OpenDBHandler::createNet(const char* net_name)
 {
     return Net::create(top(), net_name);
 }
 
 InstanceTerm*
-OpenDBHelper::connect(Net* net, Instance* inst, LibraryTerm* port) const
+OpenDBHandler::connect(Net* net, Instance* inst, LibraryTerm* port) const
 {
     return InstanceTerm::connect(inst, net, port);
 }
 
 std::vector<Net*>
-OpenDBHelper::nets() const
+OpenDBHandler::nets() const
 {
     std::vector<Net*> nets;
     Block*            block = top();
@@ -284,7 +284,7 @@ OpenDBHelper::nets() const
 }
 
 std::string
-OpenDBHelper::topName() const
+OpenDBHandler::topName() const
 {
     Block* block = top();
     if (!block)
@@ -294,43 +294,43 @@ OpenDBHelper::topName() const
     return name(block);
 }
 std::string
-OpenDBHelper::name(Block* object) const
+OpenDBHandler::name(Block* object) const
 {
     return std::string(object->getConstName());
 }
 std::string
-OpenDBHelper::name(Net* object) const
+OpenDBHandler::name(Net* object) const
 {
     return std::string(object->getConstName());
 }
 std::string
-OpenDBHelper::name(Instance* object) const
+OpenDBHandler::name(Instance* object) const
 {
     return std::string(object->getConstName());
 }
 std::string
-OpenDBHelper::name(BlockTerm* object) const
+OpenDBHandler::name(BlockTerm* object) const
 {
     return std::string(object->getConstName());
 }
 std::string
-OpenDBHelper::name(Library* object) const
+OpenDBHandler::name(Library* object) const
 {
     return std::string(object->getConstName());
 }
 std::string
-OpenDBHelper::name(LibraryCell* object) const
+OpenDBHandler::name(LibraryCell* object) const
 {
     return std::string(object->getConstName());
 }
 std::string
-OpenDBHelper::name(LibraryTerm* object) const
+OpenDBHandler::name(LibraryTerm* object) const
 {
     return std::string(object->getConstName());
 }
 
 Library*
-OpenDBHelper::library() const
+OpenDBHandler::library() const
 {
     LibrarySet libs = db_->getLibs();
 
@@ -343,7 +343,7 @@ OpenDBHelper::library() const
 }
 
 LibraryTechnology*
-OpenDBHelper::technology() const
+OpenDBHandler::technology() const
 {
     Library* lib = library();
     if (!lib)
@@ -355,7 +355,7 @@ OpenDBHelper::technology() const
 }
 
 Block*
-OpenDBHelper::top() const
+OpenDBHandler::top() const
 {
     Chip* chip = db_->getChip();
     if (!chip)
@@ -368,7 +368,7 @@ OpenDBHelper::top() const
 }
 
 void
-OpenDBHelper::clear() const
+OpenDBHandler::clear() const
 {
     db_->clear();
 }

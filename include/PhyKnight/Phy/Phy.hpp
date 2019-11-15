@@ -32,7 +32,7 @@
 #ifndef __PHY_PHY__
 #define __PHY_PHY__
 #include <OpenSTA/network/ConcreteNetwork.hh>
-#include <PhyKnight/Database/DatabaseHelper.hpp>
+#include <PhyKnight/Database/DatabaseHandler.hpp>
 #include <PhyKnight/Database/Types.hpp>
 #include <PhyKnight/Phy/ProgramOptions.hpp>
 #include <PhyKnight/PhyLogger/LogLevel.hpp>
@@ -73,7 +73,7 @@ public:
     void processStartupProgramOptions();
     int  sourceTclScript(const char* script_path);
 
-    virtual DatabaseHelper* helper() const;
+    virtual DatabaseHandler* handler() const;
 
     virtual void printVersion(bool raw_str = false);
     virtual void printUsage(bool raw_str = false);
@@ -85,7 +85,7 @@ private:
     Database*         db_;
     Liberty*          liberty_;
     sta::DatabaseSta* sta_;
-    DatabaseHelper*   db_helper_;
+    DatabaseHandler*  db_handler_;
 
     int initializeDatabase();
 

@@ -43,17 +43,17 @@ BufferFanoutTransform::buffer(Phy* phy_inst, Database* db_, int max_fanout,
                               std::string buffer_out_port,
                               std::string clock_port_name)
 {
-    PhyLogger&     logger = PhyLogger::instance();
-    DatabaseHelper helper = *(phy_inst->helper());
-    LibraryCell*   cell   = helper.libraryCell(buffer_cell.c_str());
+    PhyLogger&      logger  = PhyLogger::instance();
+    DatabaseHandler handler = *(phy_inst->handler());
+    LibraryCell*    cell    = handler.libraryCell(buffer_cell.c_str());
     if (!cell)
     {
         logger.error("Buffer {} not found!", buffer_cell);
         return -1;
     }
-    LibraryTerm* cell_in_pin = helper.libraryPin(cell, buffer_in_port.c_str());
+    LibraryTerm* cell_in_pin = handler.libraryPin(cell, buffer_in_port.c_str());
     LibraryTerm* cell_out_pin =
-        helper.libraryPin(cell, buffer_out_port.c_str());
+        handler.libraryPin(cell, buffer_out_port.c_str());
     if (!cell_in_pin)
     {
         logger.error("Pin {} not found!", buffer_in_port);
@@ -64,12 +64,12 @@ BufferFanoutTransform::buffer(Phy* phy_inst, Database* db_, int max_fanout,
         logger.error("Pin {} not found!", buffer_out_port);
         return -1;
     }
-    auto              nets = helper.nets();
+    auto              nets = handler.nets();
     std::vector<Net*> high_fanout_nets;
     for (auto& net : nets)
     {
-        if (!helper.isPrimary(net) &&
-            helper.fanoutCount(net) > (unsigned int)max_fanout)
+        if (!handler.isPrimary(net) &&
+            handler.fanoutCount(net) > (unsigned int)max_fanout)
         {
             high_fanout_nets.push_back(net);
         }
@@ -77,7 +77,7 @@ BufferFanoutTransform::buffer(Phy* phy_inst, Database* db_, int max_fanout,
     logger.info("High fanout nets [{}]: ", high_fanout_nets.size());
     for (auto& net : high_fanout_nets)
     {
-        logger.info("Net: {} {}", helper.name(net), helper.fanoutCount(net));
+        logger.info("Net: {} {}", handler.name(net), handler.fanoutCount(net));
     }
     // To-Do: Remove clock net..
     int create_buffer_count = 0;
@@ -85,11 +85,11 @@ BufferFanoutTransform::buffer(Phy* phy_inst, Database* db_, int max_fanout,
     std::vector<int> current_buffer;
     for (auto& net : high_fanout_nets)
     {
-        InstanceTerm* source_pin = helper.faninPin(net);
+        InstanceTerm* source_pin = handler.faninPin(net);
         if (source_pin)
         {
-            logger.info("Buffering: {}", helper.name(net));
-            auto fanout_pins        = helper.fanoutPins(net);
+            logger.info("Buffering: {}", handler.name(net));
+            auto fanout_pins        = handler.fanoutPins(net);
             int  net_sink_pin_count = fanout_pins.size();
             logger.info("Sink count: {}", net_sink_pin_count);
             int              iter = net_sink_pin_count;
@@ -99,8 +99,8 @@ BufferFanoutTransform::buffer(Phy* phy_inst, Database* db_, int max_fanout,
                 iter = (iter * 1.0) / max_fanout;
                 buffer_hier.push_back(ceil(iter));
             }
-            helper.disconnectAll(net);
-            helper.connect(net, source_pin);
+            handler.disconnectAll(net);
+            handler.connect(net, source_pin);
 
             int current_sink_count = 0;
             int levels             = buffer_hier.size();
@@ -122,24 +122,24 @@ BufferFanoutTransform::buffer(Phy* phy_inst, Database* db_, int max_fanout,
                     {
                         std::vector<int> parent_buf(current_buffer.begin(),
                                                     current_buffer.end() - i);
-                        if (helper.instance(bufferName(parent_buf).c_str()) ==
+                        if (handler.instance(bufferName(parent_buf).c_str()) ==
                             nullptr)
                         {
                             auto      buf_name = bufferName(parent_buf);
                             auto      net_name = bufferNetName(parent_buf);
                             Instance* new_buffer =
-                                helper.createInstance(buf_name.c_str(), cell);
+                                handler.createInstance(buf_name.c_str(), cell);
                             create_buffer_count++;
-                            Net* new_net = helper.createNet(net_name.c_str());
-                            helper.connect(new_net, new_buffer, cell_out_pin);
+                            Net* new_net = handler.createNet(net_name.c_str());
+                            handler.connect(new_net, new_buffer, cell_out_pin);
                             if (i == levels - 1)
                             {
-                                helper.connect(net, new_buffer, cell_in_pin);
+                                handler.connect(net, new_buffer, cell_in_pin);
                             }
                             else
                             {
-                                helper.connect(
-                                    helper.net(
+                                handler.connect(
+                                    handler.net(
                                         bufferNetName(std::vector<int>(
                                                           parent_buf.begin(),
                                                           parent_buf.end() - 1))
@@ -153,28 +153,28 @@ BufferFanoutTransform::buffer(Phy* phy_inst, Database* db_, int max_fanout,
                 auto net_name = bufferNetName(current_buffer);
 
                 Instance* new_buffer =
-                    helper.createInstance(buf_name.c_str(), cell);
+                    handler.createInstance(buf_name.c_str(), cell);
                 create_buffer_count++;
-                Net* new_net = helper.createNet(net_name.c_str());
-                helper.connect(new_net, new_buffer, cell_out_pin);
+                Net* new_net = handler.createNet(net_name.c_str());
+                handler.connect(new_net, new_buffer, cell_out_pin);
                 int sink_connect_count = std::min(
                     max_fanout, net_sink_pin_count - current_sink_count);
                 for (int i = 0; i < sink_connect_count; i++)
                 {
-                    helper.connect(new_net, fanout_pins[current_sink_count]);
+                    handler.connect(new_net, fanout_pins[current_sink_count]);
                     current_sink_count++;
                 }
                 if (levels == 1)
                 {
-                    helper.connect(net, new_buffer, cell_in_pin);
+                    handler.connect(net, new_buffer, cell_in_pin);
                 }
                 else
                 {
-                    helper.connect(
-                        helper.net(bufferNetName(std::vector<int>(
-                                                     current_buffer.begin(),
-                                                     current_buffer.end() - 1))
-                                       .c_str()),
+                    handler.connect(
+                        handler.net(bufferNetName(std::vector<int>(
+                                                      current_buffer.begin(),
+                                                      current_buffer.end() - 1))
+                                        .c_str()),
                         new_buffer, cell_in_pin);
                 }
 

@@ -44,7 +44,7 @@
 
 namespace phy
 {
-class OpenDBHelper;
+class OpenDBHandler;
 #ifdef USE_OPENDB_DB_HELPER
 typedef odb::dbDatabase     Database;
 typedef odb::dbChip         Chip;
@@ -67,9 +67,9 @@ typedef odb::dbSet<Net>          NetSet;
 typedef odb::dbSet<BlockTerm>    BlockTermSet;
 typedef odb::dbSet<InstanceTerm> InstanceTermSet;
 typedef odb::dbIoType::Value     PinDirection;
-typedef OpenDBHelper             DatabaseHelper;
+typedef OpenDBHandler            DatabaseHandler;
 #else
-// Default is OpenSTA helper
+// Default is OpenSTA handler
 typedef odb::dbDatabase     Database;
 typedef odb::dbChip         Chip;
 typedef odb::dbBlock        Block;

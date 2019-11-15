@@ -56,8 +56,8 @@ namespace phy
 Phy::Phy() : db_(nullptr), liberty_(nullptr), interp_(nullptr)
 {
     initializeDatabase();
-    db_helper_ = new DatabaseHelper(db_);
-    sta_       = new sta::DatabaseSta(db_);
+    db_handler_ = new DatabaseHandler(db_);
+    sta_        = new sta::DatabaseSta(db_);
     sta::initSta();
     sta::Sta::setSta(sta_);
     sta_->makeComponents();
@@ -65,7 +65,7 @@ Phy::Phy() : db_(nullptr), liberty_(nullptr), interp_(nullptr)
 
 Phy::~Phy()
 {
-    delete db_helper_;
+    delete db_handler_;
     delete sta_;
 }
 
@@ -158,10 +158,10 @@ Phy::programOptions()
     return program_options_;
 }
 
-DatabaseHelper*
-Phy::helper() const
+DatabaseHandler*
+Phy::handler() const
 {
-    return db_helper_;
+    return db_handler_;
 }
 
 Phy&

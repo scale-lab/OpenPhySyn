@@ -124,15 +124,15 @@ set_log_pattern(const char* pattern)
 {
     return Phy::instance().setLogPattern(pattern);
 }
-DatabaseHelper&
-get_helper()
+DatabaseHandler&
+get_handler()
 {
-    return get_database_helper();
+    return get_database_handler();
 }
-DatabaseHelper&
-get_database_helper()
+DatabaseHandler&
+get_database_handler()
 {
-    return *(Phy::instance().helper());
+    return *(Phy::instance().handler());
 }
 
 SteinerTree*

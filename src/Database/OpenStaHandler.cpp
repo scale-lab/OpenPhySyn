@@ -28,39 +28,39 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <PhyKnight/Database/OpenStaHelper.hpp>
+#include <PhyKnight/Database/OpenStaHandler.hpp>
 #include <PhyKnight/PhyLogger/PhyLogger.hpp>
 #include <set>
 
 namespace phy
 {
-OpenStaHelper::OpenStaHelper(Database* db) : db_(db)
+OpenStaHandler::OpenStaHandler(Database* db) : db_(db)
 {
 }
 
 std::vector<InstanceTerm*>
-OpenStaHelper::inputPins(Instance* inst) const
+OpenStaHandler::inputPins(Instance* inst) const
 {
     InstanceTermSet terms = inst->getITerms();
     return filterPins(terms, PinDirection::OUTPUT);
 }
 
 std::vector<InstanceTerm*>
-OpenStaHelper::outputPins(Instance* inst) const
+OpenStaHandler::outputPins(Instance* inst) const
 {
     InstanceTermSet terms = inst->getITerms();
     return filterPins(terms, PinDirection::INPUT);
 }
 
 std::vector<InstanceTerm*>
-OpenStaHelper::fanoutPins(Net* net) const
+OpenStaHandler::fanoutPins(Net* net) const
 {
     InstanceTermSet terms = net->getITerms();
     return filterPins(terms, PinDirection::INPUT);
 }
 
 InstanceTerm*
-OpenStaHelper::faninPin(Net* net) const
+OpenStaHandler::faninPin(Net* net) const
 {
     InstanceTermSet terms = net->getITerms();
     for (InstanceTermSet::iterator itr = terms.begin(); itr != terms.end();
@@ -80,7 +80,7 @@ OpenStaHelper::faninPin(Net* net) const
 }
 
 std::vector<Instance*>
-OpenStaHelper::fanoutInstances(Net* net) const
+OpenStaHandler::fanoutInstances(Net* net) const
 {
     std::vector<Instance*>     insts;
     std::vector<InstanceTerm*> pins = fanoutPins(net);
@@ -92,7 +92,7 @@ OpenStaHelper::fanoutInstances(Net* net) const
 }
 
 std::vector<Instance*>
-OpenStaHelper::driverInstances() const
+OpenStaHandler::driverInstances() const
 {
     std::set<Instance*> insts_set;
     for (auto& net : nets())
@@ -111,29 +111,29 @@ OpenStaHelper::driverInstances() const
 }
 
 unsigned int
-OpenStaHelper::fanoutCount(Net* net) const
+OpenStaHandler::fanoutCount(Net* net) const
 {
     return fanoutPins(net).size();
 }
 
 LibraryTerm*
-OpenStaHelper::libraryPin(InstanceTerm* term) const
+OpenStaHandler::libraryPin(InstanceTerm* term) const
 {
     return term->getMTerm();
 }
 bool
-OpenStaHelper::isClocked(InstanceTerm* term) const
+OpenStaHandler::isClocked(InstanceTerm* term) const
 {
     return term->isClocked();
 }
 bool
-OpenStaHelper::isPrimary(Net* net) const
+OpenStaHandler::isPrimary(Net* net) const
 {
     return net->getBTerms().size() > 0;
 }
 
 LibraryCell*
-OpenStaHelper::libraryCell(InstanceTerm* term) const
+OpenStaHandler::libraryCell(InstanceTerm* term) const
 {
     LibraryTerm* lterm = libraryPin(term);
     if (lterm)
@@ -144,13 +144,13 @@ OpenStaHelper::libraryCell(InstanceTerm* term) const
 }
 
 LibraryCell*
-OpenStaHelper::libraryCell(Instance* inst) const
+OpenStaHandler::libraryCell(Instance* inst) const
 {
     return inst->getMaster();
 }
 
 LibraryCell*
-OpenStaHelper::libraryCell(const char* name) const
+OpenStaHandler::libraryCell(const char* name) const
 {
     auto lib = library();
     if (!lib)
@@ -161,7 +161,7 @@ OpenStaHelper::libraryCell(const char* name) const
 }
 
 Instance*
-OpenStaHelper::instance(const char* name) const
+OpenStaHandler::instance(const char* name) const
 {
     Block* block = top();
     if (!block)
@@ -171,7 +171,7 @@ OpenStaHelper::instance(const char* name) const
     return block->findInst(name);
 }
 Net*
-OpenStaHelper::net(const char* name) const
+OpenStaHandler::net(const char* name) const
 {
     Block* block = top();
     if (!block)
@@ -182,7 +182,7 @@ OpenStaHelper::net(const char* name) const
 }
 
 LibraryTerm*
-OpenStaHelper::libraryPin(const char* cell_name, const char* pin_name) const
+OpenStaHandler::libraryPin(const char* cell_name, const char* pin_name) const
 {
     LibraryCell* cell = libraryCell(cell_name);
     if (!cell)
@@ -192,13 +192,13 @@ OpenStaHelper::libraryPin(const char* cell_name, const char* pin_name) const
     return libraryPin(cell, pin_name);
 }
 LibraryTerm*
-OpenStaHelper::libraryPin(LibraryCell* cell, const char* pin_name) const
+OpenStaHandler::libraryPin(LibraryCell* cell, const char* pin_name) const
 {
     return cell->findMTerm(top(), pin_name);
 }
 
 std::vector<InstanceTerm*>
-OpenStaHelper::filterPins(InstanceTermSet& terms, PinDirection direction) const
+OpenStaHandler::filterPins(InstanceTermSet& terms, PinDirection direction) const
 {
     std::vector<InstanceTerm*> inst_terms;
     for (InstanceTermSet::iterator itr = terms.begin(); itr != terms.end();
@@ -218,12 +218,12 @@ OpenStaHelper::filterPins(InstanceTermSet& terms, PinDirection direction) const
 }
 
 void
-OpenStaHelper::del(Net* net) const
+OpenStaHandler::del(Net* net) const
 {
     Net::destroy(net);
 }
 int
-OpenStaHelper::disconnectAll(Net* net) const
+OpenStaHandler::disconnectAll(Net* net) const
 {
     int             count   = 0;
     InstanceTermSet net_set = net->getITerms();
@@ -237,37 +237,37 @@ OpenStaHelper::disconnectAll(Net* net) const
 }
 
 void
-OpenStaHelper::connect(Net* net, InstanceTerm* term) const
+OpenStaHandler::connect(Net* net, InstanceTerm* term) const
 {
     return InstanceTerm::connect(term, net);
 }
 
 void
-OpenStaHelper::disconnect(InstanceTerm* term) const
+OpenStaHandler::disconnect(InstanceTerm* term) const
 {
     InstanceTerm::disconnect(term);
 }
 
 Instance*
-OpenStaHelper::createInstance(const char* inst_name, LibraryCell* cell)
+OpenStaHandler::createInstance(const char* inst_name, LibraryCell* cell)
 {
     return Instance::create(top(), cell, inst_name);
 }
 
 Net*
-OpenStaHelper::createNet(const char* net_name)
+OpenStaHandler::createNet(const char* net_name)
 {
     return Net::create(top(), net_name);
 }
 
 InstanceTerm*
-OpenStaHelper::connect(Net* net, Instance* inst, LibraryTerm* port) const
+OpenStaHandler::connect(Net* net, Instance* inst, LibraryTerm* port) const
 {
     return InstanceTerm::connect(inst, net, port);
 }
 
 std::vector<Net*>
-OpenStaHelper::nets() const
+OpenStaHandler::nets() const
 {
     std::vector<Net*> nets;
     Block*            block = top();
@@ -284,7 +284,7 @@ OpenStaHelper::nets() const
 }
 
 std::string
-OpenStaHelper::topName() const
+OpenStaHandler::topName() const
 {
     Block* block = top();
     if (!block)
@@ -294,43 +294,43 @@ OpenStaHelper::topName() const
     return name(block);
 }
 std::string
-OpenStaHelper::name(Block* object) const
+OpenStaHandler::name(Block* object) const
 {
     return std::string(object->getConstName());
 }
 std::string
-OpenStaHelper::name(Net* object) const
+OpenStaHandler::name(Net* object) const
 {
     return std::string(object->getConstName());
 }
 std::string
-OpenStaHelper::name(Instance* object) const
+OpenStaHandler::name(Instance* object) const
 {
     return std::string(object->getConstName());
 }
 std::string
-OpenStaHelper::name(BlockTerm* object) const
+OpenStaHandler::name(BlockTerm* object) const
 {
     return std::string(object->getConstName());
 }
 std::string
-OpenStaHelper::name(Library* object) const
+OpenStaHandler::name(Library* object) const
 {
     return std::string(object->getConstName());
 }
 std::string
-OpenStaHelper::name(LibraryCell* object) const
+OpenStaHandler::name(LibraryCell* object) const
 {
     return std::string(object->getConstName());
 }
 std::string
-OpenStaHelper::name(LibraryTerm* object) const
+OpenStaHandler::name(LibraryTerm* object) const
 {
     return std::string(object->getConstName());
 }
 
 Library*
-OpenStaHelper::library() const
+OpenStaHandler::library() const
 {
     LibrarySet libs = db_->getLibs();
 
@@ -343,7 +343,7 @@ OpenStaHelper::library() const
 }
 
 LibraryTechnology*
-OpenStaHelper::technology() const
+OpenStaHandler::technology() const
 {
     Library* lib = library();
     if (!lib)
@@ -355,7 +355,7 @@ OpenStaHelper::technology() const
 }
 
 Block*
-OpenStaHelper::top() const
+OpenStaHandler::top() const
 {
     Chip* chip = db_->getChip();
     if (!chip)
@@ -368,7 +368,7 @@ OpenStaHelper::top() const
 }
 
 void
-OpenStaHelper::clear() const
+OpenStaHandler::clear() const
 {
     db_->clear();
 }

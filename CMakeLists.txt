@@ -14,7 +14,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Tool build configuration
 option(OPENROAD_BUILD "Indicates if the tool is being built as a module in the top level application" OFF)
-set(DATABASE_HELPER "OpenDB" CACHE STRING "Specify the database helper type, can be OpenDB or OpenSTA")
+set(DATABASE_HELPER "OpenDB" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
 
 if (${DATABASE_HELPER} STREQUAL "OpenDB")
   add_definitions(-DUSE_OPENDB_DB_HELPER)
@@ -98,8 +98,8 @@ set(PHY_SOURCES_NO_MAIN_NO_WRAP
     ${PHY_HOME}/src/Analyzer/Analyzer.cpp
     ${PHY_HOME}/src/SteinerTree/SteinerTree.cpp
     ${PHY_HOME}/src/PhyLogger/PhyLogger.cpp
-    ${PHY_HOME}/src/Database/OpenDBHelper.cpp
-    ${PHY_HOME}/src/Database/OpenStaHelper.cpp
+    ${PHY_HOME}/src/Database/OpenDBHandler.cpp
+    ${PHY_HOME}/src/Database/OpenStaHandler.cpp
     ${PHY_HOME}/src/DefReader/DefReader.cpp
     ${PHY_HOME}/src/DefWriter/DefWriter.cpp
     ${PHY_HOME}/src/LefReader/LefReader.cpp

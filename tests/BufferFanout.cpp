@@ -39,7 +39,7 @@ TEST_CASE("Should add fan-out buffers")
     Phy& phy_inst = Phy::instance();
     try
     {
-        phy_inst.helper()->clear();
+        phy_inst.handler()->clear();
         phy_inst.readLef("../tests/data/tech.lef");
         phy_inst.readDef("../tests/data/design.def");
         CHECK(phy_inst.database()->getChip() != nullptr);

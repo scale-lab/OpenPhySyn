@@ -29,7 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #ifdef USE_OPENDB_DB_HELPER
-#include <PhyKnight/Database/OpenDBHelper.hpp>
+#include <PhyKnight/Database/OpenDBHandler.hpp>
 #else
-#include <PhyKnight/Database/OpenStaHelper.hpp>
+#include <PhyKnight/Database/OpenStaHandler.hpp>
 #endif
