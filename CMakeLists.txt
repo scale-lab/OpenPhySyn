@@ -99,6 +99,7 @@ set(PHY_SOURCES_NO_MAIN_NO_WRAP
     ${PHY_HOME}/src/SteinerTree/SteinerTree.cpp
     ${PHY_HOME}/src/PhyLogger/PhyLogger.cpp
     ${PHY_HOME}/src/Database/OpenDBHelper.cpp
+    ${PHY_HOME}/src/Database/OpenStaHelper.cpp
     ${PHY_HOME}/src/DefReader/DefReader.cpp
     ${PHY_HOME}/src/DefWriter/DefWriter.cpp
     ${PHY_HOME}/src/LefReader/LefReader.cpp

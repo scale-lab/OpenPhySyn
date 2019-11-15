@@ -42,7 +42,7 @@ class OpenStaHelper
 public:
     OpenStaHelper(Database* db);
 
-#include "DatabaseHelper.hpp"
+#include <PhyKnight/Database/DatabaseHelper.in>
 
 private:
     Database* db_;
