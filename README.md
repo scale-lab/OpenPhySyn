@@ -69,7 +69,7 @@ OpenPhySyn depends on the following libraries:
 
 ## Issues
 
-Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/OpenPhySyn/issues/new) if you find any bugs:
+Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/OpenPhySyn/issues/new) if you find any bugs.
 
 ## To-Do
 

@@ -188,7 +188,7 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
     }
     logger.info("Added {} buffers", create_buffer_count);
 
-    return 1;
+    return create_buffer_count;
 }
 std::vector<int>
 BufferFanoutTransform::nextBuffer(std::vector<int> current_buffer,
