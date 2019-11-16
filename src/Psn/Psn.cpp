@@ -54,7 +54,12 @@
 namespace psn
 {
 
-Psn::Psn(Database* db) : db_(db), liberty_(nullptr), interp_(nullptr)
+Psn::Psn(Database* db)
+    : db_(db),
+      liberty_(nullptr),
+      interp_(nullptr),
+      library_(nullptr),
+      tech_(nullptr)
 {
     initializeDatabase();
     sta_        = new sta::DatabaseSta(db_);
@@ -121,8 +126,16 @@ Psn::readLef(const char* path, bool read_library, bool read_tech)
     {
         if (read_library && read_tech)
         {
-            library_ = reader.readLibAndTech(path);
-            tech_    = library_->getTech();
+            if (tech_ == nullptr)
+            {
+                library_ = reader.readLibAndTech(path);
+                tech_    = library_->getTech();
+            }
+            else
+            {
+                // Might consider adding a warning here
+                library_ = reader.readLib(path);
+            }
             if (library_)
             {
                 sta_->readLefAfter(library_);
@@ -537,6 +550,14 @@ Psn::initializeDatabase()
         db_ = odb::dbDatabase::create();
     }
     return 0;
+}
+
+void
+Psn::clearDatabase()
+{
+    handler()->clear();
+    library_ = nullptr;
+    tech_    = nullptr;
 }
 
 } // namespace psn

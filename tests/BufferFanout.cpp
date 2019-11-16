@@ -40,7 +40,7 @@ TEST_CASE("Should add fan-out buffers")
     Psn& psn_inst = Psn::instance();
     try
     {
-        psn_inst.handler()->clear();
+        psn_inst.clearDatabase();
         psn_inst.readLef(
             "../tests/data/Nangate45/NangateOpenCellLibrary.mod.lef");
         psn_inst.readDef("../tests/data/design.def");

@@ -83,6 +83,8 @@ public:
     virtual Library*           library() const;
     virtual LibraryTechnology* tech() const;
 
+    virtual void clearDatabase();
+
     ~Psn();
 
 private:

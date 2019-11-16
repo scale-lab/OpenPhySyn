@@ -43,7 +43,7 @@ TEST_CASE("Should read LEF and DEF successfully")
         bool mkdir_result =
             FileUtils::createDirectoryIfNotExists("../tests/results");
         CHECK(mkdir_result);
-        psn_inst.handler()->clear();
+        psn_inst.clearDatabase();
         psn_inst.readLef("../tests/data/tech.lef");
         psn_inst.readDef("../tests/data/design.def");
         CHECK(psn_inst.database()->getChip() != nullptr);

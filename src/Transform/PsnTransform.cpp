@@ -31,6 +31,10 @@
 #include "Transform/PsnTransform.hpp"
 namespace psn
 {
-PsnTransform::PsnTransform(){}
-PsnTransform::~PsnTransform(){}
+PsnTransform::PsnTransform()
+{
+}
+PsnTransform::~PsnTransform()
+{
+}
 } // namespace psn

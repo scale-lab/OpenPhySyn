@@ -53,7 +53,7 @@ OpenPhySyn depends on the following libraries:
 
 Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/OpenPhySyn/issues/new) if you find any bugs:
 
--   Loaded plugins sometimes causes double `free` error at closing.
+-   Loaded plugins sometimes cause double `free` error at closing.
 
 ## To-Do
 
