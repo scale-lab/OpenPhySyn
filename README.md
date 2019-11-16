@@ -22,7 +22,7 @@ Example:
 ## Building Custom Transforms
 
 Physical Synthesis transforms libraries are loaded from the directory refered to by the variable `PHY_TRANSFORM_PATH`
-To build a new transform refer to the transform [template](https://github.com/The-OpenROAD-Project/PhyKnightHelloTransform).
+To build a new transform refer to the transform [template](https://github.com/The-OpenROAD-Project/OpenPhySynHelloTransform).
 
 ## Runing Transforms
 
