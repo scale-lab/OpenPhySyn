@@ -49,12 +49,14 @@ main(int argc, char* argv[])
         psn::Psn::instance().setProgramOptions(argc, argv);
         if (psn::Psn::instance().programOptions().help())
         {
-            psn::Psn::instance().printUsage(true);
+            psn::Psn::instance().printUsage(true, false, false);
+            psn::Psn::instance().setupInterpreter(Tcl_CreateInterp());
             return 0;
         }
         if (psn::Psn::instance().programOptions().version())
         {
             psn::Psn::instance().printVersion(true);
+            psn::Psn::instance().setupInterpreter(Tcl_CreateInterp());
             return 0;
         }
     }

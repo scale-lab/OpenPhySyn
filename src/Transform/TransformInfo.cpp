@@ -28,34 +28,41 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifdef USE_OPENSTA_DB_HANDLER
-#ifndef __PSN_OPEN_STA_HANDLER__
-#define __PSN_OPEN_STA_HANDLER__
 
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
-#include <OpenPhySyn/Utils/PsnGlobal.hpp>
-#include <PsnLogger/PsnLogger.hpp>
-#include <vector>
+#include <OpenPhySyn/Transform/TransformInfo.hpp>
 
 namespace psn
 {
-class OpenStaHandler
+TransformInfo::TransformInfo(const char* name, const char* help,
+                             const char* version, const char* description)
+    : name_(name), help_(help), version_(version), description_(description)
 {
-public:
-    OpenStaHandler(sta::DatabaseSta* sta);
+}
+TransformInfo::TransformInfo(std::string name, std::string help,
+                             std::string version, std::string description)
+    : name_(name), help_(help), version_(version), description_(description)
+{
+}
 
-#include <OpenPhySyn/Database/DatabaseHandler.in>
-
-    sta::DatabaseStaNetwork* network() const;
-    sta::DatabaseSta*        sta() const;
-    virtual ~OpenStaHandler();
-
-private:
-    sta::DatabaseSta* sta_;
-    Database*         db_;
-};
+std::string
+TransformInfo::name() const
+{
+    return name_;
+}
+std::string
+TransformInfo::help() const
+{
+    return help_;
+}
+std::string
+TransformInfo::version() const
+{
+    return version_;
+}
+std::string
+TransformInfo::description() const
+{
+    return description_;
+}
 
 } // namespace psn
-#endif
-#endif

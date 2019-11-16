@@ -26,7 +26,7 @@ To build a new transform refer to the transform [template](https://github.com/Th
 
 ## Runing Transforms
 
-To run any transorm simply:
+To run any transorm:
 
 ```bash
 > ./Psn
@@ -34,6 +34,24 @@ To run any transorm simply:
 > read_def <def file>
 > transform <transform name> <arguments...>
 > write_def <def file>
+```
+
+To list available commands:
+```bash
+> ./Psn
+> help
+```
+
+To list loaded transforms:
+```bash
+> ./Psn
+> print_transforms
+```
+
+To get usage info of any transform:
+```bash
+> ./Psn
+> transform <transform name> help
 ```
 
 ## Dependencies
@@ -52,8 +70,6 @@ OpenPhySyn depends on the following libraries:
 ## Issues
 
 Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/OpenPhySyn/issues/new) if you find any bugs:
-
--   Loaded plugins sometimes cause double `free` error at closing.
 
 ## To-Do
 

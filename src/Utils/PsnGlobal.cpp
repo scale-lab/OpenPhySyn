@@ -28,34 +28,4 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifdef USE_OPENSTA_DB_HANDLER
-#ifndef __PSN_OPEN_STA_HANDLER__
-#define __PSN_OPEN_STA_HANDLER__
-
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
-#include <OpenPhySyn/Utils/PsnGlobal.hpp>
-#include <PsnLogger/PsnLogger.hpp>
-#include <vector>
-
-namespace psn
-{
-class OpenStaHandler
-{
-public:
-    OpenStaHandler(sta::DatabaseSta* sta);
-
-#include <OpenPhySyn/Database/DatabaseHandler.in>
-
-    sta::DatabaseStaNetwork* network() const;
-    sta::DatabaseSta*        sta() const;
-    virtual ~OpenStaHandler();
-
-private:
-    sta::DatabaseSta* sta_;
-    Database*         db_;
-};
-
-} // namespace psn
-#endif
-#endif
+#include "Utils/PsnGlobal.hpp"

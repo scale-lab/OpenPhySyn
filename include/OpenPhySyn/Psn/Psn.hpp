@@ -37,6 +37,7 @@
 #include <OpenPhySyn/PsnLogger/LogLevel.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Transform/PsnTransform.hpp>
+#include <OpenPhySyn/Transform/TransformInfo.hpp>
 #include <OpenSTA/network/ConcreteNetwork.hh>
 
 #include <unordered_map>
@@ -66,7 +67,7 @@ public:
                              std::vector<std::string> args);
 
     int  setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace = true,
-                          bool setup_sta = true);
+                          bool print_psn_version = true, bool setup_sta = true);
     int  setupInterpreterReadline();
     void setProgramOptions(int argc, char* argv[]);
     void processStartupProgramOptions();
@@ -75,8 +76,10 @@ public:
     virtual DatabaseHandler* handler() const;
 
     virtual void printVersion(bool raw_str = false);
-    virtual void printUsage(bool raw_str = false);
+    virtual void printUsage(bool raw_str = false, bool print_transforms = true,
+                            bool print_commands = true);
     virtual void printTransforms(bool raw_str = false);
+    virtual void printCommands(bool raw_str = false);
 
     virtual Database*          database();
     virtual Liberty*           liberty();
@@ -99,10 +102,9 @@ private:
     int initializeDatabase();
 
     std::unordered_map<std::string, std::shared_ptr<PsnTransform>> transforms_;
-    std::unordered_map<std::string, std::string> transforms_versions_;
-    std::unordered_map<std::string, std::string> transforms_help_;
-    Tcl_Interp*                                  interp_;
-    ProgramOptions                               program_options_;
+    std::unordered_map<std::string, TransformInfo> transforms_info_;
+    Tcl_Interp*                                    interp_;
+    ProgramOptions                                 program_options_;
 };
 } // namespace psn
 #endif

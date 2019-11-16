@@ -51,3 +51,9 @@ install(
   TARGETS buffer_fanout
   DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
 )
+
+add_subdirectory(external/StandardTransforms/GateCloningTransform)
+install(
+  TARGETS gate_clone
+  DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
+)

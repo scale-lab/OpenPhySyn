@@ -34,7 +34,9 @@
 
 #include <OpenPhySyn/Database/Types.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
+#include <OpenPhySyn/Utils/PsnGlobal.hpp>
 #include <PsnLogger/PsnLogger.hpp>
+
 #include <vector>
 
 namespace psn

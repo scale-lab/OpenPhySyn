@@ -31,6 +31,7 @@
 
 #include "BufferFanoutTransform.hpp"
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
+#include <OpenPhySyn/Utils/PsnGlobal.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -44,9 +45,11 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                               std::string buffer_out_port,
                               std::string clock_port_name)
 {
-    PsnLogger&      logger  = PsnLogger::instance();
-    DatabaseHandler handler = *(psn_inst->handler());
-    LibraryCell*    cell    = handler.libraryCell(buffer_cell.c_str());
+    PSN_UNUSED(clock_port_name)
+
+    PsnLogger&       logger  = PsnLogger::instance();
+    DatabaseHandler& handler = *(psn_inst->handler());
+    LibraryCell*     cell    = handler.libraryCell(buffer_cell.c_str());
     if (!cell)
     {
         logger.error("Buffer {} not found!", buffer_cell);
@@ -264,12 +267,6 @@ BufferFanoutTransform::isNumber(const std::string& s)
 int
 BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
-
-    PsnLogger::instance().debug("Passed arguments:");
-    for (auto& arg : args)
-    {
-        PsnLogger::instance().debug("{}", arg);
-    }
 
     if (args.size() == 5 && isNumber(args[0]))
     {

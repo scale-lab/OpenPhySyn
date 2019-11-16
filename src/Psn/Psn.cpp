@@ -57,9 +57,9 @@ namespace psn
 Psn::Psn(Database* db)
     : db_(db),
       liberty_(nullptr),
-      interp_(nullptr),
       library_(nullptr),
-      tech_(nullptr)
+      tech_(nullptr),
+      interp_(nullptr)
 {
     initializeDatabase();
     sta_        = new sta::DatabaseSta(db_);
@@ -269,10 +269,10 @@ Psn::loadTransforms()
         std::string tr_name(tr.name());
         if (!transforms_.count(tr_name))
         {
-            auto transform                = tr.load();
-            transforms_[tr_name]          = transform;
-            transforms_versions_[tr_name] = tr.version();
-            transforms_help_[tr_name]     = tr.help();
+            auto transform            = tr.load();
+            transforms_[tr_name]      = transform;
+            transforms_info_[tr_name] = TransformInfo(
+                tr_name, tr.help(), tr.version(), tr.description());
             load_count++;
         }
         else
@@ -298,13 +298,14 @@ Psn::runTransform(std::string transform_name, std::vector<std::string> args)
         }
         if (args.size() && args[0] == "version")
         {
-            PsnLogger::instance().info("{}",
-                                       transforms_versions_[transform_name]);
+            PsnLogger::instance().info(
+                "{}", transforms_info_[transform_name].version());
             return 0;
         }
         else if (args.size() && args[0] == "help")
         {
-            PsnLogger::instance().info("{}", transforms_help_[transform_name]);
+            PsnLogger::instance().info("{}",
+                                       transforms_info_[transform_name].help());
             return 0;
         }
         else
@@ -323,7 +324,7 @@ Psn::runTransform(std::string transform_name, std::vector<std::string> args)
 
 int
 Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
-                      bool setup_sta)
+                      bool print_psn_version, bool setup_sta)
 {
     if (interp_)
     {
@@ -332,7 +333,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
     interp_ = interp;
     sta_->setTclInterp(interp_);
     const char* tcl_psn_setup =
-#include "Tcl/SetupPhy.tcl"
+#include "Tcl/SetupPsn.tcl"
         ;
     if (Tcl_Eval(interp_, tcl_psn_setup) != TCL_OK)
     {
@@ -344,6 +345,16 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
 #include "Tcl/ImportNS.tcl"
             ;
         if (Tcl_Eval(interp_, tcl_psn_import) != TCL_OK)
+        {
+            return TCL_ERROR;
+        }
+    }
+    if (print_psn_version)
+    {
+        const char* tcl_print_version =
+#include "Tcl/PrintVersion.tcl"
+            ;
+        if (Tcl_Eval(interp_, tcl_print_version) != TCL_OK)
         {
             return TCL_ERROR;
         }
@@ -378,8 +389,9 @@ Psn::printVersion(bool raw_str)
     }
 }
 void
-Psn::printUsage(bool raw_str)
+Psn::printUsage(bool raw_str, bool print_transforms, bool print_commands)
 {
+    PsnLogger::instance().raw("");
     if (raw_str)
     {
         PsnLogger::instance().raw(programOptions().usage());
@@ -388,16 +400,73 @@ Psn::printUsage(bool raw_str)
     {
         PsnLogger::instance().info(programOptions().usage());
     }
+    if (print_commands)
+    {
+        printCommands(true);
+    }
+    PsnLogger::instance().raw("");
+    if (print_transforms)
+    {
+        printTransforms(true);
+    }
+}
+void
+Psn::printCommands(bool raw_str)
+{
+    if (raw_str)
+    {
+        PsnLogger::instance().raw("Available command: ");
+    }
+    else
+    {
+
+        PsnLogger::instance().info("Available commands: ");
+    }
+    PsnLogger::instance().raw("");
+    std::string commands_str;
+    commands_str +=
+        "print_version                         print version\n"
+        "print                                 print version\n"
+        "help                                  print help\n"
+        "print_usage                           print help\n"
+        "print_transforms                      list loaded transforms\n"
+        "read_lef <file path>                  load LEF file\n"
+        "read_def <file path>                  load DEF file\n"
+        "read_lib <file path>                  load a liberty file\n"
+        "read_liberty <file path>              load a liberty file\n"
+        "write_def <output file>               Write DEF file\n"
+        "transforn <transform name> <args>     Run transform on the loaded "
+        "design\n"
+        "set_log <log level>                   Set log level [trace, debug, "
+        "info, "
+        "warn, error, critical, off]\n"
+        "set_log_level <log level>             Set log level [trace, debug, "
+        "info, warn, error, critical, off]\n"
+        "set_log_pattern <pattern>             Set log printing pattern, refer "
+        "to spdlog logger for pattern formats";
+    PsnLogger::instance().raw("{}", commands_str);
 }
 void
 Psn::printTransforms(bool raw_str)
 {
+    if (raw_str)
+    {
+        PsnLogger::instance().raw("Loaded transforms: ");
+    }
+    else
+    {
+
+        PsnLogger::instance().info("Loaded transforms: ");
+    }
+    PsnLogger::instance().raw("");
     std::string transform_str;
     for (auto it = transforms_.begin(); it != transforms_.end(); ++it)
     {
         transform_str = it->first;
-        transform_str += ": ";
-        transform_str += transforms_versions_[it->first];
+        transform_str += " (";
+        transform_str += transforms_info_[it->first].version();
+        transform_str += "): ";
+        transform_str += transforms_info_[it->first].description();
         if (raw_str)
         {
             PsnLogger::instance().raw(transform_str);
@@ -406,6 +475,7 @@ Psn::printTransforms(bool raw_str)
         {
             PsnLogger::instance().info(transform_str);
         }
+        PsnLogger::instance().raw("");
     }
 
 } // namespace psn
@@ -446,7 +516,6 @@ Psn::setLogLevel(const char* level)
     std::string level_str(level);
     std::transform(level_str.begin(), level_str.end(), level_str.begin(),
                    [](unsigned char c) { return std::tolower(c); });
-
     if (level_str == "trace")
     {
         return setLogLevel(LogLevel::trace);

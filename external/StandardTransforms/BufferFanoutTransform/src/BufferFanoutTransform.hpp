@@ -55,6 +55,7 @@ public:
 };
 
 DEFINE_TRANSFORM(BufferFanoutTransform, "buffer_fanout", "1.0.0",
+                 "Inserts buffers based on max fan-out",
                  "Usage: transform buffer_fanout "
                  "<max_fanout> <buffer_cell> <buffer_in_port> "
                  "<buffer_out_port> <clock_port>")

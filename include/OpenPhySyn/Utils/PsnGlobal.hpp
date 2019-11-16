@@ -28,34 +28,13 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifdef USE_OPENSTA_DB_HANDLER
-#ifndef __PSN_OPEN_STA_HANDLER__
-#define __PSN_OPEN_STA_HANDLER__
 
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
-#include <OpenPhySyn/Utils/PsnGlobal.hpp>
-#include <PsnLogger/PsnLogger.hpp>
-#include <vector>
+#ifndef __PSN_GLOBAL__
+#define __PSN_GLOBAL__
 
-namespace psn
-{
-class OpenStaHandler
-{
-public:
-    OpenStaHandler(sta::DatabaseSta* sta);
+#define PSN_UNUSED(arg) (void)arg;
 
-#include <OpenPhySyn/Database/DatabaseHandler.in>
-
-    sta::DatabaseStaNetwork* network() const;
-    sta::DatabaseSta*        sta() const;
-    virtual ~OpenStaHandler();
-
-private:
-    sta::DatabaseSta* sta_;
-    Database*         db_;
-};
-
-} // namespace psn
-#endif
+#define HANDLER_UNSUPPORTED_METHOD(HANDLER_NAME, METHOD_NAME)                  \
+    psn::PsnLogger::instance().error("The method " #METHOD_NAME                \
+                                     "is not supported by " #HANDLER_NAME);
 #endif

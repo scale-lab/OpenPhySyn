@@ -28,34 +28,26 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifdef USE_OPENSTA_DB_HANDLER
-#ifndef __PSN_OPEN_STA_HANDLER__
-#define __PSN_OPEN_STA_HANDLER__
 
+#include <OpenPhySyn/Database/DatabaseHandler.hpp>
 #include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
-#include <OpenPhySyn/Utils/PsnGlobal.hpp>
-#include <PsnLogger/PsnLogger.hpp>
-#include <vector>
+#include <OpenPhySyn/Psn/Psn.hpp>
+#include <OpenPhySyn/Transform/PsnTransform.hpp>
+#include <cstring>
 
-namespace psn
+class GateCloningTransform : public psn::PsnTransform
 {
-class OpenStaHandler
-{
-public:
-    OpenStaHandler(sta::DatabaseSta* sta);
-
-#include <OpenPhySyn/Database/DatabaseHandler.in>
-
-    sta::DatabaseStaNetwork* network() const;
-    sta::DatabaseSta*        sta() const;
-    virtual ~OpenStaHandler();
-
 private:
-    sta::DatabaseSta* sta_;
-    Database*         db_;
+    bool isNumber(const std::string& s);
+
+public:
+    int gateClone(psn::Psn* psn_inst, float cap_factor,
+                  bool clone_largest_only);
+
+    int run(psn::Psn* psn_inst, std::vector<std::string> args) override;
 };
 
-} // namespace psn
-#endif
-#endif
+DEFINE_TRANSFORM(GateCloningTransform, "gate_clone", "1.0.0",
+                 "Performs load-driven gate cloning",
+                 "Usage: transform gate_clone "
+                 "<float: max-cap-factor> <boolean: clone-gates-only>")

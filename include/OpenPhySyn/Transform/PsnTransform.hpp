@@ -48,7 +48,7 @@ public:
 } // namespace psn
 
 #define DEFINE_TRANSFORM(classType, transformName, transformVersion,           \
-                         transformHelp)                                        \
+                         transformDescription, transformHelp)                  \
     extern "C"                                                                 \
     {                                                                          \
         std::shared_ptr<psn::PsnTransform>                                     \
@@ -72,6 +72,11 @@ public:
         help()                                                                 \
         {                                                                      \
             return transformHelp;                                              \
+        }                                                                      \
+        const char*                                                            \
+        description()                                                          \
+        {                                                                      \
+            return transformDescription;                                       \
         }                                                                      \
     }
 

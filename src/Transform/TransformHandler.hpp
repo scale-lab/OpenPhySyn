@@ -44,6 +44,7 @@ class TransformHandler
     char* (*get_name_)();
     char* (*get_version_)();
     char* (*get_help_)();
+    char* (*get_description_)();
 
     std::shared_ptr<PsnTransform> instance;
 
@@ -55,6 +56,8 @@ public:
     std::string version();
 
     std::string help();
+
+    std::string description();
 
     std::shared_ptr<PsnTransform> load();
 };

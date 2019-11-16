@@ -39,6 +39,7 @@ TransformHandler::TransformHandler(std::string name)
     get_name_    = (char* (*)())dlsym(handle_, "name");
     get_version_ = (char* (*)())dlsym(handle_, "version");
     get_help_    = (char* (*)())dlsym(handle_, "help");
+    get_description_ = (char* (*)())dlsym(handle_, "description");
 }
 
 std::string
@@ -65,5 +66,10 @@ TransformHandler::load()
     if (!instance)
         instance = load_();
     return instance;
+}
+std::string
+TransformHandler::description()
+{
+    return std::string(get_description_());
 }
 } // namespace psn

@@ -107,7 +107,9 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/LibertyReader/LibertyReader.cpp
     ${PSN_HOME}/src/Transform/PsnTransform.cpp
     ${PSN_HOME}/src/Transform/TransformHandler.cpp
+    ${PSN_HOME}/src/Transform/TransformInfo.cpp
     ${PSN_HOME}/src/Utils/FileUtils.cpp
+    ${PSN_HOME}/src/Utils/PsnGlobal.cpp
     ${PSN_HOME}/src/PsnException/Error.cpp
     ${PSN_HOME}/src/PsnException/FileException.cpp
     ${PSN_HOME}/src/PsnException/NoTechException.cpp

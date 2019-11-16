@@ -28,34 +28,32 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifdef USE_OPENSTA_DB_HANDLER
-#ifndef __PSN_OPEN_STA_HANDLER__
-#define __PSN_OPEN_STA_HANDLER__
 
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
-#include <OpenPhySyn/Utils/PsnGlobal.hpp>
-#include <PsnLogger/PsnLogger.hpp>
-#include <vector>
+#ifndef __PSN_TRANSFORM_INFO__
+#define __PSN_TRANSFORM_INFO__
+
+#include <string>
 
 namespace psn
 {
-class OpenStaHandler
+class TransformInfo
 {
 public:
-    OpenStaHandler(sta::DatabaseSta* sta);
+    TransformInfo(const char* name = "", const char* help = "",
+                  const char* version = "", const char* description = "");
+    TransformInfo(std::string name, std::string help, std::string version,
+                  std::string description);
 
-#include <OpenPhySyn/Database/DatabaseHandler.in>
-
-    sta::DatabaseStaNetwork* network() const;
-    sta::DatabaseSta*        sta() const;
-    virtual ~OpenStaHandler();
+    std::string name() const;
+    std::string help() const;
+    std::string version() const;
+    std::string description() const;
 
 private:
-    sta::DatabaseSta* sta_;
-    Database*         db_;
+    std::string name_;
+    std::string help_;
+    std::string version_;
+    std::string description_;
 };
-
 } // namespace psn
-#endif
 #endif

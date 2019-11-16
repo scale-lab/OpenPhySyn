@@ -8,8 +8,6 @@ namespace eval psn {
 proc transform {transform_name args} {
     psn::transform_internal $transform_name $args
 }
-psn::print_version
-
 
 
 )===<><>==="

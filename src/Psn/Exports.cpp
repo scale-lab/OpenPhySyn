@@ -87,7 +87,7 @@ print_usage()
 void
 print_transforms()
 {
-    Psn::instance().printTransforms();
+    Psn::instance().printTransforms(true);
 }
 
 void
