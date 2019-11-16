@@ -29,11 +29,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_DEF_WRITER_
-#define __PHY_DEF_WRITER_
-#include <PhyKnight/Database/Types.hpp>
+#ifndef __PSN_DEF_WRITER_
+#define __PSN_DEF_WRITER_
+#include <OpenPhySyn/Database/Types.hpp>
 
-namespace phy
+namespace psn
 {
 class DefWriter
 {
@@ -46,5 +46,5 @@ private:
     Database* db_;
     DefOut    out_;
 };
-} // namespace phy
+} // namespace psn
 #endif

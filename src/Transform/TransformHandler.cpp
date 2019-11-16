@@ -29,13 +29,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "TransformHandler.hpp"
-namespace phy
+namespace psn
 {
 
 TransformHandler::TransformHandler(std::string name)
 {
     handle_      = dlopen(name.c_str(), RTLD_LAZY | RTLD_NODELETE);
-    load_        = (std::shared_ptr<PhyTransform>(*)())dlsym(handle_, "load");
+    load_        = (std::shared_ptr<PsnTransform>(*)())dlsym(handle_, "load");
     get_name_    = (char* (*)())dlsym(handle_, "name");
     get_version_ = (char* (*)())dlsym(handle_, "version");
     get_help_    = (char* (*)())dlsym(handle_, "help");
@@ -59,11 +59,11 @@ TransformHandler::help()
     return std::string(get_help_());
 }
 
-std::shared_ptr<PhyTransform>
+std::shared_ptr<PsnTransform>
 TransformHandler::load()
 {
     if (!instance)
         instance = load_();
     return instance;
 }
-} // namespace phy
+} // namespace psn

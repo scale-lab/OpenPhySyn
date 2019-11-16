@@ -34,20 +34,20 @@ set(TRANSFORMS_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/transforms")
 file(MAKE_DIRECTORY ${TRANSFORMS_BUILD_DIR})
 
 
-# option(PHY_TRANSFORM_INSTALL_PATH "Default path for transforms installation" $ENV{HOME}/.phyknight/transforms)
+# option(PSN_TRANSFORM_INSTALL_PATH "Default path for transforms installation" $ENV{HOME}/.OpenPhySyn/transforms)
 
-set(PHY_HOME ${CMAKE_CURRENT_SOURCE_DIR} CACHE FILEPATH "The path to PhyKnight includes")
-set(PHY_TRANSFORM_INSTALL_PATH "$ENV{HOME}/.phyknight/transforms" CACHE FILEPATH "Default path for transforms installation")
+set(PSN_HOME ${CMAKE_CURRENT_SOURCE_DIR} CACHE FILEPATH "The path to OpenPhySyn includes")
+set(PSN_TRANSFORM_INSTALL_PATH "$ENV{HOME}/.OpenPhySyn/transforms" CACHE FILEPATH "Default path for transforms installation")
 
 add_subdirectory(external/StandardTransforms/HelloTransform)
 install(
   TARGETS hello_transform
-  DESTINATION ${PHY_TRANSFORM_INSTALL_PATH}
+  DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
 )
 
 
 add_subdirectory(external/StandardTransforms/BufferFanoutTransform)
 install(
   TARGETS buffer_fanout
-  DESTINATION ${PHY_TRANSFORM_INSTALL_PATH}
+  DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
 )

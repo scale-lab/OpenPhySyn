@@ -1,14 +1,14 @@
 
 R"===<><>===(
-namespace eval phy {
+namespace eval psn {
     namespace export *
     namespace ensemble create
 }
 
 proc transform {transform_name args} {
-    phy::transform_internal $transform_name $args
+    psn::transform_internal $transform_name $args
 }
-phy::print_version
+psn::print_version
 
 
 

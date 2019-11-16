@@ -28,29 +28,29 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <PhyKnight/Phy/Phy.hpp>
-#include "PhyException/PhyException.hpp"
+#include <OpenPhySyn/Psn/Psn.hpp>
+#include "PsnException/PsnException.hpp"
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
-using namespace phy;
+using namespace psn;
 
 TEST_CASE("Should read LEF and DEF successfully")
 {
-    Phy& phy_inst = Phy::instance();
+    Psn& psn_inst = Psn::instance();
     try
     {
         bool mkdir_result =
             FileUtils::createDirectoryIfNotExists("../tests/results");
         CHECK(mkdir_result);
-        phy_inst.handler()->clear();
-        phy_inst.readLef("../tests/data/tech.lef");
-        phy_inst.readDef("../tests/data/design.def");
-        CHECK(phy_inst.database()->getChip() != nullptr);
-        int result = phy_inst.writeDef("../tests/results/test.def");
+        psn_inst.handler()->clear();
+        psn_inst.readLef("../tests/data/tech.lef");
+        psn_inst.readDef("../tests/data/design.def");
+        CHECK(psn_inst.database()->getChip() != nullptr);
+        int result = psn_inst.writeDef("../tests/results/test.def");
         CHECK(result >= 1);
     }
-    catch (PhyException& e)
+    catch (PsnException& e)
     {
         FAIL(e.what());
     }

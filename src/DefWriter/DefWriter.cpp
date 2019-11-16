@@ -29,9 +29,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "DefWriter.hpp"
-#include "PhyLogger/PhyLogger.hpp"
+#include "PsnLogger/PsnLogger.hpp"
 
-namespace phy
+namespace psn
 {
 
 DefWriter::DefWriter(Database* db) : db_(db)
@@ -53,4 +53,4 @@ DefWriter::write(const char* path)
     return 1;
 }
 
-} // namespace phy
+} // namespace psn

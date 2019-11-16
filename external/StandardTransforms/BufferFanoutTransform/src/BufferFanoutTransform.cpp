@@ -30,22 +30,22 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "BufferFanoutTransform.hpp"
-#include <PhyKnight/PhyLogger/PhyLogger.hpp>
+#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 
 #include <algorithm>
 #include <cmath>
 
-using namespace phy;
+using namespace psn;
 
 int
-BufferFanoutTransform::buffer(Phy* phy_inst, int max_fanout,
+BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                               std::string buffer_cell,
                               std::string buffer_in_port,
                               std::string buffer_out_port,
                               std::string clock_port_name)
 {
-    PhyLogger&      logger  = PhyLogger::instance();
-    DatabaseHandler handler = *(phy_inst->handler());
+    PsnLogger&      logger  = PsnLogger::instance();
+    DatabaseHandler handler = *(psn_inst->handler());
     LibraryCell*    cell    = handler.libraryCell(buffer_cell.c_str());
     if (!cell)
     {
@@ -262,23 +262,23 @@ BufferFanoutTransform::isNumber(const std::string& s)
 }
 
 int
-BufferFanoutTransform::run(Phy* phy_inst, std::vector<std::string> args)
+BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
 
-    PhyLogger::instance().debug("Passed arguments:");
+    PsnLogger::instance().debug("Passed arguments:");
     for (auto& arg : args)
     {
-        PhyLogger::instance().debug("{}", arg);
+        PsnLogger::instance().debug("{}", arg);
     }
 
     if (args.size() == 5 && isNumber(args[0]))
     {
-        return buffer(phy_inst, stoi(args[0]), args[1], args[2], args[3],
+        return buffer(psn_inst, stoi(args[0]), args[1], args[2], args[3],
                       args[4]);
     }
     else
     {
-        PhyLogger::instance().error(
+        PsnLogger::instance().error(
             "Usage:\n transform hello_transform "
             "<net_name>\n transform hello_transform "
             "buffer "

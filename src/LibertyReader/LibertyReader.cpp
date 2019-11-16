@@ -36,10 +36,10 @@
 #include <OpenSTA/liberty/LibertyReaderPvt.hh>
 #include <OpenSTA/network/Network.hh>
 #include <OpenSTA/util/Error.hh>
-#include <PhyKnight/Sta/DatabaseStaNetwork.hpp>
-#include "PhyException/FileException.hpp"
-#include "PhyException/ParseLibertyException.hpp"
-namespace phy
+#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
+#include "PsnException/FileException.hpp"
+#include "PsnException/ParseLibertyException.hpp"
+namespace psn
 {
 
 LibertyReader::LibertyReader(Database* db, sta::DatabaseSta* sta)
@@ -65,4 +65,4 @@ LibertyReader::read(const char* path, bool infer_latches)
     }
 }
 
-} // namespace phy
+} // namespace psn

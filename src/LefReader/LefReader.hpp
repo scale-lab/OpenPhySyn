@@ -29,11 +29,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_LEF_READER__
-#define __PHY_LEF_READER__
-#include <PhyKnight/Database/Types.hpp>
+#ifndef __PSN_LEF_READER__
+#define __PSN_LEF_READER__
+#include <OpenPhySyn/Database/Types.hpp>
 
-namespace phy
+namespace psn
 {
 class LefReader
 {
@@ -47,5 +47,5 @@ private:
     Database* db_;
     LefParser parser_;
 };
-} // namespace phy
+} // namespace psn
 #endif

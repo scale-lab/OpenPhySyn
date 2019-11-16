@@ -31,11 +31,11 @@
 
 #ifdef USE_OPENDB_DB_HANDLER
 
-#include <PhyKnight/Database/OpenDBHandler.hpp>
-#include <PhyKnight/PhyLogger/PhyLogger.hpp>
+#include <OpenPhySyn/Database/OpenDBHandler.hpp>
+#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <set>
 
-namespace phy
+namespace psn
 {
 OpenDBHandler::OpenDBHandler(sta::DatabaseSta* sta) : sta_(sta), db_(sta->db())
 {
@@ -444,5 +444,5 @@ OpenDBHandler::clear() const
 OpenDBHandler::~OpenDBHandler()
 {
 }
-} // namespace phy
+} // namespace psn
 #endif

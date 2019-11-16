@@ -29,11 +29,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_DEF_READER__
-#define __PHY_DEF_READER__
-#include <PhyKnight/Database/Types.hpp>
+#ifndef __PSN_DEF_READER__
+#define __PSN_DEF_READER__
+#include <OpenPhySyn/Database/Types.hpp>
 
-namespace phy
+namespace psn
 {
 class DefReader
 {
@@ -45,5 +45,5 @@ private:
     Database* db_;
     DefParser parser_;
 };
-} // namespace phy
+} // namespace psn
 #endif

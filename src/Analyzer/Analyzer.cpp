@@ -29,12 +29,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <PhyKnight/Analyzer/Analyzer.hpp>
+#include <OpenPhySyn/Analyzer/Analyzer.hpp>
 
-namespace phy
+namespace psn
 {
 Analyzer::Analyzer()
 {
 }
 
-} // namespace phy
+} // namespace psn

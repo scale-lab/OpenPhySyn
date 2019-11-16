@@ -29,10 +29,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "LefReader.hpp"
-#include "PhyException/FileException.hpp"
+#include "PsnException/FileException.hpp"
 #include "Utils/FileUtils.hpp"
 
-namespace phy
+namespace psn
 {
 
 LefReader::LefReader(Database* db) : db_(db), parser_(db, false)
@@ -73,4 +73,4 @@ LefReader::readTech(const char* path)
     return parser_.createTech(path);
 }
 
-} // namespace phy
+} // namespace psn

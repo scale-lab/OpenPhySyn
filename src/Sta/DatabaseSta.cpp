@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <PhyKnight/Sta/DatabaseSta.hpp>
-#include <PhyKnight/Sta/DatabaseStaNetwork.hpp>
+#include <OpenPhySyn/Sta/DatabaseSta.hpp>
+#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
 #include "Machine.hh"
 #include "Sta/DatabaseSdcNetwork.hpp"
 #include "opendb/db.h"

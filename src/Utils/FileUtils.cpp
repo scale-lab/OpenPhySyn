@@ -35,8 +35,8 @@
 #include <fstream>
 #include <libgen.h>
 #include <sys/stat.h>
-#include "PhyException/FileException.hpp"
-namespace phy
+#include "PsnException/FileException.hpp"
+namespace psn
 {
 bool
 FileUtils::pathExists(const char* path)
@@ -117,7 +117,7 @@ FileUtils::homePath()
     }
     if (!home_path.length())
     {
-        home_path = "/home/phyknight";
+        home_path = "/home/OpenPhySyn";
     }
     return home_path;
 }
@@ -135,4 +135,4 @@ FileUtils::baseName(const char* path)
 {
     return std::string(basename(const_cast<char*>(path)));
 }
-} // namespace phy
+} // namespace psn

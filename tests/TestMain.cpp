@@ -32,7 +32,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT
 
 #include <tcl.h>
-#include "Phy/Phy.hpp"
+#include "Psn/Psn.hpp"
 #include "doctest.h"
 
 int
@@ -55,8 +55,8 @@ main(int argc, char** argv)
         "no-breaks",
         false); // don't break in the debugger when assertions fail
     Tcl_Interp* interp = Tcl_CreateInterp();
-    phy::Phy::instance().loadTransforms();
-    phy::Phy::instance().setupInterpreter(interp);
+    psn::Psn::instance().loadTransforms();
+    psn::Psn::instance().setupInterpreter(interp);
 
     int res = context.run(); // run
 

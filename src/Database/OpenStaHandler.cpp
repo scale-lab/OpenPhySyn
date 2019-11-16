@@ -37,14 +37,14 @@
 #include <OpenSTA/network/PortDirection.hh>
 #include <OpenSTA/search/Search.hh>
 #include <OpenSTA/util/PatternMatch.hh>
-#include <PhyKnight/Database/OpenStaHandler.hpp>
-#include <PhyKnight/PhyLogger/PhyLogger.hpp>
-#include <PhyKnight/Sta/DatabaseSta.hpp>
-#include <PhyKnight/Sta/DatabaseStaNetwork.hpp>
+#include <OpenPhySyn/Database/OpenStaHandler.hpp>
+#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
+#include <OpenPhySyn/Sta/DatabaseSta.hpp>
+#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
 
 #include <set>
 
-namespace phy
+namespace psn
 {
 OpenStaHandler::OpenStaHandler(sta::DatabaseSta* sta)
     : sta_(sta), db_(sta->db())
@@ -448,5 +448,5 @@ OpenStaHandler::sta() const
 {
     return sta_;
 }
-} // namespace phy
+} // namespace psn
 #endif

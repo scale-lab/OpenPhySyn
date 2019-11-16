@@ -34,9 +34,9 @@ RUN wget http://downloads.sourceforge.net/project/boost/boost/1.67.0/boost_1_67_
     && ./b2 install \
     && rm -rf boost_1_67_0
 
-COPY . /PhyKnight
-RUN mkdir /PhyKnight/build
-WORKDIR /PhyKnight/build
+COPY . /OpenPhySyn
+RUN mkdir /OpenPhySyn/build
+WORKDIR /OpenPhySyn/build
 # RUN cmake -DCMAKE_INSTALL_PREFIX=/build -DCUDD=/usr/local ..
 RUN cmake -DCMAKE_INSTALL_PREFIX=/build ..
 RUN make
@@ -44,7 +44,7 @@ RUN make
 # Run enviornment
 FROM centos:centos6 AS runner
 RUN yum update -y && yum install -y tcl-devel
-COPY --from=builder /PhyKnight/build/Phy /build/Phy
+COPY --from=builder /OpenPhySyn/build/Psn /build/Psn
 RUN useradd -ms /bin/bash openroad
 USER openroad
 WORKDIR /home/openroad

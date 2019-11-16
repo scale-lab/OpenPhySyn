@@ -29,23 +29,23 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <PhyKnight/Database/DatabaseHandler.hpp>
-#include <PhyKnight/Database/Types.hpp>
-#include <PhyKnight/Phy/Phy.hpp>
-#include <PhyKnight/Transform/PhyTransform.hpp>
+#include <OpenPhySyn/Database/DatabaseHandler.hpp>
+#include <OpenPhySyn/Database/Types.hpp>
+#include <OpenPhySyn/Psn/Psn.hpp>
+#include <OpenPhySyn/Transform/PsnTransform.hpp>
 #include <cstring>
 
-class BufferFanoutTransform : public phy::PhyTransform
+class BufferFanoutTransform : public psn::PsnTransform
 {
 private:
     bool isNumber(const std::string& s);
 
 public:
-    int buffer(phy::Phy* phy_inst, int max_fanout, std::string buffer_cell,
+    int buffer(psn::Psn* psn_inst, int max_fanout, std::string buffer_cell,
                std::string buffer_in_port, std::string buffer_out_port,
                std::string clock_port_name);
 
-    int         run(phy::Phy* phy_inst, std::vector<std::string> args) override;
+    int         run(psn::Psn* psn_inst, std::vector<std::string> args) override;
     std::string bufferName(int index);
     std::string bufferNetName(int index);
     std::string bufferName(std::vector<int> indices);

@@ -1,6 +1,6 @@
-# PhyKnight
+# OpenPhySyn
 
-PhyKnight is a plugin-based physical synthesis optimization kit developed as part of the [OpenROAD](https://theopenroadproject.org/) flow.
+OpenPhySyn is a plugin-based psnsical synthesis optimization kit developed as part of the [OpenROAD](https://theopenroadproject.org/) flow.
 
 ## Building
 
@@ -10,10 +10,10 @@ Example:
 
 ```bash
 > mkdir build && cd build
-> cmake .. -DCMAKE_INSTALL_PREFIX=${HOME}/apps/PhyKnight -DCMAKE_BUILD_TYPE=[Debug | Coverage | Release]
+> cmake .. -DCMAKE_INSTALL_PREFIX=${HOME}/apps/OpenPhySyn -DCMAKE_BUILD_TYPE=[Debug | Coverage | Release]
 > make
 > make install
-> ./phy
+> ./Psn
 > make test      # Makes and runs the tests.
 > make coverage  # Generate a coverage report.
 > make doc       # Generate html documentation.
@@ -21,7 +21,7 @@ Example:
 
 ## Building Custom Transforms
 
-Physical Synthesis transforms libraries are loaded from the directory refered to by the variable `PHY_TRANSFORM_PATH`
+Psnsical Synthesis transforms libraries are loaded from the directory refered to by the variable `PSN_TRANSFORM_PATH`
 To build a new transform refer to the transform [template](https://github.com/The-OpenROAD-Project/OpenPhySynHelloTransform).
 
 ## Runing Transforms
@@ -29,7 +29,7 @@ To build a new transform refer to the transform [template](https://github.com/Th
 To run any transorm simply:
 
 ```bash
-> ./Phy
+> ./Psn
 > read_lef <lef file>
 > read_def <def file>
 > transform <transform name> <arguments...>
@@ -38,7 +38,7 @@ To run any transorm simply:
 
 ## Dependencies
 
-PhyKnight depends on the following libraries:
+OpenPhySyn depends on the following libraries:
 
 -   [Boost](https://www.boost.org/)
 -   [CPP TaskFlow](https://github.com/cpp-taskflow/cpp-taskflow)
@@ -51,7 +51,7 @@ PhyKnight depends on the following libraries:
 
 ## Issues
 
-Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/PhyKnight/issues/new) if you find any bugs:
+Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/OpenPhySyn/issues/new) if you find any bugs:
 
 -   Loaded plugins sometimes causes double `free` error at closing.
 

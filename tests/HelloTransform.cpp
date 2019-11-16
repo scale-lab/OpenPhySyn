@@ -28,28 +28,28 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "Phy/Phy.hpp"
-#include "PhyException/PhyException.hpp"
+#include "Psn/Psn.hpp"
+#include "PsnException/PsnException.hpp"
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
-using namespace phy;
+using namespace psn;
 
 TEST_CASE("Should add fan-out buffers")
 {
-    Phy& phy_inst = Phy::instance();
+    Psn& psn_inst = Psn::instance();
     try
     {
-        phy_inst.handler()->clear();
-        phy_inst.readLef("../tests/data/tech.lef");
-        phy_inst.readDef("../tests/data/design.def");
-        CHECK(phy_inst.database()->getChip() != nullptr);
-        phy::Phy::instance().loadTransforms();
-        auto result = phy_inst.runTransform("hello_transform",
+        psn_inst.handler()->clear();
+        psn_inst.readLef("../tests/data/tech.lef");
+        psn_inst.readDef("../tests/data/design.def");
+        CHECK(psn_inst.database()->getChip() != nullptr);
+        psn::Psn::instance().loadTransforms();
+        auto result = psn_inst.runTransform("hello_transform",
                                             std::vector<std::string>({"net1"}));
         CHECK(result >= 1);
     }
-    catch (PhyException& e)
+    catch (PsnException& e)
     {
         FAIL(e.what());
     }

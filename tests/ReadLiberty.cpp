@@ -28,23 +28,23 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "Phy/Phy.hpp"
-#include "PhyException/PhyException.hpp"
+#include "Psn/Psn.hpp"
+#include "PsnException/PsnException.hpp"
 #include "doctest.h"
 
-using namespace phy;
+using namespace psn;
 
 TEST_CASE("Should read liberty file")
 {
-    Phy& phy_inst = Phy::instance();
+    Psn& psn_inst = Psn::instance();
     try
     {
-        phy_inst.readLib("../tests/data/gscl45nm.lib");
-        Liberty*                 liberty = phy_inst.liberty();
+        psn_inst.readLib("../tests/data/gscl45nm.lib");
+        Liberty*                 liberty = psn_inst.liberty();
         sta::LibertyCellIterator cell_iter(liberty);
         CHECK(cell_iter.hasNext());
     }
-    catch (PhyException& e)
+    catch (PsnException& e)
     {
         FAIL(e.what());
     }

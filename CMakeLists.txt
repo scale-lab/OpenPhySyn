@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-project(PhyKnight VERSION 1.0.0 LANGUAGES CXX)
+project(OpenPhySyn VERSION 1.0.0 LANGUAGES CXX)
 
 
 option(ENABLE_WARNINGS_SETTINGS "Allow target_set_warnings to add flags and defines.
@@ -59,7 +59,7 @@ find_package(ZLIB REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
 
 
-set(PHY_HOME
+set(PSN_HOME
   ${PROJECT_SOURCE_DIR}
 )
 set(OPENDB_HOME
@@ -89,47 +89,47 @@ add_subdirectory(external/spdlog)
 
 
 
-set(PHY_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Phy_wrap.cc)
+set(PSN_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap.cc)
 
-set(PHY_MAIN ${PHY_HOME}/app/PhyMain.cpp)
-set(PHY_SOURCES_NO_MAIN_NO_WRAP
-    ${PHY_HOME}/src/Phy/Phy.cpp
-    ${PHY_HOME}/src/Phy/Exports.cpp
-    ${PHY_HOME}/src/Phy/ProgramOptions.cpp
-    ${PHY_HOME}/src/Analyzer/Analyzer.cpp
-    ${PHY_HOME}/src/SteinerTree/SteinerTree.cpp
-    ${PHY_HOME}/src/PhyLogger/PhyLogger.cpp
-    ${PHY_HOME}/src/Database/OpenDBHandler.cpp
-    ${PHY_HOME}/src/Database/OpenStaHandler.cpp
-    ${PHY_HOME}/src/DefReader/DefReader.cpp
-    ${PHY_HOME}/src/DefWriter/DefWriter.cpp
-    ${PHY_HOME}/src/LefReader/LefReader.cpp
-    ${PHY_HOME}/src/LibertyReader/LibertyReader.cpp
-    ${PHY_HOME}/src/Transform/PhyTransform.cpp
-    ${PHY_HOME}/src/Transform/TransformHandler.cpp
-    ${PHY_HOME}/src/Utils/FileUtils.cpp
-    ${PHY_HOME}/src/PhyException/Error.cpp
-    ${PHY_HOME}/src/PhyException/FileException.cpp
-    ${PHY_HOME}/src/PhyException/NoTechException.cpp
-    ${PHY_HOME}/src/PhyException/ParseLibertyException.cpp
-    ${PHY_HOME}/src/PhyException/PhyException.cpp
-    ${PHY_HOME}/src/PhyException/ProgramOptionsException.cpp
-    ${PHY_HOME}/src/PhyException/TransformNotFoundException.cpp
+set(PSN_MAIN ${PSN_HOME}/app/PsnMain.cpp)
+set(PSN_SOURCES_NO_MAIN_NO_WRAP
+    ${PSN_HOME}/src/Psn/Psn.cpp
+    ${PSN_HOME}/src/Psn/Exports.cpp
+    ${PSN_HOME}/src/Psn/ProgramOptions.cpp
+    ${PSN_HOME}/src/Analyzer/Analyzer.cpp
+    ${PSN_HOME}/src/SteinerTree/SteinerTree.cpp
+    ${PSN_HOME}/src/PsnLogger/PsnLogger.cpp
+    ${PSN_HOME}/src/Database/OpenDBHandler.cpp
+    ${PSN_HOME}/src/Database/OpenStaHandler.cpp
+    ${PSN_HOME}/src/DefReader/DefReader.cpp
+    ${PSN_HOME}/src/DefWriter/DefWriter.cpp
+    ${PSN_HOME}/src/LefReader/LefReader.cpp
+    ${PSN_HOME}/src/LibertyReader/LibertyReader.cpp
+    ${PSN_HOME}/src/Transform/PsnTransform.cpp
+    ${PSN_HOME}/src/Transform/TransformHandler.cpp
+    ${PSN_HOME}/src/Utils/FileUtils.cpp
+    ${PSN_HOME}/src/PsnException/Error.cpp
+    ${PSN_HOME}/src/PsnException/FileException.cpp
+    ${PSN_HOME}/src/PsnException/NoTechException.cpp
+    ${PSN_HOME}/src/PsnException/ParseLibertyException.cpp
+    ${PSN_HOME}/src/PsnException/PsnException.cpp
+    ${PSN_HOME}/src/PsnException/ProgramOptionsException.cpp
+    ${PSN_HOME}/src/PsnException/TransformNotFoundException.cpp
 
-    ${PHY_HOME}/src/Sta/DatabaseSta.cpp
-    ${PHY_HOME}/src/Sta/DatabaseSdcNetwork.cpp
-    ${PHY_HOME}/src/Sta/DatabaseStaNetwork.cpp
+    ${PSN_HOME}/src/Sta/DatabaseSta.cpp
+    ${PSN_HOME}/src/Sta/DatabaseSdcNetwork.cpp
+    ${PSN_HOME}/src/Sta/DatabaseStaNetwork.cpp
 )
-set(PHY_SOURCES_NO_MAIN
-    ${PHY_SOURCES_NO_MAIN_NO_WRAP}
-    ${PHY_WRAP}
+set(PSN_SOURCES_NO_MAIN
+    ${PSN_SOURCES_NO_MAIN_NO_WRAP}
+    ${PSN_WRAP}
 )
-set(PHY_SOURCES 
-    ${PHY_SOURCES_NO_MAIN}
-    ${PHY_MAIN}
+set(PSN_SOURCES 
+    ${PSN_SOURCES_NO_MAIN}
+    ${PSN_MAIN}
 )
 
-set(PHY_TESTFILES        # All .cpp files in tests/
+set(PSN_TESTFILES        # All .cpp files in tests/
     ${PROJECT_SOURCE_DIR}/tests/ReadLefDef.cpp
     ${PROJECT_SOURCE_DIR}/tests/WriteDef.cpp
     ${PROJECT_SOURCE_DIR}/tests/ReadLiberty.cpp
@@ -138,19 +138,19 @@ set(PHY_TESTFILES        # All .cpp files in tests/
     ${PROJECT_SOURCE_DIR}/tests/TestMain.cpp
 )
 
-set(PHY_SWIG_FILES
-  app/Phy.i
+set(PSN_SWIG_FILES
+  app/Psn.i
 )
-set(PHY_DEP_FILES
-  ${PHY_SWIG_FILES}
-  ${PHY_HOME}/src/Phy/Exports.cpp
+set(PSN_DEP_FILES
+  ${PSN_SWIG_FILES}
+  ${PSN_HOME}/src/Psn/Exports.cpp
 )
 set(LIBRARY_NAME ${PROJECT_NAME})  # Default name for the library built from src/*.cpp (change if you wish)
 # string(TOLOWER ${PROJECT_NAME} LIBRARY_NAME)
 
 set(INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/include
-  ${PROJECT_SOURCE_DIR}/include/PhyKnight
+  ${PROJECT_SOURCE_DIR}/include/OpenPhySyn
   ${PROJECT_SOURCE_DIR}/src
   ${PROJECT_SOURCE_DIR}/external
   ${TCL_INCLUDE_PATH}
@@ -177,45 +177,45 @@ set(PUBLIC_LIBRARIES
 )
 
 # Compile all sources into a library.
-add_library(${LIBRARY_NAME} STATIC ${PHY_SOURCES})
-add_executable(Phy ${PHY_SOURCES})  # Name of exec. and location of file.
+add_library(${LIBRARY_NAME} STATIC ${PSN_SOURCES})
+add_executable(Psn ${PSN_SOURCES})  # Name of exec. and location of file.
 
 target_include_directories(${LIBRARY_NAME} PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES}) 
-target_include_directories(Phy PUBLIC ${INCLUDE_DIRS})
-target_link_libraries(Phy PUBLIC ${PUBLIC_LIBRARIES}) 
+target_include_directories(Psn PUBLIC ${INCLUDE_DIRS})
+target_link_libraries(Psn PUBLIC ${PUBLIC_LIBRARIES}) 
 
 include_directories (
   ${INCLUDE_DIRS}
 )
 
 set_target_properties(
-    ${LIBRARY_NAME} Phy
+    ${LIBRARY_NAME} Psn
       PROPERTIES 
         CXX_STANDARD 17 
         CXX_STANDARD_REQUIRED YES 
         CXX_EXTENSIONS NO
 )
 set_property(TARGET ${LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_property(TARGET Phy PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_property(TARGET Psn PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 
 
-add_custom_command(OUTPUT ${PHY_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix phy -I${PROJECT_SOURCE_DIR}/src -o ${PHY_WRAP} ${PHY_SWIG_FILES}
-  WORKING_DIRECTORY ${PHY_HOME}
-  DEPENDS ${PHY_SWIG_FILES}
+add_custom_command(OUTPUT ${PSN_WRAP}
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_WRAP} ${PSN_SWIG_FILES}
+  WORKING_DIRECTORY ${PSN_HOME}
+  DEPENDS ${PSN_SWIG_FILES}
 )
 
-install(TARGETS Phy DESTINATION bin)
+install(TARGETS Psn DESTINATION bin)
 # Set up tests (see tests/CMakeLists.txt).
 add_subdirectory(tests)
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
-  ${PHY_WRAP}
+  ${PSN_WRAP}
 )
 
-option(PHY_STANDARD_TRANSFORMS "Build PhyKnight Standard Transforms" ON)
-if(PHY_STANDARD_TRANSFORMS)
+option(PSN_STANDARD_TRANSFORMS "Build OpenPhySyn Standard Transforms" ON)
+if(PSN_STANDARD_TRANSFORMS)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/external/StandardTransforms")
     include(Transforms)
 endif()

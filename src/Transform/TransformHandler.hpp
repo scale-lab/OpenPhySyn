@@ -29,23 +29,23 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_TRANSFORM_HANDLER__
-#define __PHY_TRANSFORM_HANDLER__
+#ifndef __PSN_TRANSFORM_HANDLER__
+#define __PSN_TRANSFORM_HANDLER__
 
-#include <Transform/PhyTransform.hpp>
+#include <Transform/PsnTransform.hpp>
 #include <dlfcn.h>
 #include <memory>
-namespace phy
+namespace psn
 {
 class TransformHandler
 {
-    std::shared_ptr<PhyTransform> (*load_)();
+    std::shared_ptr<PsnTransform> (*load_)();
     void* handle_;
     char* (*get_name_)();
     char* (*get_version_)();
     char* (*get_help_)();
 
-    std::shared_ptr<PhyTransform> instance;
+    std::shared_ptr<PsnTransform> instance;
 
 public:
     TransformHandler(std::string name);
@@ -56,8 +56,8 @@ public:
 
     std::string help();
 
-    std::shared_ptr<PhyTransform> load();
+    std::shared_ptr<PsnTransform> load();
 };
-} // namespace phy
+} // namespace psn
 
 #endif //__TRANSFORM_HANDLER__

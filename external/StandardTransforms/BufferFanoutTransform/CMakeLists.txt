@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-project(PhyKnightBufferFanoutTransform VERSION 1.0.0 LANGUAGES CXX)
+project(OpenPhySynBufferFanoutTransform VERSION 1.0.0 LANGUAGES CXX)
 
 set(TRANSFORM_NAME buffer_fanout)
 
@@ -10,27 +10,27 @@ find_package(TCL REQUIRED)
 set(Boost_USE_STATIC_LIBS ON)
 
 
-set(PHY_HOME "/usr/include/phyknight" CACHE FILEPATH "The path to PhyKnight includes")
+set(PSN_HOME "/usr/include/OpenPhySyn" CACHE FILEPATH "The path to OpenPhySyn includes")
 
-IF(NOT EXISTS ${PHY_HOME})
-message( FATAL_ERROR "Cannot find PhyKnight headers, set PHY_HOME option." )
+IF(NOT EXISTS ${PSN_HOME})
+message( FATAL_ERROR "Cannot find OpenPhySyn headers, set PSN_HOME option." )
 endif()
 
-set(OPEDNDB_HOME ${PHY_HOME}/external/OpenDB CACHE FILEPATH "The path to OpenDB includes")
+set(OPEDNDB_HOME ${PSN_HOME}/external/OpenDB CACHE FILEPATH "The path to OpenDB includes")
 
-option(OPENSTA_HOME "The path to OpenSTA" ${PHY_HOME}/external/OpenSTA)
+option(OPENSTA_HOME "The path to OpenSTA" ${PSN_HOME}/external/OpenSTA)
 
 IF(NOT EXISTS ${OPEDNDB_HOME})
-message( FATAL_ERROR "${OPEDNDB_HOME} -- ${PHY_HOME} Cannot find OpenDB headers, set OPEDNDB_HOME option." )
+message( FATAL_ERROR "${OPEDNDB_HOME} -- ${PSN_HOME} Cannot find OpenDB headers, set OPEDNDB_HOME option." )
 endif()
 IF(NOT EXISTS ${OPENSTA_HOME})
 message( FATAL_ERROR "Cannot find OpenSTA headers, set OPENSTA_HOME option." )
 endif()
 
-set(PHY_LIB_PATH "" CACHE STRING "Set PhyKnight built library path" 0)
+set(PSN_LIB_PATH "" CACHE STRING "Set OpenPhySyn built library path" 0)
 
-if(NOT PHY_LIB_PATH STREQUAL 0)
-link_directories(${PHY_LIB_PATH})
+if(NOT PSN_LIB_PATH STREQUAL 0)
+link_directories(${PSN_LIB_PATH})
 endif()
 
 set(OPENDB_LIB_PATH "" CACHE STRING "Set OpenDB built library path" 0)
@@ -50,8 +50,8 @@ endif()
 
 include_directories(
   src/
-  ${PHY_HOME}/include/
-  ${PHY_HOME}/external/spdlog/include
+  ${PSN_HOME}/include/
+  ${PSN_HOME}/external/spdlog/include
   ${OPEDNDB_HOME}/include
   ${OPEDNDB_HOME}/src
   ${OPEDNDB_HOME}/src/db
@@ -75,7 +75,7 @@ tm
 ${TCL_LIBRARY}
 # ${Boost_LIBRARIES}
 dl
-PhyKnight
+OpenPhySyn
 )
 if (DEFINED "TRANSFORMS_BUILD_DIR")
 set_target_properties(${TRANSFORM_NAME}
@@ -88,12 +88,12 @@ target_compile_options(${TRANSFORM_NAME} PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>
 set_property(TARGET ${TRANSFORM_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 
-set(PHY_TRANSFORM_INSTALL_PATH "$ENV{HOME}/.phyknight/transforms" CACHE STRING "Default path for transforms installation")
+set(PSN_TRANSFORM_INSTALL_PATH "$ENV{HOME}/.OpenPhySyn/transforms" CACHE STRING "Default path for transforms installation")
 
 
 install(
   TARGETS ${TRANSFORM_NAME}
-  DESTINATION ${PHY_TRANSFORM_INSTALL_PATH}
+  DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
 )
 
 

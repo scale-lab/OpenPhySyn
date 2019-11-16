@@ -29,12 +29,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_FILE_UTILS__
-#define __PHY_FILE_UTILS__
+#ifndef __PSN_FILE_UTILS__
+#define __PSN_FILE_UTILS__
 #include <string>
 #include <vector>
 
-namespace phy
+namespace psn
 {
 class FileUtils
 {
@@ -50,5 +50,5 @@ public:
                                              const char* second_path);
     static std::string              baseName(const char* path);
 };
-} // namespace phy
+} // namespace psn
 #endif
