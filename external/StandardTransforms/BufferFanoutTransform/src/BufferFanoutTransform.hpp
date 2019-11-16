@@ -41,16 +41,15 @@ private:
     bool isNumber(const std::string& s);
 
 public:
-    int buffer(phy::Phy* phy_inst, phy::Database* db, int max_fanout,
-               std::string buffer_cell, std::string buffer_in_port,
-               std::string buffer_out_port, std::string clock_port_name);
+    int buffer(phy::Phy* phy_inst, int max_fanout, std::string buffer_cell,
+               std::string buffer_in_port, std::string buffer_out_port,
+               std::string clock_port_name);
 
-    int              run(phy::Phy* phy_inst, phy::Database* db,
-                         std::vector<std::string> args) override;
-    std::string      bufferName(int index);
-    std::string      bufferNetName(int index);
-    std::string      bufferName(std::vector<int> indices);
-    std::string      bufferNetName(std::vector<int> indices);
+    int         run(phy::Phy* phy_inst, std::vector<std::string> args) override;
+    std::string bufferName(int index);
+    std::string bufferNetName(int index);
+    std::string bufferName(std::vector<int> indices);
+    std::string bufferNetName(std::vector<int> indices);
     std::vector<int> nextBuffer(std::vector<int> current_buffer,
                                 int              max_fanout);
 };

@@ -49,6 +49,12 @@ PhyKnight depends on the following libraries:
 -   [Doxygen](http://www.doxygen.nl) (optional)
 -   [Doctests](https://github.com/onqtam/doctest) (optional)
 
+## Issues
+
+Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/PhyKnight/issues/new) if you find any bugs:
+
+-   Loaded plugins sometimes causes double `free` error at closing.
+
 ## To-Do
 
 -   [ ] Integrate Steiner Tree

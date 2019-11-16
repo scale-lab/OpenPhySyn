@@ -28,6 +28,9 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
+#ifdef USE_OPENDB_DB_HANDLER
+
 #include <PhyKnight/Database/OpenDBHandler.hpp>
 #include <PhyKnight/PhyLogger/PhyLogger.hpp>
 #include <set>
@@ -39,24 +42,62 @@ OpenDBHandler::OpenDBHandler(sta::DatabaseSta* sta) : sta_(sta), db_(sta->db())
 }
 
 std::vector<InstanceTerm*>
+OpenDBHandler::pins(Net* net) const
+{
+    std::vector<InstanceTerm*> terms;
+    InstanceTermSet            term_set = net->getITerms();
+    for (InstanceTermSet::iterator itr = term_set.begin();
+         itr != term_set.end(); itr++)
+    {
+        InstanceTerm* inst_term = (*itr);
+        terms.push_back(inst_term);
+    }
+    return terms;
+}
+std::vector<InstanceTerm*>
+OpenDBHandler::pins(Instance* inst) const
+{
+    std::vector<InstanceTerm*> terms;
+    InstanceTermSet            term_set = inst->getITerms();
+    for (InstanceTermSet::iterator itr = term_set.begin();
+         itr != term_set.end(); itr++)
+    {
+        InstanceTerm* inst_term = (*itr);
+        terms.push_back(inst_term);
+    }
+    return terms;
+}
+
+std::vector<InstanceTerm*>
+OpenDBHandler::connectedPins(Net* net) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, connectedPins)
+    std::vector<InstanceTerm*>();
+}
+
+std::vector<InstanceTerm*>
 OpenDBHandler::inputPins(Instance* inst) const
 {
-    InstanceTermSet terms = inst->getITerms();
-    return filterPins(terms, PinDirection::OUTPUT);
+    auto         inst_pins = pins(inst);
+    PinDirection dir       = PinDirection::OUTPUT;
+    return filterPins(inst_pins, &dir);
 }
 
 std::vector<InstanceTerm*>
 OpenDBHandler::outputPins(Instance* inst) const
 {
-    InstanceTermSet terms = inst->getITerms();
-    return filterPins(terms, PinDirection::INPUT);
+    auto         inst_pins = pins(inst);
+    PinDirection dir       = PinDirection::INPUT;
+
+    return filterPins(inst_pins, &dir);
 }
 
 std::vector<InstanceTerm*>
 OpenDBHandler::fanoutPins(Net* net) const
 {
-    InstanceTermSet terms = net->getITerms();
-    return filterPins(terms, PinDirection::INPUT);
+    auto         inst_pins = pins(net);
+    PinDirection dir       = PinDirection::INPUT;
+    return filterPins(inst_pins, &dir);
 }
 
 InstanceTerm*
@@ -116,6 +157,35 @@ OpenDBHandler::fanoutCount(Net* net) const
     return fanoutPins(net).size();
 }
 
+Point
+OpenDBHandler::location(InstanceTerm* term)
+{
+    int x, y;
+    term->getInst()->getOrigin(x, y);
+    return Point(x, y);
+}
+Point
+OpenDBHandler::location(BlockTerm* term)
+{
+    int x, y;
+    if (term->getFirstPinLocation(x, y))
+        return Point(x, y);
+    return Point(0, 0);
+}
+
+Point
+OpenDBHandler::location(Instance* inst)
+{
+    int x, y;
+    inst->getOrigin(x, y);
+    return Point(x, y);
+}
+void
+OpenDBHandler::setLocation(Instance* inst, Point pt)
+{
+    inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    inst->setLocation(pt.getX(), pt.getY());
+}
 LibraryTerm*
 OpenDBHandler::libraryPin(InstanceTerm* term) const
 {
@@ -198,19 +268,18 @@ OpenDBHandler::libraryPin(LibraryCell* cell, const char* pin_name) const
 }
 
 std::vector<InstanceTerm*>
-OpenDBHandler::filterPins(InstanceTermSet& terms, PinDirection direction) const
+OpenDBHandler::filterPins(std::vector<InstanceTerm*>& terms,
+                          PinDirection*               direction) const
 {
     std::vector<InstanceTerm*> inst_terms;
-    for (InstanceTermSet::iterator itr = terms.begin(); itr != terms.end();
-         itr++)
+    for (auto& term : terms)
     {
-        InstanceTerm* inst_term = (*itr);
-        Instance*     inst      = itr->getInst();
+        Instance* inst = term->getInst();
         if (inst)
         {
-            if (inst_term && inst_term->getIoType() == direction)
+            if (term && term->getIoType() == *direction)
             {
-                inst_terms.push_back(inst_term);
+                inst_terms.push_back(term);
             }
         }
     }
@@ -372,4 +441,8 @@ OpenDBHandler::clear() const
 {
     db_->clear();
 }
+OpenDBHandler::~OpenDBHandler()
+{
+}
 } // namespace phy
+#endif

@@ -16,8 +16,8 @@
 
 #include <PhyKnight/Sta/DatabaseSta.hpp>
 #include <PhyKnight/Sta/DatabaseStaNetwork.hpp>
-#include "DatabaseSdcNetwork.hpp"
 #include "Machine.hh"
+#include "Sta/DatabaseSdcNetwork.hpp"
 #include "opendb/db.h"
 
 namespace sta
@@ -27,24 +27,19 @@ DatabaseSta::DatabaseSta(dbDatabase* db) : Sta(), db_(db)
 {
 }
 
-DatabaseStaNetwork*
-DatabaseSta::getDatabaseStaNetwork()
-{
-    return dynamic_cast<class DatabaseStaNetwork*>(network_);
-}
-
 // Wrapper to init network db.
 void
 DatabaseSta::makeComponents()
 {
     Sta::makeComponents();
-    getDatabaseStaNetwork()->setDb(db_);
+    db_network_->setDb(db_);
 }
 
 void
 DatabaseSta::makeNetwork()
 {
-    network_ = new class DatabaseStaNetwork();
+    db_network_ = new class DatabaseStaNetwork();
+    network_    = db_network_;
 }
 
 void
@@ -54,9 +49,21 @@ DatabaseSta::makeSdcNetwork()
 }
 
 void
+DatabaseSta::readLefAfter(dbLib* lib)
+{
+    db_network_->readLefAfter(lib);
+}
+
+void
+DatabaseSta::readDefAfter()
+{
+    db_network_->readDefAfter();
+}
+
+void
 DatabaseSta::readDbAfter()
 {
-    getDatabaseStaNetwork()->readDbAfter();
+    db_network_->readDbAfter();
 }
 
 // Wrapper to sync db/liberty libraries.
@@ -67,8 +74,14 @@ DatabaseSta::readLiberty(const char* filename, Corner* corner,
 {
     LibertyLibrary* lib =
         Sta::readLiberty(filename, corner, min_max, infer_latches);
-    getDatabaseStaNetwork()->readLibertyAfter(lib);
+    db_network_->readLibertyAfter(lib);
     return lib;
 }
 
+Slack
+DatabaseSta::netSlack(const dbNet* db_net, const MinMax* min_max)
+{
+    const Net* net = db_network_->dbToSta(db_net);
+    return netSlack(net, min_max);
+}
 } // namespace sta

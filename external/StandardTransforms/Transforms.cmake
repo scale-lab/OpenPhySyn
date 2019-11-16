@@ -39,7 +39,7 @@ file(MAKE_DIRECTORY ${TRANSFORMS_BUILD_DIR})
 set(PHY_HOME ${CMAKE_CURRENT_SOURCE_DIR} CACHE FILEPATH "The path to PhyKnight includes")
 set(PHY_TRANSFORM_INSTALL_PATH "$ENV{HOME}/.phyknight/transforms" CACHE FILEPATH "Default path for transforms installation")
 
-add_subdirectory(external/StandardTransforms/PhyKnightHelloTransform)
+add_subdirectory(external/StandardTransforms/HelloTransform)
 install(
   TARGETS hello_transform
   DESTINATION ${PHY_TRANSFORM_INSTALL_PATH}

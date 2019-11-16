@@ -30,6 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include "Phy/Phy.hpp"
 #include "PhyException/PhyException.hpp"
+#include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
 using namespace phy;
@@ -40,14 +41,17 @@ TEST_CASE("Should add fan-out buffers")
     try
     {
         phy_inst.handler()->clear();
-        phy_inst.readLef("../tests/data/tech.lef");
+        phy_inst.readLef(
+            "../tests/data/Nangate45/NangateOpenCellLibrary.mod.lef");
         phy_inst.readDef("../tests/data/design.def");
+        phy_inst.readLib(
+            "../tests/data/Nangate45/NangateOpenCellLibrary_typical.lib");
         CHECK(phy_inst.database()->getChip() != nullptr);
         phy::Phy::instance().loadTransforms();
         auto result = phy_inst.runTransform(
             "buffer_fanout",
             std::vector<std::string>({"2", "BUF_X1", "A", "Z", "clk"}));
-        CHECK(result);
+        CHECK(result >= 1);
     }
     catch (PhyException& e)
     {

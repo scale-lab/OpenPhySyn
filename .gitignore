@@ -26,6 +26,7 @@
 *.a
 *.lib
 !tests/data/*.lib
+!tests/data/Nangate45/*.lib
 
 # Executables
 *.exe

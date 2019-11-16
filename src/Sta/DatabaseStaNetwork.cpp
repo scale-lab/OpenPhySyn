@@ -416,15 +416,11 @@ const char*
 DatabaseStaNetwork::name(const Instance* instance) const
 {
     if (instance == top_instance_)
-    {
-        dbString name = block_->getName();
-        return tmpStringCopy(name.c_str());
-    }
+        return tmpStringCopy(block_->getConstName());
     else
     {
-        dbInst*  dinst = staToDb(instance);
-        dbString name  = dinst->getName();
-        return tmpStringCopy(name.c_str());
+        dbInst* dinst = staToDb(instance);
+        return tmpStringCopy(dinst->getConstName());
     }
 }
 
@@ -455,6 +451,13 @@ DatabaseStaNetwork::isLeaf(const Instance* instance) const
     if (instance == top_instance_)
         return false;
     return true;
+}
+
+Instance*
+DatabaseStaNetwork::findInstance(const char* path_name) const
+{
+    dbInst* inst = block_->findInst(path_name);
+    return dbToSta(inst);
 }
 
 Instance*
@@ -518,7 +521,7 @@ DatabaseStaNetwork::findInstNetsMatching(const Instance*     instance,
         {
             for (dbNet* dnet : block_->getNets())
             {
-                const char* net_name = dnet->getName();
+                const char* net_name = dnet->getConstName();
                 if (pattern->match(net_name))
                     nets->push_back(dbToSta(dnet));
             }
@@ -611,8 +614,8 @@ DatabaseStaNetwork::port(const Pin* pin) const
     }
     else if (bterm)
     {
-        dbString port_name = bterm->getName();
-        return findPort(top_cell_, port_name.c_str());
+        const char* port_name = bterm->getConstName();
+        return findPort(top_cell_, port_name);
     }
     else
         return nullptr;
@@ -638,37 +641,29 @@ DatabaseStaNetwork::direction(const Pin* pin) const
         return nullptr;
 }
 
-VertexIndex
-DatabaseStaNetwork::vertexIndex(const Pin* pin) const
+VertexId
+DatabaseStaNetwork::vertexId(const Pin* pin) const
 {
     dbITerm* iterm;
     dbBTerm* bterm;
     staToDb(pin, iterm, bterm);
     if (iterm)
-    {
-        dbIntProperty* prop = dbIntProperty::find(iterm, "vertex_index");
-        if (prop)
-            return prop->getValue();
-    }
+        return iterm->staVertexId();
     else if (bterm)
-    {
-        dbIntProperty* prop = dbIntProperty::find(bterm, "vertex_index");
-        if (prop)
-            return prop->getValue();
-    }
-    return 0;
+        return bterm->staVertexId();
+    return object_id_null;
 }
 
 void
-DatabaseStaNetwork::setVertexIndex(Pin* pin, VertexIndex index)
+DatabaseStaNetwork::setVertexId(Pin* pin, VertexId id)
 {
     dbITerm* iterm;
     dbBTerm* bterm;
     staToDb(pin, iterm, bterm);
     if (iterm)
-        dbIntProperty::create(iterm, "vertex_index", index);
+        return iterm->staSetVertexId(id);
     else if (bterm)
-        dbIntProperty::create(bterm, "vertex_index", index);
+        return bterm->staSetVertexId(id);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -676,9 +671,9 @@ DatabaseStaNetwork::setVertexIndex(Pin* pin, VertexIndex index)
 const char*
 DatabaseStaNetwork::name(const Net* net) const
 {
-    dbNet*   dnet = staToDb(net);
-    dbString name = dnet->getName();
-    return tmpStringCopy(name.c_str());
+    dbNet*      dnet = staToDb(net);
+    const char* name = dnet->getConstName();
+    return tmpStringCopy(name);
 }
 
 Instance*
@@ -788,8 +783,25 @@ DatabaseStaNetwork::linkNetwork(const char*, bool, Report*)
     return true;
 }
 
-// Make ConcreteLibrary/Cell/Port objects for the db library/master/MTerm
-// objects.
+void
+DatabaseStaNetwork::readLefAfter(dbLib* lib)
+{
+    makeLibrary(lib);
+}
+
+void
+DatabaseStaNetwork::readDefAfter()
+{
+    dbChip* chip = db_->getChip();
+    if (chip)
+    {
+        block_ = chip->getBlock();
+        makeTopCell();
+    }
+}
+
+// Make ConcreteLibrary/Cell/Port objects for the
+// db library/master/MTerm objects.
 void
 DatabaseStaNetwork::readDbAfter()
 {
@@ -806,8 +818,8 @@ DatabaseStaNetwork::readDbAfter()
 void
 DatabaseStaNetwork::makeLibrary(dbLib* lib)
 {
-    dbString lib_name = lib->getName();
-    Library* library  = makeLibrary(lib_name.c_str(), nullptr);
+    const char* lib_name = lib->getConstName();
+    Library*    library  = makeLibrary(lib_name, nullptr);
     for (dbMaster* master : lib->getMasters())
         makeCell(library, master);
 }
@@ -815,22 +827,37 @@ DatabaseStaNetwork::makeLibrary(dbLib* lib)
 void
 DatabaseStaNetwork::makeCell(Library* library, dbMaster* master)
 {
-    dbString      cell_name = master->getName();
-    Cell*         cell = makeCell(library, cell_name.c_str(), true, nullptr);
-    LibertyCell*  lib_cell = findLibertyCell(cell_name);
-    ConcreteCell* ccell    = reinterpret_cast<ConcreteCell*>(cell);
-    ccell->setLibertyCell(lib_cell);
+    const char* cell_name = master->getConstName();
+    Cell*       cell      = makeCell(library, cell_name, true, nullptr);
+    master->staSetCell(reinterpret_cast<void*>(cell));
+    ConcreteCell* ccell = reinterpret_cast<ConcreteCell*>(cell);
+    ccell->setExtCell(reinterpret_cast<void*>(master));
+
+    LibertyCell* lib_cell = findLibertyCell(cell_name);
+    if (lib_cell)
+    {
+        ccell->setLibertyCell(lib_cell);
+        lib_cell->setExtCell(reinterpret_cast<void*>(master));
+    }
+
     for (dbMTerm* mterm : master->getMTerms())
     {
-        dbString       port_name = mterm->getName();
-        Port*          port      = makePort(cell, port_name.c_str());
+        const char*    port_name = mterm->getConstName();
+        Port*          port      = makePort(cell, port_name);
         PortDirection* dir = dbToSta(mterm->getSigType(), mterm->getIoType());
         setDirection(port, dir);
+        mterm->staSetPort(reinterpret_cast<void*>(port));
+        ConcretePort* cport = reinterpret_cast<ConcretePort*>(port);
+        cport->setExtPort(reinterpret_cast<void*>(mterm));
+
         if (lib_cell)
         {
-            LibertyPort*  lib_port = lib_cell->findLibertyPort(port_name);
-            ConcretePort* cport    = reinterpret_cast<ConcretePort*>(port);
-            cport->setLibertyPort(lib_port);
+            LibertyPort* lib_port = lib_cell->findLibertyPort(port_name);
+            if (lib_port)
+                cport->setLibertyPort(lib_port);
+            else if (!dir->isPowerGround())
+                report_->warn("LEF macro %s pin %s missing from liberty cell\n",
+                              cell_name, port_name);
         }
     }
     groupBusPorts(cell);
@@ -839,13 +866,13 @@ DatabaseStaNetwork::makeCell(Library* library, dbMaster* master)
 void
 DatabaseStaNetwork::makeTopCell()
 {
-    dbString design_name = block_->getName();
-    Library* top_lib     = makeLibrary(design_name.c_str(), nullptr);
-    top_cell_ = makeCell(top_lib, design_name.c_str(), false, nullptr);
+    const char* design_name = block_->getConstName();
+    Library*    top_lib     = makeLibrary(design_name, nullptr);
+    top_cell_               = makeCell(top_lib, design_name, false, nullptr);
     for (dbBTerm* bterm : block_->getBTerms())
     {
-        dbString       port_name = bterm->getName();
-        Port*          port      = makePort(top_cell_, port_name.c_str());
+        const char*    port_name = bterm->getConstName();
+        Port*          port      = makePort(top_cell_, port_name);
         PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
         setDirection(port, dir);
     }
@@ -858,27 +885,36 @@ DatabaseStaNetwork::readLibertyAfter(LibertyLibrary* lib)
 {
     for (ConcreteLibrary* clib : library_seq_)
     {
-        ConcreteLibraryCellIterator* cell_iter = clib->cellIterator();
-        while (cell_iter->hasNext())
+        if (!clib->isLiberty())
         {
-            ConcreteCell* ccell = cell_iter->next();
-            LibertyCell*  lcell = lib->findLibertyCell(ccell->name());
-            if (lcell)
+            ConcreteLibraryCellIterator* cell_iter = clib->cellIterator();
+            while (cell_iter->hasNext())
             {
-                ccell->setLibertyCell(lcell);
-                ConcreteCellPortBitIterator* port_iter =
-                    ccell->portBitIterator();
-                while (port_iter->hasNext())
+                ConcreteCell* ccell = cell_iter->next();
+                // Don't clobber an existing liberty cell so link points to the
+                // first.
+                if (ccell->libertyCell() == nullptr)
                 {
-                    ConcretePort* cport = port_iter->next();
-                    LibertyPort*  lport = lcell->findLibertyPort(cport->name());
-                    if (lport)
-                        cport->setLibertyPort(lport);
+                    LibertyCell* lcell = lib->findLibertyCell(ccell->name());
+                    if (lcell)
+                    {
+                        ccell->setLibertyCell(lcell);
+                        ConcreteCellPortBitIterator* port_iter =
+                            ccell->portBitIterator();
+                        while (port_iter->hasNext())
+                        {
+                            ConcretePort* cport = port_iter->next();
+                            LibertyPort*  lport =
+                                lcell->findLibertyPort(cport->name());
+                            if (lport)
+                                cport->setLibertyPort(lport);
+                        }
+                        delete port_iter;
+                    }
                 }
-                delete port_iter;
             }
+            delete cell_iter;
         }
-        delete cell_iter;
     }
 }
 
@@ -892,8 +928,8 @@ DatabaseStaNetwork::makeInstance(LibertyCell* cell, const char* name,
 {
     if (parent == top_instance_)
     {
-        Cell*     ccell  = this->cell(cell);
-        dbMaster* master = staToDb(ccell);
+        const char* cell_name = cell->name();
+        dbMaster*   master    = db_->findMaster(cell_name);
         if (master)
         {
             dbInst* inst = dbInst::create(block_, master, name);
@@ -1073,25 +1109,15 @@ DatabaseStaNetwork::staToDb(const Term* term) const
 dbMaster*
 DatabaseStaNetwork::staToDb(const Cell* cell) const
 {
-    Library*    lib      = library(cell);
-    const char* lib_name = name(lib);
-    dbLib*      dlib     = db_->findLib(lib_name);
-    if (dlib)
-    {
-        const char* cell_name = name(cell);
-        return dlib->findMaster(cell_name);
-    }
-    else
-        return nullptr;
+    const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
+    return reinterpret_cast<dbMaster*>(ccell->extCell());
 }
 
 dbMTerm*
 DatabaseStaNetwork::staToDb(const Port* port) const
 {
-    Cell*       cell      = this->cell(port);
-    dbMaster*   master    = staToDb(cell);
-    const char* port_name = name(port);
-    return master->findMTerm(port_name);
+    const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
+    return reinterpret_cast<dbMTerm*>(cport->extPort());
 }
 
 void
@@ -1142,6 +1168,12 @@ DatabaseStaNetwork::dbToSta(dbNet* net) const
     return reinterpret_cast<Net*>(net);
 }
 
+const Net*
+DatabaseStaNetwork::dbToSta(const dbNet* net) const
+{
+    return reinterpret_cast<const Net*>(net);
+}
+
 Pin*
 DatabaseStaNetwork::dbToSta(dbBTerm* bterm) const
 {
@@ -1163,22 +1195,13 @@ DatabaseStaNetwork::dbToStaTerm(dbBTerm* bterm) const
 Port*
 DatabaseStaNetwork::dbToSta(dbMTerm* mterm) const
 {
-    dbMaster* master    = mterm->getMaster();
-    Cell*     cell      = dbToSta(master);
-    dbString  port_name = mterm->getName();
-    Port*     port      = findPort(cell, port_name.c_str());
-    return port;
+    return reinterpret_cast<Port*>(mterm->staPort());
 }
 
 Cell*
 DatabaseStaNetwork::dbToSta(dbMaster* master) const
 {
-    dbLib*   lib      = master->getLib();
-    dbString lib_name = lib->getName();
-    Library* library =
-        const_cast<DatabaseStaNetwork*>(this)->findLibrary(lib_name.c_str());
-    dbString cell_name = master->getName();
-    return findCell(library, cell_name.c_str());
+    return reinterpret_cast<Cell*>(master->staCell());
 }
 
 PortDirection*

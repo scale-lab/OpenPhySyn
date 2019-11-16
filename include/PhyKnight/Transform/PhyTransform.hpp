@@ -43,8 +43,7 @@ class PhyTransform
 public:
     PhyTransform();
     virtual ~PhyTransform();
-    virtual int run(Phy* phy_, Database* db_,
-                    std::vector<std::string> args) = 0;
+    virtual int run(Phy* phy_, std::vector<std::string> args) = 0;
 };
 } // namespace phy
 

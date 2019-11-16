@@ -48,7 +48,7 @@ TEST_CASE("Should read LEF and DEF successfully")
         phy_inst.readDef("../tests/data/design.def");
         CHECK(phy_inst.database()->getChip() != nullptr);
         int result = phy_inst.writeDef("../tests/results/test.def");
-        CHECK(result);
+        CHECK(result >= 1);
     }
     catch (PhyException& e)
     {

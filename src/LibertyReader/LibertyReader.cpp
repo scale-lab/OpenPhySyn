@@ -29,27 +29,34 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "LibertyReader.hpp"
+#include <OpenSTA/liberty/LeakagePower.cc>
 #include <OpenSTA/liberty/Liberty.hh>
+#include <OpenSTA/liberty/LibertyBuilder.hh>
 #include <OpenSTA/liberty/LibertyReader.hh>
+#include <OpenSTA/liberty/LibertyReaderPvt.hh>
 #include <OpenSTA/network/Network.hh>
 #include <OpenSTA/util/Error.hh>
+#include <PhyKnight/Sta/DatabaseStaNetwork.hpp>
 #include "PhyException/FileException.hpp"
 #include "PhyException/ParseLibertyException.hpp"
-
 namespace phy
 {
 
-LibertyReader::LibertyReader(Database* db, sta::Network* network)
-    : db_(db), network_(network)
+LibertyReader::LibertyReader(Database* db, sta::DatabaseSta* sta)
+    : db_(db), sta_(sta)
 {
 }
 
 Liberty*
-LibertyReader::read(const char* path)
+LibertyReader::read(const char* path, bool infer_latches)
 {
     try
     {
-        Liberty* liberty = sta::readLibertyFile(path, true, network_);
+        sta::LibertyBuilder builder;
+        sta::LibertyReader  reader(&builder);
+
+        Liberty* liberty =
+            reader.readLibertyFile(path, infer_latches, sta_->getDbNetwork());
         return liberty;
     }
     catch (sta::StaException& e)

@@ -28,12 +28,13 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-
+#ifdef USE_OPENDB_DB_HANDLER
 #ifndef __PHY_OPEN_DB_HANDLER__
 #define __PHY_OPEN_DB_HANDLER__
 
 #include <PhyKnight/Database/Types.hpp>
 #include <PhyKnight/Sta/DatabaseSta.hpp>
+#include <PhyLogger/PhyLogger.hpp>
 #include <vector>
 
 namespace phy
@@ -43,10 +44,13 @@ class OpenDBHandler
 public:
     OpenDBHandler(sta::DatabaseSta* sta);
 #include <PhyKnight/Database/DatabaseHandler.in>
+    Point OpenStaHandler::location(BlockTerm* term);
+
 private:
     sta::DatabaseSta* sta_;
     Database*         db_;
 };
 
 } // namespace phy
+#endif
 #endif

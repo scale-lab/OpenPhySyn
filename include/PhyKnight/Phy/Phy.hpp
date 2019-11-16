@@ -48,9 +48,6 @@ class Phy
 public:
     static Phy& instance();
 
-    virtual Database* database();
-    virtual Liberty*  liberty();
-
     virtual ProgramOptions& programOptions();
 
     int setLogLevel(const char* level);
@@ -58,7 +55,8 @@ public:
     int setLogLevel(LogLevel level);
 
     virtual int readDef(const char* path);
-    virtual int readLef(const char* path);
+    virtual int readLef(const char* path, bool read_library = true,
+                        bool read_tech = true);
     virtual int readLib(const char* path);
 
     virtual int writeDef(const char* path);
@@ -67,7 +65,8 @@ public:
     virtual int runTransform(std::string              transform_name,
                              std::vector<std::string> args);
 
-    int  setupInterpreter(Tcl_Interp* interp);
+    int  setupInterpreter(Tcl_Interp* interp, bool import_phy_namespace = true,
+                          bool setup_sta = true);
     int  setupInterpreterReadline();
     void setProgramOptions(int argc, char* argv[]);
     void processStartupProgramOptions();
@@ -78,14 +77,22 @@ public:
     virtual void printVersion(bool raw_str = false);
     virtual void printUsage(bool raw_str = false);
     virtual void printTransforms(bool raw_str = false);
+
+    virtual Database*          database();
+    virtual Liberty*           liberty();
+    virtual Library*           library() const;
+    virtual LibraryTechnology* tech() const;
+
     ~Phy();
 
 private:
-    Phy();
-    Database*         db_;
-    Liberty*          liberty_;
-    sta::DatabaseSta* sta_;
-    DatabaseHandler*  db_handler_;
+    Phy(Database* db = nullptr);
+    Database*          db_;
+    Liberty*           liberty_;
+    sta::DatabaseSta*  sta_;
+    DatabaseHandler*   db_handler_;
+    Library*           library_;
+    LibraryTechnology* tech_;
 
     int initializeDatabase();
 

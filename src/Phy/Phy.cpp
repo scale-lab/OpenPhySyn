@@ -37,6 +37,7 @@
 #include <OpenSTA/search/Sta.hh>
 #include <Phy/Phy.hpp>
 #include <PhyKnight/PhyLogger/PhyLogger.hpp>
+#include <PhyKnight/Sta/DatabaseStaNetwork.hpp>
 #include <boost/algorithm/string.hpp>
 #include <tcl.h>
 #include "DefReader/DefReader.hpp"
@@ -53,7 +54,7 @@
 namespace phy
 {
 
-Phy::Phy() : db_(nullptr), liberty_(nullptr), interp_(nullptr)
+Phy::Phy(Database* db) : db_(db), liberty_(nullptr), interp_(nullptr)
 {
     initializeDatabase();
     sta_        = new sta::DatabaseSta(db_);
@@ -76,7 +77,7 @@ Phy::readDef(const char* path)
     try
     {
         int rc = reader.read(path);
-        sta_->readDbAfter();
+        sta_->readDefAfter();
         return rc;
     }
     catch (FileException& e)
@@ -94,11 +95,11 @@ Phy::readDef(const char* path)
 int
 Phy::readLib(const char* path)
 {
-    LibertyReader reader(db_, sta_->network());
+    LibertyReader reader(db_, sta_);
     try
     {
         liberty_ = reader.read(path);
-        sta_->network()->readLibertyAfter(liberty_);
+        sta_->getDbNetwork()->readLibertyAfter(liberty_);
         if (liberty_)
         {
             return 1;
@@ -113,12 +114,37 @@ Phy::readLib(const char* path)
 }
 
 int
-Phy::readLef(const char* path)
+Phy::readLef(const char* path, bool read_library, bool read_tech)
 {
     LefReader reader(db_);
     try
     {
-        return reader.read(path);
+        if (read_library && read_tech)
+        {
+            library_ = reader.readLibAndTech(path);
+            tech_    = library_->getTech();
+            if (library_)
+            {
+                sta_->readLefAfter(library_);
+            }
+        }
+        else if (read_library)
+        {
+            library_ = reader.readLib(path);
+            if (library_)
+            {
+                sta_->readLefAfter(library_);
+            }
+        }
+        else if (read_tech)
+        {
+            tech_ = reader.readTech(path);
+        }
+        else
+        {
+            return 0;
+        }
+        return 1;
     }
     catch (PhyException& e)
     {
@@ -152,6 +178,17 @@ Phy::liberty()
 {
     return liberty_;
 }
+Library*
+Phy::library() const
+{
+    return library_;
+}
+LibraryTechnology*
+Phy::tech() const
+{
+    return tech_;
+}
+
 ProgramOptions&
 Phy::programOptions()
 {
@@ -261,7 +298,7 @@ Phy::runTransform(std::string transform_name, std::vector<std::string> args)
         {
 
             PhyLogger::instance().info("Invoking {} transform", transform_name);
-            return transforms_[transform_name]->run(this, db_, args);
+            return transforms_[transform_name]->run(this, args);
         }
     }
     catch (PhyException& e)
@@ -272,7 +309,8 @@ Phy::runTransform(std::string transform_name, std::vector<std::string> args)
 }
 
 int
-Phy::setupInterpreter(Tcl_Interp* interp)
+Phy::setupInterpreter(Tcl_Interp* interp, bool import_phy_namespace,
+                      bool setup_sta)
 {
     if (interp_)
     {
@@ -280,10 +318,34 @@ Phy::setupInterpreter(Tcl_Interp* interp)
     }
     interp_ = interp;
     sta_->setTclInterp(interp_);
-    const char* tcl_setup =
-#include "Tcl/Setup.tcl"
+    const char* tcl_phy_setup =
+#include "Tcl/SetupPhy.tcl"
         ;
-    return Tcl_Eval(interp_, tcl_setup);
+    if (Tcl_Eval(interp_, tcl_phy_setup) != TCL_OK)
+    {
+        return TCL_ERROR;
+    }
+    if (import_phy_namespace)
+    {
+        const char* tcl_phy_import =
+#include "Tcl/ImportNS.tcl"
+            ;
+        if (Tcl_Eval(interp_, tcl_phy_import) != TCL_OK)
+        {
+            return TCL_ERROR;
+        }
+    }
+    if (setup_sta)
+    {
+        const char* tcl_setup_sta =
+#include "Tcl/SetupSta.tcl"
+            ;
+        if (Tcl_Eval(interp_, tcl_setup_sta) != TCL_OK)
+        {
+            return TCL_ERROR;
+        }
+    }
+    return TCL_OK;
 }
 void
 Phy::printVersion(bool raw_str)
@@ -470,8 +532,10 @@ Phy::sourceTclScript(const char* script_path)
 int
 Phy::initializeDatabase()
 {
-    db_ = odb::dbDatabase::create();
-
+    if (db_ == nullptr)
+    {
+        db_ = odb::dbDatabase::create();
+    }
     return 0;
 }
 

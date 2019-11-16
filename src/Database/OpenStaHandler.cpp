@@ -28,8 +28,20 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#ifdef USE_OPENSTA_DB_HANDLER
+
+// Temproary fix for OpenSTA
+#define THROW_DCL throw()
+
+#include <OpenSTA/graph/Graph.hh>
+#include <OpenSTA/network/PortDirection.hh>
+#include <OpenSTA/search/Search.hh>
+#include <OpenSTA/util/PatternMatch.hh>
 #include <PhyKnight/Database/OpenStaHandler.hpp>
 #include <PhyKnight/PhyLogger/PhyLogger.hpp>
+#include <PhyKnight/Sta/DatabaseSta.hpp>
+#include <PhyKnight/Sta/DatabaseStaNetwork.hpp>
+
 #include <set>
 
 namespace phy
@@ -40,43 +52,79 @@ OpenStaHandler::OpenStaHandler(sta::DatabaseSta* sta)
 }
 
 std::vector<InstanceTerm*>
+OpenStaHandler::pins(Net* net) const
+{
+    std::vector<InstanceTerm*> terms;
+    auto                       pin_iter = network()->pinIterator(net);
+    while (pin_iter->hasNext())
+    {
+        InstanceTerm* pin = pin_iter->next();
+        terms.push_back(pin);
+    }
+    return terms;
+}
+std::vector<InstanceTerm*>
+OpenStaHandler::pins(Instance* inst) const
+{
+    std::vector<InstanceTerm*> terms;
+    auto                       pin_iter = network()->pinIterator(inst);
+    while (pin_iter->hasNext())
+    {
+        InstanceTerm* pin = pin_iter->next();
+        terms.push_back(pin);
+    }
+    return terms;
+}
+std::vector<InstanceTerm*>
+OpenStaHandler::connectedPins(Net* net) const
+{
+    std::vector<InstanceTerm*> terms;
+    auto                       pin_iter = network()->connectedPinIterator(net);
+    while (pin_iter->hasNext())
+    {
+        InstanceTerm* pin = pin_iter->next();
+        terms.push_back(pin);
+    }
+    return terms;
+}
+
+std::vector<InstanceTerm*>
 OpenStaHandler::inputPins(Instance* inst) const
 {
-    InstanceTermSet terms = inst->getITerms();
-    return filterPins(terms, PinDirection::OUTPUT);
+    auto inst_pins = pins(inst);
+    return filterPins(inst_pins, PinDirection::output());
 }
 
 std::vector<InstanceTerm*>
 OpenStaHandler::outputPins(Instance* inst) const
 {
-    InstanceTermSet terms = inst->getITerms();
-    return filterPins(terms, PinDirection::INPUT);
+    auto inst_pins = pins(inst);
+    return filterPins(inst_pins, PinDirection::input());
 }
 
 std::vector<InstanceTerm*>
 OpenStaHandler::fanoutPins(Net* net) const
 {
-    InstanceTermSet terms = net->getITerms();
-    return filterPins(terms, PinDirection::INPUT);
+    auto inst_pins = pins(net);
+    return filterPins(inst_pins, PinDirection::input());
 }
 
 InstanceTerm*
 OpenStaHandler::faninPin(Net* net) const
 {
-    InstanceTermSet terms = net->getITerms();
-    for (InstanceTermSet::iterator itr = terms.begin(); itr != terms.end();
-         itr++)
+    auto net_pins = pins(net);
+    for (auto& pin : net_pins)
     {
-        InstanceTerm* inst_term = (*itr);
-        Instance*     inst      = itr->getInst();
+        Instance* inst = network()->instance(pin);
         if (inst)
         {
-            if (inst_term->getIoType() == PinDirection::OUTPUT)
+            if (network()->direction(pin)->isOutput())
             {
-                return inst_term;
+                return pin;
             }
         }
     }
+
     return nullptr;
 }
 
@@ -84,10 +132,10 @@ std::vector<Instance*>
 OpenStaHandler::fanoutInstances(Net* net) const
 {
     std::vector<Instance*>     insts;
-    std::vector<InstanceTerm*> pins = fanoutPins(net);
-    for (auto& term : pins)
+    std::vector<InstanceTerm*> net_pins = fanoutPins(net);
+    for (auto& term : net_pins)
     {
-        insts.push_back(term->getInst());
+        insts.push_back(network()->instance(term));
     }
     return insts;
 }
@@ -101,7 +149,7 @@ OpenStaHandler::driverInstances() const
         InstanceTerm* driverPin = faninPin(net);
         if (driverPin)
         {
-            Instance* inst = driverPin->getInst();
+            Instance* inst = network()->instance(driverPin);
             if (inst)
             {
                 insts_set.insert(inst);
@@ -117,29 +165,75 @@ OpenStaHandler::fanoutCount(Net* net) const
     return fanoutPins(net).size();
 }
 
+Point
+OpenStaHandler::location(InstanceTerm* term)
+{
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
+    network()->staToDb(term, iterm, bterm);
+    if (iterm)
+    {
+        int x, y;
+        iterm->getInst()->getOrigin(x, y);
+        return Point(x, y);
+    }
+    if (bterm)
+    {
+        int x, y;
+        if (bterm->getFirstPinLocation(x, y))
+            return Point(x, y);
+    }
+    return Point(0, 0);
+}
+
+Point
+OpenStaHandler::location(Instance* inst)
+{
+    odb::dbInst* dinst = network()->staToDb(inst);
+    int          x, y;
+    dinst->getOrigin(x, y);
+    return Point(x, y);
+}
+void
+OpenStaHandler::setLocation(Instance* inst, Point pt)
+{
+    odb::dbInst* dinst = network()->staToDb(inst);
+    dinst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    dinst->setLocation(pt.getX(), pt.getY());
+}
+
 LibraryTerm*
 OpenStaHandler::libraryPin(InstanceTerm* term) const
 {
-    return term->getMTerm();
+    return network()->libertyPort(term);
 }
 bool
 OpenStaHandler::isClocked(InstanceTerm* term) const
 {
-    return term->isClocked();
+    sta::Vertex *vertex, *bidirect_drvr_vertex;
+    sta_->graph()->pinVertices(term, vertex, bidirect_drvr_vertex);
+    return sta_->search()->isClock(vertex);
 }
 bool
 OpenStaHandler::isPrimary(Net* net) const
 {
-    return net->getBTerms().size() > 0;
+    for (auto& pin : pins(net))
+    {
+        if (network()->isTopLevelPort(pin))
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 LibraryCell*
 OpenStaHandler::libraryCell(InstanceTerm* term) const
 {
-    LibraryTerm* lterm = libraryPin(term);
-    if (lterm)
+    auto inst = network()->instance(term);
+    if (inst)
     {
-        return lterm->getMaster();
+        return network()->libertyCell(inst);
     }
     return nullptr;
 }
@@ -147,39 +241,24 @@ OpenStaHandler::libraryCell(InstanceTerm* term) const
 LibraryCell*
 OpenStaHandler::libraryCell(Instance* inst) const
 {
-    return inst->getMaster();
+    return network()->libertyCell(inst);
 }
 
 LibraryCell*
 OpenStaHandler::libraryCell(const char* name) const
 {
-    auto lib = library();
-    if (!lib)
-    {
-        return nullptr;
-    }
-    return lib->findMaster(name);
+    return network()->findLibertyCell(name);
 }
 
 Instance*
 OpenStaHandler::instance(const char* name) const
 {
-    Block* block = top();
-    if (!block)
-    {
-        return nullptr;
-    }
-    return block->findInst(name);
+    return network()->findInstance(name);
 }
 Net*
 OpenStaHandler::net(const char* name) const
 {
-    Block* block = top();
-    if (!block)
-    {
-        return nullptr;
-    }
-    return block->findNet(name);
+    return network()->findNet(name);
 }
 
 LibraryTerm*
@@ -195,43 +274,39 @@ OpenStaHandler::libraryPin(const char* cell_name, const char* pin_name) const
 LibraryTerm*
 OpenStaHandler::libraryPin(LibraryCell* cell, const char* pin_name) const
 {
-    return cell->findMTerm(top(), pin_name);
+    return cell->findLibertyPort(pin_name);
 }
 
 std::vector<InstanceTerm*>
-OpenStaHandler::filterPins(InstanceTermSet& terms, PinDirection direction) const
+OpenStaHandler::filterPins(std::vector<InstanceTerm*>& terms,
+                           PinDirection*               direction) const
 {
     std::vector<InstanceTerm*> inst_terms;
-    for (InstanceTermSet::iterator itr = terms.begin(); itr != terms.end();
-         itr++)
+    for (auto& term : terms)
     {
-        InstanceTerm* inst_term = (*itr);
-        Instance*     inst      = itr->getInst();
+        Instance* inst = network()->instance(term);
         if (inst)
         {
-            if (inst_term && inst_term->getIoType() == direction)
+            if (term && network()->direction(term) == direction)
             {
-                inst_terms.push_back(inst_term);
+                inst_terms.push_back(term);
             }
         }
     }
     return inst_terms;
 }
-
 void
 OpenStaHandler::del(Net* net) const
 {
-    Net::destroy(net);
+    network()->deleteNet(net);
 }
 int
 OpenStaHandler::disconnectAll(Net* net) const
 {
-    int             count   = 0;
-    InstanceTermSet net_set = net->getITerms();
-    for (InstanceTermSet::iterator itr = net_set.begin(); itr != net_set.end();
-         itr++)
+    int count = 0;
+    for (auto& pin : pins(net))
     {
-        InstanceTerm::disconnect(*itr);
+        network()->disconnectPin(pin);
         count++;
     }
     return count;
@@ -240,59 +315,46 @@ OpenStaHandler::disconnectAll(Net* net) const
 void
 OpenStaHandler::connect(Net* net, InstanceTerm* term) const
 {
-    return InstanceTerm::connect(term, net);
+    network()->connect(network()->instance(term), network()->port(term), net);
 }
 
 void
 OpenStaHandler::disconnect(InstanceTerm* term) const
 {
-    InstanceTerm::disconnect(term);
+    network()->disconnectPin(term);
 }
 
 Instance*
 OpenStaHandler::createInstance(const char* inst_name, LibraryCell* cell)
 {
-    return Instance::create(top(), cell, inst_name);
+    return network()->makeInstance(cell, inst_name, network()->topInstance());
 }
 
 Net*
 OpenStaHandler::createNet(const char* net_name)
 {
-    return Net::create(top(), net_name);
+    return network()->makeNet(net_name, network()->topInstance());
 }
 
 InstanceTerm*
 OpenStaHandler::connect(Net* net, Instance* inst, LibraryTerm* port) const
 {
-    return InstanceTerm::connect(inst, net, port);
+    return network()->connect(inst, port, net);
 }
 
 std::vector<Net*>
 OpenStaHandler::nets() const
 {
-    std::vector<Net*> nets;
-    Block*            block = top();
-    if (!block)
-    {
-        return std::vector<Net*>();
-    }
-    NetSet net_set = block->getNets();
-    for (NetSet::iterator itr = net_set.begin(); itr != net_set.end(); itr++)
-    {
-        nets.push_back(*itr);
-    }
-    return nets;
+    sta::NetSeq       all_nets;
+    sta::PatternMatch pattern("*");
+    network()->findNetsMatching(network()->topInstance(), &pattern, &all_nets);
+    return static_cast<std::vector<Net*>>(all_nets);
 }
 
 std::string
 OpenStaHandler::topName() const
 {
-    Block* block = top();
-    if (!block)
-    {
-        return "";
-    }
-    return name(block);
+    return std::string(network()->name(network()->topInstance()));
 }
 std::string
 OpenStaHandler::name(Block* object) const
@@ -302,17 +364,17 @@ OpenStaHandler::name(Block* object) const
 std::string
 OpenStaHandler::name(Net* object) const
 {
-    return std::string(object->getConstName());
+    return std::string(network()->name(object));
 }
 std::string
 OpenStaHandler::name(Instance* object) const
 {
-    return std::string(object->getConstName());
+    return std::string(network()->name(object));
 }
 std::string
 OpenStaHandler::name(BlockTerm* object) const
 {
-    return std::string(object->getConstName());
+    return std::string(network()->name(object));
 }
 std::string
 OpenStaHandler::name(Library* object) const
@@ -322,12 +384,12 @@ OpenStaHandler::name(Library* object) const
 std::string
 OpenStaHandler::name(LibraryCell* object) const
 {
-    return std::string(object->getConstName());
+    return std::string(network()->name(network()->cell(object)));
 }
 std::string
 OpenStaHandler::name(LibraryTerm* object) const
 {
-    return std::string(object->getConstName());
+    return object->name();
 }
 
 Library*
@@ -368,9 +430,23 @@ OpenStaHandler::top() const
     return block;
 }
 
+OpenStaHandler::~OpenStaHandler()
+{
+}
 void
 OpenStaHandler::clear() const
 {
     db_->clear();
 }
+sta::DatabaseStaNetwork*
+OpenStaHandler::network() const
+{
+    return sta_->getDbNetwork();
+}
+sta::DatabaseSta*
+OpenStaHandler::sta() const
+{
+    return sta_;
+}
 } // namespace phy
+#endif

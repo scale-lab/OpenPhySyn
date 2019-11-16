@@ -6,7 +6,7 @@
 	path = external/OpenDB
 	url = https://github.com/The-OpenROAD-Project/OpenDB.git
 	branch = develop
-[submodule "external/StandardTransforms/PhyKnightHelloTransform"]
-	path = external/StandardTransforms/PhyKnightHelloTransform
+[submodule "external/StandardTransforms/HelloTransform"]
+	path = external/StandardTransforms/HelloTransform
 	url = git@github.com:The-OpenROAD-Project/PhyKnightHelloTransform.git
 	branch = master

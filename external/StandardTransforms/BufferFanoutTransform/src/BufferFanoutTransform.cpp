@@ -31,13 +31,14 @@
 
 #include "BufferFanoutTransform.hpp"
 #include <PhyKnight/PhyLogger/PhyLogger.hpp>
+
 #include <algorithm>
 #include <cmath>
 
 using namespace phy;
 
 int
-BufferFanoutTransform::buffer(Phy* phy_inst, Database* db_, int max_fanout,
+BufferFanoutTransform::buffer(Phy* phy_inst, int max_fanout,
                               std::string buffer_cell,
                               std::string buffer_in_port,
                               std::string buffer_out_port,
@@ -226,7 +227,7 @@ std::string
 BufferFanoutTransform::bufferName(std::vector<int> indices)
 {
     std::string name;
-    for (int i = 0; i < indices.size(); i++)
+    for (unsigned int i = 0; i < indices.size(); i++)
     {
         name += std::to_string(indices[i]);
         if (i != indices.size() - 1)
@@ -241,7 +242,7 @@ std::string
 BufferFanoutTransform::bufferNetName(std::vector<int> indices)
 {
     std::string name;
-    for (int i = 0; i < indices.size(); i++)
+    for (unsigned int i = 0; i < indices.size(); i++)
     {
         name += std::to_string(indices[i]);
         if (i != indices.size() - 1)
@@ -261,8 +262,7 @@ BufferFanoutTransform::isNumber(const std::string& s)
 }
 
 int
-BufferFanoutTransform::run(Phy* phy_inst, Database* db,
-                           std::vector<std::string> args)
+BufferFanoutTransform::run(Phy* phy_inst, std::vector<std::string> args)
 {
 
     PhyLogger::instance().debug("Passed arguments:");
@@ -273,7 +273,7 @@ BufferFanoutTransform::run(Phy* phy_inst, Database* db,
 
     if (args.size() == 5 && isNumber(args[0]))
     {
-        return buffer(phy_inst, db, stoi(args[0]), args[1], args[2], args[3],
+        return buffer(phy_inst, stoi(args[0]), args[1], args[2], args[3],
                       args[4]);
     }
     else

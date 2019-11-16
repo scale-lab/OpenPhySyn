@@ -39,7 +39,9 @@ class LefReader
 {
 public:
     LefReader(Database* db);
-    int read(const char* path);
+    Library*           readLib(const char* path);
+    Library*           readLibAndTech(const char* path);
+    LibraryTechnology* readTech(const char* path);
 
 private:
     Database* db_;

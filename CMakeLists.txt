@@ -8,13 +8,13 @@ option(ENABLE_WARNINGS_SETTINGS "Allow target_set_warnings to add flags and defi
 option(ENABLE_LTO "Enable link time optimization" ON)
 option(ENABLE_DOCTESTS "Include tests in the library. Setting this to OFF will remove all doctest related code.
                         Tests in tests/*.cpp will still be enabled." ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ltcl -lz -lm -ldl -Wno-error -Wall -Wextra -Wno-unused-parameter")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -ltcl -lz -lm -ldl -Wno-error -Wall -Wextra -Wno-unused-parameter")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 
 # Tool build configuration
 option(OPENROAD_BUILD "Indicates if the tool is being built as a module in the top level application" OFF)
-set(DATABASE_HANDLER "OpenDB" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
+set(DATABASE_HANDLER "OpenSTA" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
 
 if (${DATABASE_HANDLER} STREQUAL "OpenDB")
   add_definitions(-DUSE_OPENDB_DB_HANDLER)
@@ -134,6 +134,7 @@ set(PHY_TESTFILES        # All .cpp files in tests/
     ${PROJECT_SOURCE_DIR}/tests/WriteDef.cpp
     ${PROJECT_SOURCE_DIR}/tests/ReadLiberty.cpp
     ${PROJECT_SOURCE_DIR}/tests/BufferFanout.cpp
+    ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
     ${PROJECT_SOURCE_DIR}/tests/TestMain.cpp
 )
 

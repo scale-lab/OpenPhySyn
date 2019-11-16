@@ -1,3 +1,4 @@
+
 // StaDb, OpenSTA on OpenDB
 // Copyright (c) 2019, Parallax Software, Inc.
 //
@@ -29,6 +30,8 @@ namespace sta
 class DatabaseStaNetwork;
 
 using odb::dbDatabase;
+using odb::dbLib;
+using odb::dbNet;
 
 class DatabaseSta : public Sta
 {
@@ -39,18 +42,28 @@ public:
     {
         return db_;
     }
-    virtual void            makeComponents();
-    DatabaseStaNetwork*     getDatabaseStaNetwork();
+    virtual void makeComponents();
+    DatabaseStaNetwork*
+    getDbNetwork()
+    {
+        return db_network_;
+    }
+    void                    readLefAfter(dbLib* lib);
+    void                    readDefAfter();
     void                    readDbAfter();
     virtual LibertyLibrary* readLiberty(const char* filename, Corner* corner,
                                         const MinMaxAll* min_max,
                                         bool             infer_latches);
 
+    Slack netSlack(const dbNet* net, const MinMax* min_max);
+    using Sta::netSlack;
+
 protected:
     virtual void makeNetwork();
     virtual void makeSdcNetwork();
 
-    dbDatabase* db_;
+    dbDatabase*         db_;
+    DatabaseStaNetwork* db_network_;
 };
 
 } // namespace sta

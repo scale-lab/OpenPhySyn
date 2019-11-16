@@ -31,9 +31,7 @@
 
 #ifndef __PHY_FILE_UTILS__
 #define __PHY_FILE_UTILS__
-#include <filesystem>
-#include <fstream>
-#include <sys/stat.h>
+#include <string>
 #include <vector>
 
 namespace phy
@@ -50,6 +48,7 @@ public:
     static std::string              homePath();
     static std::string              joinPath(const char* first_path,
                                              const char* second_path);
+    static std::string              baseName(const char* path);
 };
 } // namespace phy
 #endif

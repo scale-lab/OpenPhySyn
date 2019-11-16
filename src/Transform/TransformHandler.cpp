@@ -34,7 +34,7 @@ namespace phy
 
 TransformHandler::TransformHandler(std::string name)
 {
-    handle_      = dlopen(name.c_str(), RTLD_LAZY);
+    handle_      = dlopen(name.c_str(), RTLD_LAZY | RTLD_NODELETE);
     load_        = (std::shared_ptr<PhyTransform>(*)())dlsym(handle_, "load");
     get_name_    = (char* (*)())dlsym(handle_, "name");
     get_version_ = (char* (*)())dlsym(handle_, "version");

@@ -50,6 +50,8 @@ public:
     void         setDb(dbDatabase* db);
     virtual void clear();
 
+    void readLefAfter(dbLib* lib);
+    void readDefAfter();
     void readDbAfter();
     void readLibertyAfter(LibertyLibrary* lib);
 
@@ -66,6 +68,7 @@ public:
     virtual Cell*       cell(const Instance* instance) const;
     virtual Instance*   parent(const Instance* instance) const;
     virtual bool        isLeaf(const Instance* instance) const;
+    virtual Instance*   findInstance(const char* path_name) const;
     virtual Instance* findChild(const Instance* parent, const char* name) const;
     virtual InstanceChildIterator*
                                  childIterator(const Instance* instance) const;
@@ -81,8 +84,8 @@ public:
     virtual Net*           net(const Pin* pin) const;
     virtual Term*          term(const Pin* pin) const;
     virtual PortDirection* direction(const Pin* pin) const;
-    virtual VertexIndex    vertexIndex(const Pin* pin) const;
-    virtual void           setVertexIndex(Pin* pin, VertexIndex index);
+    virtual VertexId       vertexId(const Pin* pin) const;
+    virtual void           setVertexId(Pin* pin, VertexId id);
 
     ////////////////////////////////////////////////////////////////
     // Terminal functions
@@ -150,6 +153,7 @@ public:
     Pin*           dbToSta(dbITerm* iterm) const;
     Instance*      dbToSta(dbInst* inst) const;
     Net*           dbToSta(dbNet* net) const;
+    const Net*     dbToSta(const dbNet* net) const;
     Cell*          dbToSta(dbMaster* master) const;
     Port*          dbToSta(dbMTerm* mterm) const;
     PortDirection* dbToSta(dbSigType sig_type, dbIoType io_type) const;
@@ -176,7 +180,6 @@ protected:
 
     dbDatabase* db_;
     dbBlock*    block_;
-
     Instance*   top_instance_;
     Cell*       top_cell_;
     const char* zero_net_name_;

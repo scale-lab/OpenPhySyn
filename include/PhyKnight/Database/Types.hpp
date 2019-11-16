@@ -45,6 +45,7 @@
 namespace phy
 {
 class OpenDBHandler;
+class OpenStaHandler;
 #ifdef USE_OPENDB_DB_HANDLER
 typedef odb::dbDatabase     Database;
 typedef odb::dbChip         Chip;
@@ -67,30 +68,33 @@ typedef odb::dbSet<Net>          NetSet;
 typedef odb::dbSet<BlockTerm>    BlockTermSet;
 typedef odb::dbSet<InstanceTerm> InstanceTermSet;
 typedef odb::dbIoType::Value     PinDirection;
+typedef odb::adsPoint            Point;
 typedef OpenDBHandler            DatabaseHandler;
 #else
 // Default is OpenSTA handler
 typedef odb::dbDatabase     Database;
 typedef odb::dbChip         Chip;
 typedef odb::dbBlock        Block;
-typedef odb::dbInst         Instance;
-typedef odb::dbITerm        InstanceTerm; // Instance pin
-typedef odb::dbMTerm        LibraryTerm;  // Library pin
-typedef odb::dbBTerm        BlockTerm;
-typedef odb::dbMaster       LibraryCell;
+typedef sta::Instance       Instance;
+typedef sta::Pin            InstanceTerm; // Instance pin
+typedef sta::LibertyPort    LibraryTerm;  // Library pin
+typedef sta::Pin            BlockTerm;
+typedef sta::LibertyCell    LibraryCell;
 typedef odb::dbLib          Library;
 typedef odb::dbTech         LibraryTechnology;
-typedef odb::dbNet          Net;
+typedef sta::Net            Net;
 typedef odb::defin          DefParser;
 typedef odb::defout         DefOut;
 typedef odb::lefin          LefParser;
 typedef sta::LibertyLibrary Liberty;
 
-typedef odb::dbSet<Library>      LibrarySet;
-typedef odb::dbSet<Net>          NetSet;
-typedef odb::dbSet<BlockTerm>    BlockTermSet;
-typedef odb::dbSet<InstanceTerm> InstanceTermSet;
-typedef odb::dbIoType::Value     PinDirection;
+typedef odb::dbSet<Library> LibrarySet;
+typedef sta::NetSet         NetSet;
+typedef sta::PinSet         BlockTermSet;
+typedef sta::PinSet         InstanceTermSet;
+typedef sta::PortDirection  PinDirection;
+typedef odb::adsPoint       Point;
+typedef OpenStaHandler      DatabaseHandler;
 #endif
 
 } // namespace phy

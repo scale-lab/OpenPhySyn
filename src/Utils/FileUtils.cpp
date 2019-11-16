@@ -31,6 +31,10 @@
 
 #include "FileUtils.hpp"
 #include <boost/filesystem.hpp>
+#include <filesystem>
+#include <fstream>
+#include <libgen.h>
+#include <sys/stat.h>
 #include "PhyException/FileException.hpp"
 namespace phy
 {
@@ -124,5 +128,11 @@ FileUtils::joinPath(const char* first_path, const char* second_path)
     boost::filesystem::path appendee(second_path);
     boost::filesystem::path full_path = base / appendee;
     return full_path.generic_string();
+}
+
+std::string
+FileUtils::baseName(const char* path)
+{
+    return std::string(basename(const_cast<char*>(path)));
 }
 } // namespace phy

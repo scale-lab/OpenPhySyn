@@ -33,19 +33,19 @@
 #define __PHY_LIBERTY_READER__
 #include <OpenSTA/liberty/LibertyParser.hh>
 #include <PhyKnight/Database/Types.hpp>
+#include <PhyKnight/Sta/DatabaseSta.hpp>
 
 namespace phy
 {
 class LibertyReader
 {
 public:
-    LibertyReader(Database* db, sta::Network* network);
-    Liberty* read(const char* path);
+    LibertyReader(Database* db, sta::DatabaseSta* sta);
+    Liberty* read(const char* path, bool infer_latches = false);
 
 private:
-    Liberty*      readLibertyFile(const char* filename, bool infer_latches);
-    Database*     db_;
-    sta::Network* network_;
+    Database*         db_;
+    sta::DatabaseSta* sta_;
 };
 } // namespace phy
 #endif

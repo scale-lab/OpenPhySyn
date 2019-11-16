@@ -28,46 +28,60 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-std::vector<InstanceTerm*> inputPins(Instance* inst) const;
-std::vector<InstanceTerm*> outputPins(Instance* inst) const;
-std::vector<InstanceTerm*> filterPins(InstanceTermSet& terms,
-                                      PinDirection     direction) const;
-std::vector<InstanceTerm*>
-                       fanoutPins(Net* net) const; // Does not include top level pins
-std::vector<Instance*> fanoutInstances(Net* net) const;
-std::vector<Instance*> driverInstances() const;
-InstanceTerm*          faninPin(Net* net) const;
-LibraryTerm*           libraryPin(InstanceTerm* term) const;
-LibraryCell*           libraryCell(InstanceTerm* term) const;
-LibraryCell*           libraryCell(Instance* inst) const;
-LibraryCell*           libraryCell(const char* name) const;
-Instance*              instance(const char* name) const;
-Net*                   net(const char* name) const;
-LibraryTerm* libraryPin(const char* cell_name, const char* pin_name) const;
-LibraryTerm* libraryPin(LibraryCell* cell, const char* pin_name) const;
-bool         isClocked(InstanceTerm* term) const;
-bool         isPrimary(Net* net) const;
+#define HANDLER_UNSUPPORTED_METHOD(HANDLER_NAME, METHOD_NAME)                  \
+    phy::PhyLogger::instance().error("The method " #METHOD_NAME                \
+                                     "is not supported by " #HANDLER_NAME);
 
-Instance* createInstance(const char* inst_name, LibraryCell* cell);
-Net*      createNet(const char* net_name);
-
-void          connect(Net* net, InstanceTerm* term) const;
-InstanceTerm* connect(Net* net, Instance* inst, LibraryTerm* port) const;
-void          disconnect(InstanceTerm* term) const;
-int           disconnectAll(Net* net) const;
-void          del(Net* net) const;
-void          clear() const;
-
-unsigned int fanoutCount(Net* net) const; // Does not include top level pins
-std::vector<Net*>  nets() const;          // Get all database net objects
-Block*             top() const;
-Library*           library() const;
-LibraryTechnology* technology() const;
-std::string        name(Block* object) const;
-std::string        name(Net* object) const;
-std::string        name(Instance* object) const;
-std::string        name(BlockTerm* object) const;
-std::string        name(Library* object) const;
-std::string        name(LibraryCell* object) const;
-std::string        name(LibraryTerm* object) const;
-std::string        topName() const;
+virtual std::vector<InstanceTerm*> inputPins(Instance* inst) const;
+virtual std::vector<InstanceTerm*> outputPins(Instance* inst) const;
+virtual std::vector<InstanceTerm*> filterPins(std::vector<InstanceTerm*>& terms,
+                                              PinDirection* direction) const;
+virtual std::vector<InstanceTerm*> fanoutPins(Net* net) const;
+virtual // Does not include top level pins
+    std::vector<Instance*>
+                                   fanoutInstances(Net* net) const;
+virtual std::vector<Instance*>     driverInstances() const;
+virtual InstanceTerm*              faninPin(Net* net) const;
+virtual std::vector<InstanceTerm*> pins(Net* net) const;
+virtual std::vector<InstanceTerm*> pins(Instance* inst) const;
+virtual std::vector<InstanceTerm*> connectedPins(Net* net) const;
+virtual Point                      location(InstanceTerm* term);
+virtual Point                      location(Instance* inst);
+virtual void                       setLocation(Instance* inst, Point pt);
+virtual LibraryTerm*               libraryPin(InstanceTerm* term) const;
+virtual LibraryCell*               libraryCell(InstanceTerm* term) const;
+virtual LibraryCell*               libraryCell(Instance* inst) const;
+virtual LibraryCell*               libraryCell(const char* name) const;
+virtual Instance*                  instance(const char* name) const;
+virtual Net*                       net(const char* name) const;
+virtual LibraryTerm*               libraryPin(const char* cell_name,
+                                              const char* pin_name) const;
+virtual LibraryTerm*  libraryPin(LibraryCell* cell, const char* pin_name) const;
+virtual bool          isClocked(InstanceTerm* term) const;
+virtual bool          isPrimary(Net* net) const;
+virtual Instance*     createInstance(const char* inst_name, LibraryCell* cell);
+virtual Net*          createNet(const char* net_name);
+virtual void          connect(Net* net, InstanceTerm* term) const;
+virtual InstanceTerm* connect(Net* net, Instance* inst,
+                              LibraryTerm* port) const;
+virtual void          disconnect(InstanceTerm* term) const;
+virtual int           disconnectAll(Net* net) const;
+virtual void          del(Net* net) const;
+virtual void          clear() const;
+virtual unsigned int  fanoutCount(Net* net) const;
+virtual // Does not include top level pins
+    std::vector<Net*>
+    nets() const;
+virtual // Get all database net objects
+    Block*
+                           top() const;
+virtual Library*           library() const;
+virtual LibraryTechnology* technology() const;
+virtual std::string        name(Block* object) const;
+virtual std::string        name(Net* object) const;
+virtual std::string        name(Instance* object) const;
+virtual std::string        name(BlockTerm* object) const;
+virtual std::string        name(Library* object) const;
+virtual std::string        name(LibraryCell* object) const;
+virtual std::string        name(LibraryTerm* object) const;
+virtual std::string        topName() const;
