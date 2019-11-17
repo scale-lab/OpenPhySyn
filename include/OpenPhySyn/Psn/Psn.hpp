@@ -33,6 +33,7 @@
 #define __PSN_PSN__
 #include <OpenPhySyn/Database/DatabaseHandler.hpp>
 #include <OpenPhySyn/Database/Types.hpp>
+#include <OpenPhySyn/Psn/DesignSettings.hpp>
 #include <OpenPhySyn/Psn/ProgramOptions.hpp>
 #include <OpenPhySyn/PsnLogger/LogLevel.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
@@ -74,6 +75,7 @@ public:
     int  sourceTclScript(const char* script_path);
 
     virtual DatabaseHandler* handler() const;
+    virtual DesignSettings*  settings() const;
 
     virtual void printVersion(bool raw_str = false);
     virtual void printUsage(bool raw_str = false, bool print_transforms = true,
@@ -81,18 +83,21 @@ public:
     virtual void printTransforms(bool raw_str = false);
     virtual void printCommands(bool raw_str = false);
 
-    virtual Database*          database();
-    virtual Liberty*           liberty();
+    virtual Database*          database() const;
+    virtual Liberty*           liberty() const;
     virtual Library*           library() const;
     virtual LibraryTechnology* tech() const;
 
     virtual void clearDatabase();
+
+    virtual int initalizeFlute(const char* flue_init_dir);
 
     ~Psn();
 
 private:
     Psn(Database* db = nullptr);
     Database*          db_;
+    DesignSettings*    settings_;
     Liberty*           liberty_;
     sta::DatabaseSta*  sta_;
     DatabaseHandler*   db_handler_;

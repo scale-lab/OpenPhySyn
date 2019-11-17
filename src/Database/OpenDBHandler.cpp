@@ -67,12 +67,16 @@ OpenDBHandler::pins(Instance* inst) const
     }
     return terms;
 }
-
+Net*
+OpenDBHandler::net(InstanceTerm* term) const
+{
+    return term->getNet();
+}
 std::vector<InstanceTerm*>
 OpenDBHandler::connectedPins(Net* net) const
 {
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, connectedPins)
-    std::vector<InstanceTerm*>();
+    return std::vector<InstanceTerm*>();
 }
 
 std::vector<InstanceTerm*>
@@ -98,6 +102,12 @@ OpenDBHandler::fanoutPins(Net* net) const
     auto         inst_pins = pins(net);
     PinDirection dir       = PinDirection::INPUT;
     return filterPins(inst_pins, &dir);
+}
+std::vector<InstanceTerm*>
+OpenDBHandler::levelDriverPins() const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, levelDriverPins)
+    return std::vector<InstanceTerm*>();
 }
 
 InstanceTerm*
@@ -180,6 +190,18 @@ OpenDBHandler::location(Instance* inst)
     inst->getOrigin(x, y);
     return Point(x, y);
 }
+float
+OpenDBHandler::area(Instance* inst)
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, area)
+    return 0;
+}
+float
+OpenDBHandler::area()
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, area)
+    return 0;
+}
 void
 OpenDBHandler::setLocation(Instance* inst, Point pt)
 {
@@ -229,6 +251,67 @@ OpenDBHandler::libraryCell(const char* name) const
     }
     return lib->findMaster(name);
 }
+LibraryCell*
+OpenDBHandler::largestLibraryCell(LibraryCell* cell) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, largestLibraryCell)
+    return nullptr;
+}
+double
+OpenDBHandler::dbuToMeters(uint dist) const
+{
+    return dist * 1E-9;
+}
+bool
+OpenDBHandler::isPlaced(InstanceTerm* term) const
+{
+
+    odb::dbPlacementStatus status = term->getInst()->getPlacementStatus();
+    return status == odb::dbPlacementStatus::PLACED ||
+           status == odb::dbPlacementStatus::LOCKED ||
+           status == odb::dbPlacementStatus::FIRM ||
+           status == odb::dbPlacementStatus::COVER;
+}
+bool
+OpenDBHandler::isPlaced(BlockTerm* term) const
+{
+
+    odb::dbPlacementStatus status = term->getFirstPinPlacementStatus();
+    return status == odb::dbPlacementStatus::PLACED ||
+           status == odb::dbPlacementStatus::LOCKED ||
+           status == odb::dbPlacementStatus::FIRM ||
+           status == odb::dbPlacementStatus::COVER;
+}
+bool
+OpenDBHandler::isPlaced(Instance* inst) const
+{
+    odb::dbPlacementStatus status = inst->getPlacementStatus();
+
+    return status == odb::dbPlacementStatus::PLACED ||
+           status == odb::dbPlacementStatus::LOCKED ||
+           status == odb::dbPlacementStatus::FIRM ||
+           status == odb::dbPlacementStatus::COVER;
+}
+bool
+OpenDBHandler::isDriver(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isDriver)
+    return false;
+}
+
+float
+OpenDBHandler::pinCapacitance(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinCapacitance)
+    return 0.0;
+}
+
+float
+OpenDBHandler::pinCapacitance(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinCapacitance)
+    return 0.0;
+}
 
 Instance*
 OpenDBHandler::instance(const char* name) const
@@ -239,6 +322,11 @@ OpenDBHandler::instance(const char* name) const
         return nullptr;
     }
     return block->findInst(name);
+}
+Instance*
+OpenDBHandler::instance(InstanceTerm* term) const
+{
+    return term->getInst();
 }
 Net*
 OpenDBHandler::net(const char* name) const

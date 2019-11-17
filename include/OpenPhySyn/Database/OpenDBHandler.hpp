@@ -47,6 +47,7 @@ public:
     OpenDBHandler(sta::DatabaseSta* sta);
 #include <OpenPhySyn/Database/DatabaseHandler.in>
     Point OpenStaHandler::location(BlockTerm* term);
+    bool  isPlaced(BlockTerm* term) const;
 
 private:
     sta::DatabaseSta* sta_;

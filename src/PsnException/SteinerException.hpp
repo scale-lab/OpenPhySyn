@@ -29,38 +29,20 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_EXPORTS__
-#define __PSN_EXPORTS__
-#include <OpenPhySyn/Database/DatabaseHandler.hpp>
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
+#ifndef __PSN_STEINER_EXCEPTION__
+#define __PSN_STEINER_EXCEPTION__
+#include "PsnException.hpp"
 
 namespace psn
 {
-void version();
-void print_version();
-void help();
-void print_usage();
-void print_transforms();
-int  read_def(const char* def_path);
-int  read_lef(const char* lef_path, int ignore_routing_layers = true);
-int  read_lib(const char* lib_path); // Alias for read_liberty
-int  read_liberty(const char* lib_path);
-int  write_def(const char* def_path);
-int  set_wire_rc(float res_per_micon, float cap_per_micron);
-int  set_max_area(float area);
-int  set_log(const char* level);
-int  set_log_level(const char* level);
-int  set_log_pattern(const char* pattern);
-int  transform_internal(std::string              transform_name,
-                        std::vector<std::string> args);
+class SteinerException : public PsnException
+{
+public:
+    explicit SteinerException();
+    explicit SteinerException(const char* message)        = delete;
+    explicit SteinerException(const std::string& message) = delete;
 
-DatabaseHandler& get_handler();
-DatabaseHandler& get_database_handler();
-Database&        get_database();
-Liberty&         get_liberty();
-SteinerTree*     create_steiner_tree(const char* pin_name);
-int              print_liberty_cells();
+private:
+};
 } // namespace psn
-
 #endif

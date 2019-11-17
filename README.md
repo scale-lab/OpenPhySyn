@@ -73,12 +73,13 @@ Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/OpenPhySyn/
 
 ## To-Do
 
--   [ ] Integrate Steiner Tree
+-   [x] Integrate Steiner Tree
 -   [x] Integrate Liberty Parser
 -   [x] Integrate OpenSTA
 -   [x] Support reading scripts from file
 -   [x] Add unit tests
 -   [ ] Add API documentation
 -   [ ] Add Gate Cloning Transform
+-   [ ] Expose lower-level APIs through TCL/Python interface
 -   [ ] Add Optimization Transforms
 -   [ ] Add Coding Guideline and Contribution Guide

@@ -61,7 +61,21 @@ write_def(const char* lib_path)
 {
     return Psn::instance().writeDef(lib_path);
 }
-
+int
+set_wire_rc(float res_per_micon, float cap_per_micron)
+{
+    Psn::instance()
+        .settings()
+        ->setResistancePerMicron(res_per_micon)
+        ->setCapacitancePerMicron(cap_per_micron);
+    return 1;
+}
+int
+set_max_area(float area)
+{
+    Psn::instance().settings()->setMaxArea(area);
+    return 1;
+}
 void
 version()
 {

@@ -31,6 +31,7 @@
 
 #include "GateCloningTransform.hpp"
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
+#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -39,16 +40,49 @@
 using namespace psn;
 
 int
-GateCloningTransform::gateClone(psn::Psn* psn_inst, float cap_factor,
+GateCloningTransform::gateClone(Psn* psn_inst, float cap_factor,
                                 bool clone_largest_only)
 {
     PsnLogger&       logger  = PsnLogger::instance();
     DatabaseHandler& handler = *(psn_inst->handler());
     logger.info("Clone {} {}", cap_factor, clone_largest_only);
-
+    std::vector<InstanceTerm*> level_drvrs = handler.levelDriverPins();
+    for (auto& pin : level_drvrs)
+    {
+        Instance* inst = handler.instance(pin);
+        cloneTree(psn_inst, inst, cap_factor, clone_largest_only);
+        // if (handler.area() > psn_inst->settings()->maxArea())
+        // {
+        //     logger.warn("Max utilization reached!");
+        //     break;
+        // }
+    }
     return 1;
 }
+void
+GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
+                                bool clone_largest_only)
+{
+    PsnLogger&       logger  = PsnLogger::instance();
+    DatabaseHandler& handler = *(psn_inst->handler());
 
+    auto output_pins = handler.outputPins(inst);
+    if (!output_pins.size())
+    {
+        return;
+    }
+    InstanceTerm* output_pin = *(output_pins.begin());
+    Net*          net        = handler.net(output_pin);
+    if (!net)
+    {
+        return;
+    }
+    auto tree = SteinerTree::create(net, psn_inst);
+    if (tree == nullptr)
+    {
+        return;
+    }
+}
 bool
 GateCloningTransform::isNumber(const std::string& s)
 {
@@ -97,6 +131,6 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
                 return -1;
             }
         }
-        return gateClone(psn_inst, cap_factor, clone_largest_only);
     }
+    return gateClone(psn_inst, cap_factor, clone_largest_only);
 }

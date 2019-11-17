@@ -34,22 +34,32 @@ virtual std::vector<InstanceTerm*> outputPins(Instance* inst) const;
 virtual std::vector<InstanceTerm*> filterPins(std::vector<InstanceTerm*>& terms,
                                               PinDirection* direction) const;
 virtual std::vector<InstanceTerm*> fanoutPins(Net* net) const;
-virtual // Does not include top level pins
-    std::vector<Instance*>
-                                   fanoutInstances(Net* net) const;
+virtual std::vector<Instance*>     fanoutInstances(Net* net) const;
+virtual std::vector<InstanceTerm*> levelDriverPins() const;
 virtual std::vector<Instance*>     driverInstances() const;
 virtual InstanceTerm*              faninPin(Net* net) const;
 virtual std::vector<InstanceTerm*> pins(Net* net) const;
 virtual std::vector<InstanceTerm*> pins(Instance* inst) const;
+virtual Net*                       net(InstanceTerm* term) const;
 virtual std::vector<InstanceTerm*> connectedPins(Net* net) const;
 virtual Point                      location(InstanceTerm* term);
 virtual Point                      location(Instance* inst);
+virtual float                      area(Instance* inst);
+virtual float                      area();
 virtual void                       setLocation(Instance* inst, Point pt);
 virtual LibraryTerm*               libraryPin(InstanceTerm* term) const;
 virtual LibraryCell*               libraryCell(InstanceTerm* term) const;
 virtual LibraryCell*               libraryCell(Instance* inst) const;
 virtual LibraryCell*               libraryCell(const char* name) const;
+virtual LibraryCell*               largestLibraryCell(LibraryCell* cell) const;
+virtual double                     dbuToMeters(uint dist) const;
+virtual bool                       isPlaced(InstanceTerm* term) const;
+virtual bool                       isPlaced(Instance* inst) const;
+virtual bool                       isDriver(InstanceTerm* term) const;
+virtual Instance*                  instance(InstanceTerm* term) const;
 virtual Instance*                  instance(const char* name) const;
+virtual float                      pinCapacitance(InstanceTerm* term) const;
+virtual float                      pinCapacitance(LibraryTerm* term) const;
 virtual Net*                       net(const char* name) const;
 virtual LibraryTerm*               libraryPin(const char* cell_name,
                                               const char* pin_name) const;

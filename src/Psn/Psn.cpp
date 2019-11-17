@@ -39,6 +39,7 @@
 #include <OpenSTA/search/Sta.hh>
 #include <Psn/Psn.hpp>
 #include <boost/algorithm/string.hpp>
+#include <flute/flute.h>
 #include <tcl.h>
 #include "DefReader/DefReader.hpp"
 #include "DefWriter/DefWriter.hpp"
@@ -62,15 +63,18 @@ Psn::Psn(Database* db)
       interp_(nullptr)
 {
     initializeDatabase();
+    settings_   = new DesignSettings();
     sta_        = new sta::DatabaseSta(db_);
     db_handler_ = new DatabaseHandler(sta_);
     sta::initSta();
     sta::Sta::setSta(sta_);
     sta_->makeComponents();
+    initalizeFlute("../external/flute/etc");
 }
 
 Psn::~Psn()
 {
+    delete settings_;
     delete db_handler_;
     delete sta_;
 }
@@ -182,12 +186,12 @@ Psn::writeDef(const char* path)
 }
 
 Database*
-Psn::database()
+Psn::database() const
 {
     return db_;
 }
 Liberty*
-Psn::liberty()
+Psn::liberty() const
 {
     return liberty_;
 }
@@ -212,6 +216,12 @@ DatabaseHandler*
 Psn::handler() const
 {
     return db_handler_;
+}
+
+DesignSettings*
+Psn::settings() const
+{
+    return settings_;
 }
 
 Psn&
@@ -435,7 +445,10 @@ Psn::printCommands(bool raw_str)
         "read_lib <file path>                  load a liberty file\n"
         "read_liberty <file path>              load a liberty file\n"
         "write_def <output file>               Write DEF file\n"
-        "transforn <transform name> <args>     Run transform on the loaded "
+        "set_wire_rc <res> <cap>               Set resistance & capacitance "
+        "per micron\n"
+        "set_max_area <area>                   Set maximum design area\n"
+        "transform <transform name> <args>     Run transform on the loaded "
         "design\n"
         "set_log <log level>                   Set log level [trace, debug, "
         "info, "
@@ -629,4 +642,23 @@ Psn::clearDatabase()
     tech_    = nullptr;
 }
 
+int
+Psn::initalizeFlute(const char* flue_init_dir)
+{
+    std::string powv_file_path = std::string(flue_init_dir) + "/POWV9.dat";
+    std::string post_file_path = std::string(flue_init_dir) + "/POST9.dat";
+    if (!FileUtils::isDirectory(flue_init_dir) ||
+        !FileUtils::pathExists(powv_file_path.c_str()) ||
+        !FileUtils::pathExists(post_file_path.c_str()))
+    {
+        PsnLogger::instance().error("Flute initialization failed");
+        return -1;
+    }
+    char* cwd = getcwd(NULL, 0);
+    chdir(flue_init_dir);
+    Flute::readLUT();
+    chdir(cwd);
+    free(cwd);
+    return 1;
+}
 } // namespace psn

@@ -41,11 +41,13 @@
 #include <opendb/defin.h>
 #include <opendb/defout.h>
 #include <opendb/lefin.h>
+#include <unordered_map>
 
 namespace psn
 {
 class OpenDBHandler;
 class OpenStaHandler;
+typedef int DefDbu;
 #ifdef USE_OPENDB_DB_HANDLER
 typedef odb::dbDatabase     Database;
 typedef odb::dbChip         Chip;
@@ -97,5 +99,26 @@ typedef odb::adsPoint       Point;
 typedef OpenStaHandler      DatabaseHandler;
 #endif
 
+class PointHash
+{
+public:
+    size_t
+    operator()(const Point& pt) const
+    {
+        size_t h1 = std::hash<int>()(pt.x());
+        size_t h2 = std::hash<int>()(pt.y());
+        return h1 ^ h2;
+    }
+};
+
+class PointEqual
+{
+public:
+    bool
+    operator()(const Point& pt1, const Point& pt2) const
+    {
+        return pt1.x() == pt2.x() && pt1.y() == pt2.y();
+    }
+};
 } // namespace psn
 #endif

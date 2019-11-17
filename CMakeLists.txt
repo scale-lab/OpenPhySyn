@@ -96,6 +96,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Psn/Psn.cpp
     ${PSN_HOME}/src/Psn/Exports.cpp
     ${PSN_HOME}/src/Psn/ProgramOptions.cpp
+    ${PSN_HOME}/src/Psn/DesignSettings.cpp
     ${PSN_HOME}/src/Analyzer/Analyzer.cpp
     ${PSN_HOME}/src/SteinerTree/SteinerTree.cpp
     ${PSN_HOME}/src/PsnLogger/PsnLogger.cpp
@@ -113,6 +114,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/PsnException/Error.cpp
     ${PSN_HOME}/src/PsnException/FileException.cpp
     ${PSN_HOME}/src/PsnException/NoTechException.cpp
+    ${PSN_HOME}/src/PsnException/SteinerException.cpp
     ${PSN_HOME}/src/PsnException/ParseLibertyException.cpp
     ${PSN_HOME}/src/PsnException/PsnException.cpp
     ${PSN_HOME}/src/PsnException/ProgramOptionsException.cpp
@@ -136,6 +138,7 @@ set(PSN_TESTFILES        # All .cpp files in tests/
     ${PROJECT_SOURCE_DIR}/tests/WriteDef.cpp
     ${PROJECT_SOURCE_DIR}/tests/ReadLiberty.cpp
     ${PROJECT_SOURCE_DIR}/tests/BufferFanout.cpp
+    ${PROJECT_SOURCE_DIR}/tests/SteinerTree.cpp
     ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
     ${PROJECT_SOURCE_DIR}/tests/TestMain.cpp
 )

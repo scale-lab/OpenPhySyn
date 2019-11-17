@@ -33,15 +33,18 @@
 // Temproary fix for OpenSTA
 #define THROW_DCL throw()
 
-#include <OpenSTA/graph/Graph.hh>
-#include <OpenSTA/network/PortDirection.hh>
-#include <OpenSTA/search/Search.hh>
-#include <OpenSTA/util/PatternMatch.hh>
 #include <OpenPhySyn/Database/OpenStaHandler.hpp>
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
+#include <OpenSTA/graph/Graph.hh>
+#include <OpenSTA/liberty/Transition.hh>
+#include <OpenSTA/network/NetworkCmp.cc>
+#include <OpenSTA/network/PortDirection.hh>
+#include <OpenSTA/search/Search.hh>
+#include <OpenSTA/util/PatternMatch.hh>
 
+#include <algorithm>
 #include <set>
 
 namespace psn
@@ -75,6 +78,11 @@ OpenStaHandler::pins(Instance* inst) const
     }
     return terms;
 }
+Net*
+OpenStaHandler::net(InstanceTerm* term) const
+{
+    return network()->net(term);
+}
 std::vector<InstanceTerm*>
 OpenStaHandler::connectedPins(Net* net) const
 {
@@ -85,6 +93,7 @@ OpenStaHandler::connectedPins(Net* net) const
         InstanceTerm* pin = pin_iter->next();
         terms.push_back(pin);
     }
+    std::sort(terms.begin(), terms.end(), sta::PinPathNameLess(network()));
     return terms;
 }
 
@@ -107,6 +116,34 @@ OpenStaHandler::fanoutPins(Net* net) const
 {
     auto inst_pins = pins(net);
     return filterPins(inst_pins, PinDirection::input());
+}
+std::vector<InstanceTerm*>
+OpenStaHandler::levelDriverPins() const
+{
+    auto                       handler_network = network();
+    std::vector<InstanceTerm*> terms;
+    std::vector<sta::Vertex*>  vertices;
+    sta_->ensureLevelized();
+    sta::VertexIterator itr(handler_network->graph());
+    while (itr.hasNext())
+    {
+        sta::Vertex* vtx = itr.next();
+        if (vtx->isDriver(handler_network))
+            vertices.push_back(vtx);
+    }
+    std::sort(
+        vertices.begin(), vertices.end(),
+        [=](const sta::Vertex* v1, const sta::Vertex* v2) -> bool {
+            return (v1->level() < v2->level()) ||
+                   (v1->level() == v2->level() &&
+                    sta::stringLess(handler_network->pathName(v1->pin()),
+                                    handler_network->pathName(v2->pin())));
+        });
+    for (auto& v : vertices)
+    {
+        terms.push_back(v->pin());
+    }
+    return terms;
 }
 
 InstanceTerm*
@@ -201,7 +238,18 @@ OpenStaHandler::setLocation(Instance* inst, Point pt)
     dinst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     dinst->setLocation(pt.getX(), pt.getY());
 }
-
+float
+OpenStaHandler::area(Instance* inst)
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenStaHandler, area)
+    return 0;
+}
+float
+OpenStaHandler::area()
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenStaHandler, area)
+    return 0;
+}
 LibraryTerm*
 OpenStaHandler::libraryPin(InstanceTerm* term) const
 {
@@ -249,11 +297,79 @@ OpenStaHandler::libraryCell(const char* name) const
 {
     return network()->findLibertyCell(name);
 }
+LibraryCell*
+OpenStaHandler::largestLibraryCell(LibraryCell* cell) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenStaHandler, connectedPins)
+    return nullptr;
+}
+double
+OpenStaHandler::dbuToMeters(uint dist) const
+{
+    return dist * 1E-9;
+}
+bool
+OpenStaHandler::isPlaced(InstanceTerm* term) const
+{
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
+    network()->staToDb(term, iterm, bterm);
+    odb::dbPlacementStatus status = odb::dbPlacementStatus::UNPLACED;
+    if (iterm)
+    {
+        odb::dbInst* inst = iterm->getInst();
+        status            = inst->getPlacementStatus();
+    }
+    if (bterm)
+        status = bterm->getFirstPinPlacementStatus();
+    return status == odb::dbPlacementStatus::PLACED ||
+           status == odb::dbPlacementStatus::LOCKED ||
+           status == odb::dbPlacementStatus::FIRM ||
+           status == odb::dbPlacementStatus::COVER;
+}
+bool
+OpenStaHandler::isPlaced(Instance* inst) const
+{
+    odb::dbInst*           dinst  = network()->staToDb(inst);
+    odb::dbPlacementStatus status = dinst->getPlacementStatus();
+    return status == odb::dbPlacementStatus::PLACED ||
+           status == odb::dbPlacementStatus::LOCKED ||
+           status == odb::dbPlacementStatus::FIRM ||
+           status == odb::dbPlacementStatus::COVER;
+}
+bool
+OpenStaHandler::isDriver(InstanceTerm* term) const
+{
+    return network()->isDriver(term);
+}
+
+float
+OpenStaHandler::pinCapacitance(InstanceTerm* term) const
+{
+    auto port = network()->libertyPort(term);
+    if (port)
+    {
+        return pinCapacitance(port);
+    }
+    return 0.0;
+}
+float
+OpenStaHandler::pinCapacitance(LibraryTerm* term) const
+{
+    float cap1 = term->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
+    float cap2 = term->capacitance(sta::RiseFall::fall(), sta::MinMax::max());
+    return std::max(cap1, cap2);
+}
 
 Instance*
 OpenStaHandler::instance(const char* name) const
 {
     return network()->findInstance(name);
+}
+Instance*
+OpenStaHandler::instance(InstanceTerm* term) const
+{
+    return network()->instance(term);
 }
 Net*
 OpenStaHandler::net(const char* name) const

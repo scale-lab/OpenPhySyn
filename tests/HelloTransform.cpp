@@ -35,7 +35,7 @@
 
 using namespace psn;
 
-TEST_CASE("Should add fan-out buffers")
+TEST_CASE("Should add a signle net")
 {
     Psn& psn_inst = Psn::instance();
     try
