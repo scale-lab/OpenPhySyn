@@ -30,6 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <OpenPhySyn/Psn/DesignSettings.hpp>
+#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 
 namespace psn
 {
@@ -45,16 +46,30 @@ DesignSettings::DesignSettings(float max_area, float res_per_micron,
 float
 DesignSettings::maxArea() const
 {
+    if (max_area_ == 0)
+    {
+        PsnLogger::instance().warn("Max area is 0 or not set.");
+    }
     return max_area_;
 }
 float
 DesignSettings::resistancePerMicron() const
 {
+    if (res_per_micron_ == 0)
+    {
+        PsnLogger::instance().warn(
+            "Resistance per micron is 0 or not set, use_set_wire_rc.");
+    }
     return res_per_micron_;
 }
 float
 DesignSettings::capacitancePerMicron() const
 {
+    if (cap_per_micron_ == 0)
+    {
+        PsnLogger::instance().warn(
+            "Capacitance per micron is 0 or not set, use set_wire_rc.");
+    }
     return cap_per_micron_;
 }
 

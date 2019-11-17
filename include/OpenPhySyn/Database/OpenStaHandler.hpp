@@ -51,11 +51,16 @@ public:
     sta::DatabaseSta*        sta() const;
     virtual ~OpenStaHandler();
 
+    void resetEquivalentCells();
+
 private:
-    sta::DatabaseSta* sta_;
-    Database*         db_;
+    void                   makeEquivalentCells();
+    sta::LibertyLibrarySeq allLibs() const;
+    sta::DatabaseSta*      sta_;
+    Database*              db_;
 
     const sta::MinMax* min_max_;
+    bool               has_equiv_cells_;
 };
 
 } // namespace psn

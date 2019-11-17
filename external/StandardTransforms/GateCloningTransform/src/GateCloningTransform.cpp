@@ -47,6 +47,7 @@ int
 GateCloningTransform::gateClone(Psn* psn_inst, float cap_factor,
                                 bool clone_largest_only)
 {
+    clone_count_             = 0;
     PsnLogger&       logger  = PsnLogger::instance();
     DatabaseHandler& handler = *(psn_inst->handler());
     logger.info("Clone {} {}", cap_factor, clone_largest_only);
@@ -92,25 +93,31 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
     LibraryCell* cell           = handler.libraryCell(inst);
 
     float output_target_load = handler.maxLoad(cell);
-    // printf("Target load %s -> %f\n", handler.name(cell).c_str(),
-    //        output_target_load);
 
     float c_limit = cap_factor * output_target_load;
+    logger.debug("{} cap_per_micron: {}", handler.name(cell), cap_per_micron);
+    logger.debug("{} c_limit: {}", handler.name(cell), c_limit);
+    logger.debug("{} total_net_load: {}", handler.name(cell), total_net_load);
     if (sta::fuzzyLess(total_net_load, c_limit))
     {
+        logger.debug("{} load is fine", handler.name(cell));
         return;
     }
     if (clone_largest_only && cell != handler.largestLibraryCell(cell))
     {
+        logger.debug("{} is not the largest cell", handler.name(cell));
         return;
     }
 
     int fanout_count = handler.fanoutPins(net).size();
-    ;
+
     if (fanout_count <= 1)
     {
+        logger.debug("{} has one fanout", handler.name(cell));
         return;
     }
+    logger.info("Cloning: {}", handler.name(cell));
+
     topDownClone(psn_inst, tree, tree->driverPoint(), c_limit);
 }
 void
@@ -193,7 +200,6 @@ GateCloningTransform::cloneInstance(psn::Psn*                          psn_inst,
                                     std::unique_ptr<psn::SteinerTree>& tree,
                                     psn::SteinerPoint                  k)
 {
-    PsnLogger&       logger  = PsnLogger::instance();
     DatabaseHandler& handler = *(psn_inst->handler());
 
     SteinerPoint drvr       = tree->driverPoint();
@@ -222,16 +228,16 @@ GateCloningTransform::cloneInstance(psn::Psn*                          psn_inst,
             handler.createInstance(instance_name.c_str(), cell);
         handler.setLocation(cloned_inst, handler.location(output_pin));
         handler.connect(clone_net, cloned_inst, output_port);
-        // clone_count_++;
+        clone_count_++;
         auto pins = handler.pins(inst);
         for (auto& p : pins)
         {
-            // if (handler.isInput(p) && p != output_pin)
-            // {
-            //     Net* target_net  = handler.net(target_pin);
-            //     auto target_port = handler.libraryPin(target_pin);
-            //     handler.connect(target_net, cloned_inst, target_port);
-            // }
+            if (handler.isInput(p) && p != output_pin)
+            {
+                Net* target_net  = handler.net(p);
+                auto target_port = handler.libraryPin(p);
+                handler.connect(target_net, cloned_inst, target_port);
+            }
         }
     }
 }

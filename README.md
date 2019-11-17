@@ -79,7 +79,7 @@ Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/OpenPhySyn/
 -   [x] Support reading scripts from file
 -   [x] Add unit tests
 -   [ ] Add API documentation
--   [ ] Add Gate Cloning Transform
+-   [x] Add Gate Cloning Transform
 -   [ ] Expose lower-level APIs through TCL/Python interface
 -   [ ] Add Optimization Transforms
 -   [ ] Add Coding Guideline and Contribution Guide

@@ -53,9 +53,11 @@
 namespace psn
 {
 OpenStaHandler::OpenStaHandler(sta::DatabaseSta* sta)
-    : sta_(sta), db_(sta->db())
+    : sta_(sta),
+      db_(sta->db()),
+      min_max_(sta::MinMax::max()),
+      has_equiv_cells_(false)
 {
-    min_max_ = sta::MinMax::max();
 }
 
 std::vector<InstanceTerm*>
@@ -302,10 +304,28 @@ OpenStaHandler::libraryCell(const char* name) const
     return network()->findLibertyCell(name);
 }
 LibraryCell*
-OpenStaHandler::largestLibraryCell(LibraryCell* cell) const
+OpenStaHandler::largestLibraryCell(LibraryCell* cell)
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenStaHandler, connectedPins)
-    return nullptr;
+    if (!has_equiv_cells_)
+    {
+        makeEquivalentCells();
+    }
+    auto  equiv_cells = sta_->equivCells(cell);
+    auto  largest     = cell;
+    float current_max = maxLoad(cell);
+    if (equiv_cells)
+    {
+        for (auto e_cell : *equiv_cells)
+        {
+            auto cell_load = maxLoad(e_cell);
+            if (cell_load > current_max)
+            {
+                current_max = cell_load;
+                largest     = e_cell;
+            }
+        }
+    }
+    return largest;
 }
 double
 OpenStaHandler::dbuToMeters(uint dist) const
@@ -599,6 +619,100 @@ OpenStaHandler::maxLoad(LibraryTerm* term)
         return limit;
     }
     return 0;
+}
+
+bool
+OpenStaHandler::isInput(InstanceTerm* term) const
+{
+    return network()->direction(term)->isInput();
+}
+bool
+OpenStaHandler::isOutput(InstanceTerm* term) const
+{
+    return network()->direction(term)->isOutput();
+}
+bool
+OpenStaHandler::isAnyInput(InstanceTerm* term) const
+{
+    return network()->direction(term)->isAnyInput();
+}
+bool
+OpenStaHandler::isAnyOutput(InstanceTerm* term) const
+{
+    return network()->direction(term)->isAnyOutput();
+}
+bool
+OpenStaHandler::isBiDriect(InstanceTerm* term) const
+{
+    return network()->direction(term)->isBidirect();
+}
+bool
+OpenStaHandler::isTriState(InstanceTerm* term) const
+{
+    return network()->direction(term)->isTristate();
+}
+bool
+OpenStaHandler::isInput(LibraryTerm* term) const
+{
+    return term->direction()->isInput();
+}
+bool
+OpenStaHandler::isOutput(LibraryTerm* term) const
+{
+    return term->direction()->isOutput();
+}
+bool
+OpenStaHandler::isAnyInput(LibraryTerm* term) const
+{
+    return term->direction()->isAnyInput();
+}
+bool
+OpenStaHandler::isAnyOutput(LibraryTerm* term) const
+{
+    return term->direction()->isAnyOutput();
+}
+bool
+OpenStaHandler::isBiDriect(LibraryTerm* term) const
+{
+    return term->direction()->isBidirect();
+}
+bool
+OpenStaHandler::isTriState(LibraryTerm* term) const
+{
+    return term->direction()->isTristate();
+}
+void
+OpenStaHandler::makeEquivalentCells()
+{
+    sta::LibertyLibrarySeq       map_libs;
+    sta::LibertyLibraryIterator* lib_iter = network()->libertyLibraryIterator();
+    while (lib_iter->hasNext())
+    {
+        auto lib = lib_iter->next();
+        map_libs.push_back(lib);
+    }
+    delete lib_iter;
+    auto all_libs = allLibs();
+    sta_->makeEquivCells(&all_libs, &map_libs);
+    has_equiv_cells_ = true;
+}
+sta::LibertyLibrarySeq
+OpenStaHandler::allLibs() const
+{
+    sta::LibertyLibrarySeq       seq;
+    sta::LibertyLibraryIterator* iter = network()->libertyLibraryIterator();
+    while (iter->hasNext())
+    {
+        sta::LibertyLibrary* lib = iter->next();
+        seq.push_back(lib);
+    }
+    delete iter;
+    return seq;
+}
+void
+OpenStaHandler::resetEquivalentCells()
+{
+    has_equiv_cells_ = false;
 }
 } // namespace psn
 #endif

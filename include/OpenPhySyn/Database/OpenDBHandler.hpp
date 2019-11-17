@@ -46,8 +46,14 @@ class OpenDBHandler
 public:
     OpenDBHandler(sta::DatabaseSta* sta);
 #include <OpenPhySyn/Database/DatabaseHandler.in>
-    Point OpenStaHandler::location(BlockTerm* term);
-    bool  isPlaced(BlockTerm* term) const;
+    Point        OpenStaHandler::location(BlockTerm* term);
+    bool         isPlaced(BlockTerm* term) const;
+    virtual bool isInput(BlockTerm* term) const;
+    virtual bool isOutput(BlockTerm* term) const;
+    virtual bool isAnyInput(BlockTerm* term) const;
+    virtual bool isAnyOutput(BlockTerm* term) const;
+    virtual bool isBiDirect(BlockTerm* term) const;
+    virtual bool isTriState(BlockTerm* term) const;
 
 private:
     sta::DatabaseSta* sta_;

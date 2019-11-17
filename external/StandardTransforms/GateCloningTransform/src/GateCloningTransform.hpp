@@ -57,6 +57,7 @@ private:
 
     int net_index_;
     int clone_index_;
+    int clone_count_;
 
 public:
     GateCloningTransform();

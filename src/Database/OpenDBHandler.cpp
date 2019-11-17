@@ -252,7 +252,7 @@ OpenDBHandler::libraryCell(const char* name) const
     return lib->findMaster(name);
 }
 LibraryCell*
-OpenDBHandler::largestLibraryCell(LibraryCell* cell) const
+OpenDBHandler::largestLibraryCell(LibraryCell* cell)
 {
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, largestLibraryCell)
     return nullptr;
@@ -323,6 +323,113 @@ OpenDBHandler::maxLoad(LibraryTerm* term)
 {
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, maxLoad)
     return 0.0;
+}
+bool
+OpenDBHandler::isInput(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isInput)
+    return false;
+}
+bool
+OpenDBHandler::isOutput(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isOutput)
+    return false;
+}
+bool
+OpenDBHandler::isAnyInput(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyInput)
+    return false;
+}
+bool
+OpenDBHandler::isAnyOutput(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyOutput)
+    return false;
+}
+bool
+OpenDBHandler::isBiDirect(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isBiDirect)
+    return false;
+}
+bool
+OpenDBHandler::isTriState(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isTriState)
+    return false;
+}
+OpenDBHandler::isInput(BlockTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isInput)
+    return false;
+}
+bool
+OpenDBHandler::isOutput(BlockTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isOutput)
+    return false;
+}
+bool
+OpenDBHandler::isAnyInput(BlockTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyInput)
+    return false;
+}
+bool
+OpenDBHandler::isAnyOutput(BlockTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyOutput)
+    return false;
+}
+bool
+OpenDBHandler::isBiDirect(BlockTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isBiDirect)
+    return false;
+}
+bool
+OpenDBHandler::isTriState(BlockTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isTriState)
+    return false;
+}
+bool
+OpenDBHandler::isInput(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isInput)
+    return false;
+}
+bool
+OpenDBHandler::isOutput(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isOutput)
+    return false;
+}
+bool
+OpenDBHandler::isAnyInput(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyInput)
+    return false;
+}
+bool
+OpenDBHandler::isAnyOutput(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyOutput)
+    return false;
+}
+bool
+OpenDBHandler::isBiDirect(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isBiDirect)
+    return false;
+}
+bool
+OpenDBHandler::isTriState(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isTriState)
+    return false;
 }
 
 Instance*
