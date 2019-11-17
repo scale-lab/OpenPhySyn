@@ -29,6 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "LibertyReader.hpp"
+#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
 #include <OpenSTA/liberty/LeakagePower.cc>
 #include <OpenSTA/liberty/Liberty.hh>
 #include <OpenSTA/liberty/LibertyBuilder.hh>
@@ -36,7 +37,6 @@
 #include <OpenSTA/liberty/LibertyReaderPvt.hh>
 #include <OpenSTA/network/Network.hh>
 #include <OpenSTA/util/Error.hh>
-#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
 #include "PsnException/FileException.hpp"
 #include "PsnException/ParseLibertyException.hpp"
 namespace psn
@@ -54,8 +54,7 @@ LibertyReader::read(const char* path, bool infer_latches)
     {
         sta::LibertyBuilder builder;
         sta::LibertyReader  reader(&builder);
-
-        Liberty* liberty =
+        Liberty*            liberty =
             reader.readLibertyFile(path, infer_latches, sta_->getDbNetwork());
         return liberty;
     }

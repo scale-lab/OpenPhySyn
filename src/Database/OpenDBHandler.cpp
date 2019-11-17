@@ -312,6 +312,18 @@ OpenDBHandler::pinCapacitance(LibraryTerm* term) const
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinCapacitance)
     return 0.0;
 }
+float
+OpenDBHandler::maxLoad(LibraryCell* cell)
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, maxLoad)
+    return 0.0;
+}
+float
+OpenDBHandler::maxLoad(LibraryTerm* term)
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, maxLoad)
+    return 0.0;
+}
 
 Instance*
 OpenDBHandler::instance(const char* name) const

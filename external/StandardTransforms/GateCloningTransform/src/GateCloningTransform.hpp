@@ -32,8 +32,10 @@
 #include <OpenPhySyn/Database/DatabaseHandler.hpp>
 #include <OpenPhySyn/Database/Types.hpp>
 #include <OpenPhySyn/Psn/Psn.hpp>
+#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
 #include <OpenPhySyn/Transform/PsnTransform.hpp>
 #include <cstring>
+#include <memory>
 
 class GateCloningTransform : public psn::PsnTransform
 {
@@ -41,8 +43,23 @@ private:
     bool isNumber(const std::string& s);
     void cloneTree(psn::Psn* psn_inst, psn::Instance* inst, float cap_factor,
                    bool clone_largest_only);
+    void topDownClone(psn::Psn*                          psn_inst,
+                      std::unique_ptr<psn::SteinerTree>& tree,
+                      psn::SteinerPoint k, float c_limit);
+    void topDownConnect(psn::Psn*                          psn_inst,
+                        std::unique_ptr<psn::SteinerTree>& tree,
+                        psn::SteinerPoint k, psn::Net* net);
+    void cloneInstance(psn::Psn*                          psn_inst,
+                       std::unique_ptr<psn::SteinerTree>& tree,
+                       psn::SteinerPoint                  k);
+    std::string makeUniqueNetName(psn::Psn* psn_inst);
+    std::string makeUniqueCloneName(psn::Psn* psn_inst);
+
+    int net_index_;
+    int clone_index_;
 
 public:
+    GateCloningTransform();
     int gateClone(psn::Psn* psn_inst, float cap_factor,
                   bool clone_largest_only);
 

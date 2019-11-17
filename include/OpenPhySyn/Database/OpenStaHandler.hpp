@@ -36,8 +36,8 @@
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Utils/PsnGlobal.hpp>
 #include <PsnLogger/PsnLogger.hpp>
+#include <unordered_map>
 #include <vector>
-
 namespace psn
 {
 class OpenStaHandler
@@ -54,6 +54,8 @@ public:
 private:
     sta::DatabaseSta* sta_;
     Database*         db_;
+
+    const sta::MinMax* min_max_;
 };
 
 } // namespace psn

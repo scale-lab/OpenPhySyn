@@ -64,10 +64,8 @@ write_def(const char* lib_path)
 int
 set_wire_rc(float res_per_micon, float cap_per_micron)
 {
-    Psn::instance()
-        .settings()
-        ->setResistancePerMicron(res_per_micon)
-        ->setCapacitancePerMicron(cap_per_micron);
+    Psn::instance().setWireRC(res_per_micon, cap_per_micron);
+
     return 1;
 }
 int

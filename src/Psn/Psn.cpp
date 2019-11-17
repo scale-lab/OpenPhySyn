@@ -33,9 +33,11 @@
 #define THROW_DCL throw()
 
 #include <Config.hpp>
+#include <GraphDelayCalc.hh>
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
 #include <OpenSTA/network/ConcreteNetwork.hh>
+#include <OpenSTA/search/Search.hh>
 #include <OpenSTA/search/Sta.hh>
 #include <Psn/Psn.hpp>
 #include <boost/algorithm/string.hpp>
@@ -51,7 +53,6 @@
 #include "PsnException/TransformNotFoundException.hpp"
 #include "Transform/TransformHandler.hpp"
 #include "Utils/FileUtils.hpp"
-
 namespace psn
 {
 
@@ -621,7 +622,16 @@ Psn::sourceTclScript(const char* script_path)
     }
     return 1;
 }
+void
+Psn::setWireRC(float res_per_micon, float cap_per_micron)
+{
+    sta_->graphDelayCalc()->delaysInvalid();
+    sta_->search()->arrivalsInvalid();
 
+    settings()
+        ->setResistancePerMicron(res_per_micon)
+        ->setCapacitancePerMicron(cap_per_micron);
+}
 // Private methods:
 
 int

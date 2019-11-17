@@ -31,7 +31,8 @@
 
 #include "GateCloningTransform.hpp"
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
+#include <OpenPhySyn/Utils/PsnGlobal.hpp>
+#include <OpenSTA/util/Fuzzy.hh>
 
 #include <algorithm>
 #include <cmath>
@@ -39,6 +40,9 @@
 
 using namespace psn;
 
+GateCloningTransform::GateCloningTransform() : net_index_(0), clone_index_(0)
+{
+}
 int
 GateCloningTransform::gateClone(Psn* psn_inst, float cap_factor,
                                 bool clone_largest_only)
@@ -65,6 +69,7 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
 {
     PsnLogger&       logger  = PsnLogger::instance();
     DatabaseHandler& handler = *(psn_inst->handler());
+    float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
 
     auto output_pins = handler.outputPins(inst);
     if (!output_pins.size())
@@ -77,11 +82,180 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
     {
         return;
     }
-    auto tree = SteinerTree::create(net, psn_inst);
+    std::unique_ptr<SteinerTree> tree = SteinerTree::create(net, psn_inst);
     if (tree == nullptr)
     {
         return;
     }
+
+    float        total_net_load = tree->totalLoad(cap_per_micron);
+    LibraryCell* cell           = handler.libraryCell(inst);
+
+    float output_target_load = handler.maxLoad(cell);
+    // printf("Target load %s -> %f\n", handler.name(cell).c_str(),
+    //        output_target_load);
+
+    float c_limit = cap_factor * output_target_load;
+    if (sta::fuzzyLess(total_net_load, c_limit))
+    {
+        return;
+    }
+    if (clone_largest_only && cell != handler.largestLibraryCell(cell))
+    {
+        return;
+    }
+
+    int fanout_count = handler.fanoutPins(net).size();
+    ;
+    if (fanout_count <= 1)
+    {
+        return;
+    }
+    topDownClone(psn_inst, tree, tree->driverPoint(), c_limit);
+}
+void
+GateCloningTransform::topDownClone(psn::Psn*                          psn_inst,
+                                   std::unique_ptr<psn::SteinerTree>& tree,
+                                   psn::SteinerPoint k, float c_limit)
+{
+    PsnLogger&       logger  = PsnLogger::instance();
+    DatabaseHandler& handler = *(psn_inst->handler());
+    float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
+
+    SteinerPoint drvr = tree->driverPoint();
+    auto         pin  = tree->pin(drvr);
+    auto         inst = handler.instance(pin);
+
+    float src_wire_len = handler.dbuToMeters(tree->distance(drvr, k));
+    float src_wire_cap = src_wire_len * cap_per_micron;
+    if (src_wire_cap > c_limit)
+    {
+        return;
+    }
+
+    SteinerPoint left  = tree->left(k);
+    SteinerPoint right = tree->right(k);
+    if (left != SteinerNull)
+    {
+        float cap_left = tree->subtreeLoad(cap_per_micron, left) + src_wire_cap;
+        bool  is_leaf =
+            tree->left(left) == SteinerNull && tree->right(left) == SteinerNull;
+        if (cap_left < c_limit || is_leaf)
+        {
+            cloneInstance(psn_inst, tree, left);
+        }
+        else
+        {
+            topDownClone(psn_inst, tree, left, c_limit);
+        }
+    }
+
+    if (right != SteinerNull)
+    {
+        float cap_right =
+            tree->subtreeLoad(cap_per_micron, right) + src_wire_cap;
+        bool is_leaf = tree->left(right) == SteinerNull &&
+                       tree->right(right) == SteinerNull;
+        if (cap_right < c_limit || is_leaf)
+        {
+            cloneInstance(psn_inst, tree, right);
+        }
+        else
+        {
+            topDownClone(psn_inst, tree, right, c_limit);
+        }
+    }
+}
+void
+GateCloningTransform::topDownConnect(psn::Psn* psn_inst,
+                                     std::unique_ptr<psn::SteinerTree>& tree,
+                                     psn::SteinerPoint k, psn::Net* net)
+{
+    PsnLogger&       logger  = PsnLogger::instance();
+    DatabaseHandler& handler = *(psn_inst->handler());
+    if (k == SteinerNull)
+    {
+        return;
+    }
+
+    if (tree->left(k) == SteinerNull && tree->right(k) == SteinerNull)
+    {
+        handler.connect(net, tree->pin(k));
+    }
+    else
+    {
+        topDownConnect(psn_inst, tree, tree->left(k), net);
+        topDownConnect(psn_inst, tree, tree->right(k), net);
+    }
+}
+void
+GateCloningTransform::cloneInstance(psn::Psn*                          psn_inst,
+                                    std::unique_ptr<psn::SteinerTree>& tree,
+                                    psn::SteinerPoint                  k)
+{
+    PsnLogger&       logger  = PsnLogger::instance();
+    DatabaseHandler& handler = *(psn_inst->handler());
+
+    SteinerPoint drvr       = tree->driverPoint();
+    auto         output_pin = tree->pin(drvr);
+    auto         inst       = handler.instance(output_pin);
+    Net*         output_net = handler.net(output_pin);
+
+    std::string clone_net_name = makeUniqueNetName(psn_inst);
+    Net*        clone_net      = handler.createNet(clone_net_name.c_str());
+    auto        output_port    = handler.libraryPin(output_pin);
+
+    topDownConnect(psn_inst, tree, k, clone_net);
+
+    int fanout_count = handler.fanoutPins(handler.net(output_pin)).size();
+    if (fanout_count == 0)
+    {
+        handler.connect(clone_net, output_pin);
+        handler.del(output_net);
+    }
+    else
+    {
+        std::string instance_name = makeUniqueCloneName(psn_inst);
+        auto        cell          = handler.libraryCell(inst);
+
+        Instance* cloned_inst =
+            handler.createInstance(instance_name.c_str(), cell);
+        handler.setLocation(cloned_inst, handler.location(output_pin));
+        handler.connect(clone_net, cloned_inst, output_port);
+        // clone_count_++;
+        auto pins = handler.pins(inst);
+        for (auto& p : pins)
+        {
+            // if (handler.isInput(p) && p != output_pin)
+            // {
+            //     Net* target_net  = handler.net(target_pin);
+            //     auto target_port = handler.libraryPin(target_pin);
+            //     handler.connect(target_net, cloned_inst, target_port);
+            // }
+        }
+    }
+}
+std::string
+GateCloningTransform::makeUniqueNetName(Psn* psn_inst)
+{
+    DatabaseHandler& handler = *(psn_inst->handler());
+
+    std::string name;
+    do
+        name = std::string("net_") + std::to_string(net_index_++);
+    while (handler.net(name.c_str()));
+    return name;
+}
+std::string
+GateCloningTransform::makeUniqueCloneName(Psn* psn_inst)
+{
+    DatabaseHandler& handler = *(psn_inst->handler());
+
+    std::string name;
+    do
+        name = std::string("cloned_gate_") + std::to_string(clone_index_++);
+    while (handler.instance(name.c_str()));
+    return name;
 }
 bool
 GateCloningTransform::isNumber(const std::string& s)

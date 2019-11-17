@@ -38,8 +38,11 @@
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
 #include <OpenSTA/graph/Graph.hh>
+#include <OpenSTA/liberty/TimingArc.hh>
+#include <OpenSTA/liberty/TimingModel.hh>
+#include <OpenSTA/liberty/TimingRole.hh>
 #include <OpenSTA/liberty/Transition.hh>
-#include <OpenSTA/network/NetworkCmp.cc>
+#include <OpenSTA/network/NetworkCmp.hh>
 #include <OpenSTA/network/PortDirection.hh>
 #include <OpenSTA/search/Search.hh>
 #include <OpenSTA/util/PatternMatch.hh>
@@ -52,6 +55,7 @@ namespace psn
 OpenStaHandler::OpenStaHandler(sta::DatabaseSta* sta)
     : sta_(sta), db_(sta->db())
 {
+    min_max_ = sta::MinMax::max();
 }
 
 std::vector<InstanceTerm*>
@@ -563,6 +567,38 @@ sta::DatabaseSta*
 OpenStaHandler::sta() const
 {
     return sta_;
+}
+float
+OpenStaHandler::maxLoad(LibraryCell* cell)
+{
+    sta::LibertyCellPortIterator itr(cell);
+    while (itr.hasNext())
+    {
+        auto port = itr.next();
+        if (port->direction() == PinDirection::output())
+        {
+            float limit;
+            bool  exists;
+            port->capacitanceLimit(sta::MinMax::max(), limit, exists);
+            if (exists)
+            {
+                return limit;
+            }
+        }
+    }
+    return 0;
+}
+float
+OpenStaHandler::maxLoad(LibraryTerm* term)
+{
+    float limit;
+    bool  exists;
+    term->capacitanceLimit(sta::MinMax::max(), limit, exists);
+    if (exists)
+    {
+        return limit;
+    }
+    return 0;
 }
 } // namespace psn
 #endif
