@@ -51,7 +51,7 @@ public:
     sta::DatabaseSta*        sta() const;
     virtual ~OpenStaHandler();
 
-    void resetEquivalentCells();
+    void resetCache(); // Reset equivalent cells and target loads
 
 private:
     void                   makeEquivalentCells();
@@ -61,6 +61,28 @@ private:
 
     const sta::MinMax* min_max_;
     bool               has_equiv_cells_;
+    bool               has_target_loads_;
+
+    std::unordered_map<LibraryCell*, float> target_load_map_;
+
+    void findTargetLoads();
+
+    /* The following code is borrowed from James Cherry's Resizer Code */
+    const sta::Corner*              corner_;
+    const sta::DcalcAnalysisPt*     dcalc_ap_;
+    const sta::Pvt*                 pvt_;
+    const sta::ParasiticAnalysisPt* parasitics_ap_;
+    sta::Slew                       target_slews_[sta::RiseFall::index_count];
+
+    void      findTargetLoads(sta::LibertyLibrarySeq* resize_libs);
+    void      findTargetLoads(Liberty* library, sta::Slew slews[]);
+    void      findTargetLoad(LibraryCell* cell, sta::Slew slews[]);
+    float     findTargetLoad(LibraryCell* cell, sta::TimingArc* arc,
+                             sta::Slew in_slew, sta::Slew out_slew);
+    sta::Slew targetSlew(const sta::RiseFall* rf);
+    void      findBufferTargetSlews(sta::LibertyLibrarySeq* resize_libs);
+    void      findBufferTargetSlews(Liberty* library, sta::Slew slews[],
+                                    int counts[]);
 };
 
 } // namespace psn

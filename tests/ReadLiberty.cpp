@@ -39,7 +39,8 @@ TEST_CASE("Should read liberty file")
     Psn& psn_inst = Psn::instance();
     try
     {
-        psn_inst.readLib("../tests/data/gscl45nm.lib");
+        psn_inst.readLib("../tests/data/libraries/Nangate45/"
+                         "NangateOpenCellLibrary_typical.lib");
         Liberty*                 liberty = psn_inst.liberty();
         sta::LibertyCellIterator cell_iter(liberty);
         CHECK(cell_iter.hasNext());

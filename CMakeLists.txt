@@ -139,6 +139,7 @@ set(PSN_TESTFILES        # All .cpp files in tests/
     ${PROJECT_SOURCE_DIR}/tests/ReadLiberty.cpp
     ${PROJECT_SOURCE_DIR}/tests/BufferFanout.cpp
     ${PROJECT_SOURCE_DIR}/tests/SteinerTree.cpp
+    ${PROJECT_SOURCE_DIR}/tests/GateClone.cpp
     ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
     ${PROJECT_SOURCE_DIR}/tests/TestMain.cpp
 )

@@ -64,12 +64,12 @@ Psn::Psn(Database* db)
       interp_(nullptr)
 {
     initializeDatabase();
-    settings_   = new DesignSettings();
-    sta_        = new sta::DatabaseSta(db_);
-    db_handler_ = new DatabaseHandler(sta_);
+    settings_ = new DesignSettings();
     sta::initSta();
+    sta_ = new sta::DatabaseSta(db_);
     sta::Sta::setSta(sta_);
     sta_->makeComponents();
+    db_handler_ = new DatabaseHandler(sta_);
     initalizeFlute("../external/flute/etc");
 }
 
@@ -78,6 +78,10 @@ Psn::~Psn()
     delete settings_;
     delete db_handler_;
     delete sta_;
+    if (db_ != nullptr)
+    {
+        Database::destroy(db_);
+    }
 }
 
 int

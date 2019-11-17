@@ -34,7 +34,7 @@ namespace psn
 
 TransformHandler::TransformHandler(std::string name)
 {
-    handle_      = dlopen(name.c_str(), RTLD_LAZY | RTLD_NODELETE);
+    handle_      = dlopen(name.c_str(), RTLD_LAZY);
     load_        = (std::shared_ptr<PsnTransform>(*)())dlsym(handle_, "load");
     get_name_    = (char* (*)())dlsym(handle_, "name");
     get_version_ = (char* (*)())dlsym(handle_, "version");

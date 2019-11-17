@@ -48,15 +48,16 @@ main(int argc, char** argv)
     // test execution after 5 failed assertions context.setOption("order-by",
     // "name");            // sort the test cases by their name
 
+    Tcl_Interp* interp = Tcl_CreateInterp();
+    psn::Psn::instance().loadTransforms();
+    psn::Psn::instance().setupInterpreter(interp);
+
     context.applyCommandLine(argc, argv);
 
     // overrides
     context.setOption(
         "no-breaks",
         false); // don't break in the debugger when assertions fail
-    Tcl_Interp* interp = Tcl_CreateInterp();
-    psn::Psn::instance().loadTransforms();
-    psn::Psn::instance().setupInterpreter(interp);
 
     int res = context.run(); // run
 

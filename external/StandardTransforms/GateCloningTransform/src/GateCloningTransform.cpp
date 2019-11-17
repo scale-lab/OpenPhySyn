@@ -32,10 +32,10 @@
 #include "GateCloningTransform.hpp"
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <OpenPhySyn/Utils/PsnGlobal.hpp>
-#include <OpenSTA/util/Fuzzy.hh>
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <sstream>
 
 using namespace psn;
@@ -50,7 +50,7 @@ GateCloningTransform::gateClone(Psn* psn_inst, float cap_factor,
     clone_count_             = 0;
     PsnLogger&       logger  = PsnLogger::instance();
     DatabaseHandler& handler = *(psn_inst->handler());
-    logger.info("Clone {} {}", cap_factor, clone_largest_only);
+    logger.debug("Clone {} {}", cap_factor, clone_largest_only);
     std::vector<InstanceTerm*> level_drvrs = handler.levelDriverPins();
     for (auto& pin : level_drvrs)
     {
@@ -62,7 +62,7 @@ GateCloningTransform::gateClone(Psn* psn_inst, float cap_factor,
         //     break;
         // }
     }
-    return 1;
+    return clone_count_;
 }
 void
 GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
@@ -92,20 +92,27 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
     float        total_net_load = tree->totalLoad(cap_per_micron);
     LibraryCell* cell           = handler.libraryCell(inst);
 
-    float output_target_load = handler.maxLoad(cell);
+    float output_target_load = handler.targetLoad(cell);
 
     float c_limit = cap_factor * output_target_load;
-    logger.debug("{} cap_per_micron: {}", handler.name(cell), cap_per_micron);
-    logger.debug("{} c_limit: {}", handler.name(cell), c_limit);
-    logger.debug("{} total_net_load: {}", handler.name(cell), total_net_load);
-    if (sta::fuzzyLess(total_net_load, c_limit))
+    logger.trace("{} {} output_target_load: {}", handler.name(inst),
+                 handler.name(cell), output_target_load);
+    logger.trace("{} {} cap_per_micron: {}", handler.name(inst),
+                 handler.name(cell), cap_per_micron);
+    logger.trace("{} {} c_limit: {}", handler.name(inst), handler.name(cell),
+                 c_limit);
+    logger.trace("{} {} total_net_load: {}", handler.name(inst),
+                 handler.name(cell), total_net_load);
+    if ((c_limit - total_net_load) > std::numeric_limits<float>::epsilon())
     {
-        logger.debug("{} load is fine", handler.name(cell));
+        logger.trace("{} {} load is fine", handler.name(inst),
+                     handler.name(cell));
         return;
     }
     if (clone_largest_only && cell != handler.largestLibraryCell(cell))
     {
-        logger.debug("{} is not the largest cell", handler.name(cell));
+        logger.trace("{} {} is not the largest cell", handler.name(inst),
+                     handler.name(cell));
         return;
     }
 
@@ -113,10 +120,9 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
 
     if (fanout_count <= 1)
     {
-        logger.debug("{} has one fanout", handler.name(cell));
         return;
     }
-    logger.info("Cloning: {}", handler.name(cell));
+    logger.debug("Cloning: {}", handler.name(inst), handler.name(cell));
 
     topDownClone(psn_inst, tree, tree->driverPoint(), c_limit);
 }
@@ -125,13 +131,10 @@ GateCloningTransform::topDownClone(psn::Psn*                          psn_inst,
                                    std::unique_ptr<psn::SteinerTree>& tree,
                                    psn::SteinerPoint k, float c_limit)
 {
-    PsnLogger&       logger  = PsnLogger::instance();
     DatabaseHandler& handler = *(psn_inst->handler());
     float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
 
     SteinerPoint drvr = tree->driverPoint();
-    auto         pin  = tree->pin(drvr);
-    auto         inst = handler.instance(pin);
 
     float src_wire_len = handler.dbuToMeters(tree->distance(drvr, k));
     float src_wire_cap = src_wire_len * cap_per_micron;
@@ -178,7 +181,6 @@ GateCloningTransform::topDownConnect(psn::Psn* psn_inst,
                                      std::unique_ptr<psn::SteinerTree>& tree,
                                      psn::SteinerPoint k, psn::Net* net)
 {
-    PsnLogger&       logger  = PsnLogger::instance();
     DatabaseHandler& handler = *(psn_inst->handler());
     if (k == SteinerNull)
     {

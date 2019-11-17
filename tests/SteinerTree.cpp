@@ -28,6 +28,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
 #include "Psn/Psn.hpp"
 #include "PsnException/PsnException.hpp"
 #include "Utils/FileUtils.hpp"
@@ -41,13 +42,18 @@ TEST_CASE("Should construct a steiner tree correctly")
     try
     {
         psn_inst.clearDatabase();
-        psn_inst.readLef("../tests/data/tech.lef");
-        psn_inst.readDef("../tests/data/design.def");
+        psn_inst.readLef(
+            "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
+        psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
+        auto& handler = *(psn_inst.handler());
         CHECK(psn_inst.database()->getChip() != nullptr);
-        psn::Psn::instance().loadTransforms();
-        auto result = psn_inst.runTransform(
-            "gate_clone", std::vector<std::string>({"1.4", "false"}));
-        CHECK(1);
+        auto net = handler.net("clk");
+        CHECK(net != nullptr);
+        auto tree = SteinerTree::create(net, &psn_inst, 3);
+        CHECK(tree->branchCount() == 18);
+        SteinerBranch branch = tree->branch(0);
+        auto          pin1   = branch.firstPin();
+        CHECK(pin1 != nullptr);
     }
     catch (PsnException& e)
     {

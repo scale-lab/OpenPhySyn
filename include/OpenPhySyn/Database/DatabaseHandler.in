@@ -61,6 +61,7 @@ virtual Instance*                  instance(const char* name) const;
 virtual float                      pinCapacitance(InstanceTerm* term) const;
 virtual float                      pinCapacitance(LibraryTerm* term) const;
 virtual float                      maxLoad(LibraryCell* cell);
+virtual float                      targetLoad(LibraryCell* cell);
 virtual float                      maxLoad(LibraryTerm* term);
 virtual Net*                       net(const char* name) const;
 virtual LibraryTerm*               libraryPin(const char* cell_name,
@@ -90,12 +91,9 @@ virtual int           disconnectAll(Net* net) const;
 virtual void          del(Net* net) const;
 virtual void          clear() const;
 virtual unsigned int  fanoutCount(Net* net) const;
-virtual // Does not include top level pins
-    std::vector<Net*>
-    nets() const;
-virtual // Get all database net objects
-    Block*
-                           top() const;
+bool                  dontUse(LibraryCell* cell) const;
+virtual std::vector<Net*>  nets() const;
+virtual Block*             top() const;
 virtual Library*           library() const;
 virtual LibraryTechnology* technology() const;
 virtual std::string        name(Block* object) const;

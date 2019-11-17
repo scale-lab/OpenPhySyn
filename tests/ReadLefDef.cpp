@@ -40,8 +40,9 @@ TEST_CASE("Should read LEF and DEF successfully")
     try
     {
         psn_inst.clearDatabase();
-        psn_inst.readLef("../tests/data/tech.lef");
-        psn_inst.readDef("../tests/data/design.def");
+        psn_inst.readLef(
+            "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
+        psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
         CHECK(psn_inst.database()->getChip() != nullptr);
     }
     catch (PsnException& e)

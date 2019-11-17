@@ -83,7 +83,7 @@ std::vector<InstanceTerm*>
 OpenDBHandler::inputPins(Instance* inst) const
 {
     auto         inst_pins = pins(inst);
-    PinDirection dir       = PinDirection::OUTPUT;
+    PinDirection dir       = PinDirection::INPUT;
     return filterPins(inst_pins, &dir);
 }
 
@@ -91,7 +91,7 @@ std::vector<InstanceTerm*>
 OpenDBHandler::outputPins(Instance* inst) const
 {
     auto         inst_pins = pins(inst);
-    PinDirection dir       = PinDirection::INPUT;
+    PinDirection dir       = PinDirection::OUTPUT;
 
     return filterPins(inst_pins, &dir);
 }
@@ -310,6 +310,12 @@ float
 OpenDBHandler::pinCapacitance(LibraryTerm* term) const
 {
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinCapacitance)
+    return 0.0;
+}
+float
+OpenDBHandler::targetLoad(LibraryCell* cell)
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, targetLoad)
     return 0.0;
 }
 float
@@ -617,7 +623,11 @@ OpenDBHandler::library() const
     Library* lib = *(libs.begin());
     return lib;
 }
-
+bool
+OpenDBHandler::dontUse(LibraryCell* cell) const
+{
+    return false;
+}
 LibraryTechnology*
 OpenDBHandler::technology() const
 {

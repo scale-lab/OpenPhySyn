@@ -1,4 +1,4 @@
-read_lib ../tests/data/gscl45nm.lib
+read_lib ../tests/data/libraries/gscl45nm/gscl45nm.lib
 print_lib
 puts "Read ok!"
 exit 0

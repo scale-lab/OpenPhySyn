@@ -37,6 +37,7 @@
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
+#include <OpenSTA/dcalc/DcalcAnalysisPt.hh>
 #include <OpenSTA/graph/Graph.hh>
 #include <OpenSTA/liberty/TimingArc.hh>
 #include <OpenSTA/liberty/TimingModel.hh>
@@ -44,9 +45,9 @@
 #include <OpenSTA/liberty/Transition.hh>
 #include <OpenSTA/network/NetworkCmp.hh>
 #include <OpenSTA/network/PortDirection.hh>
+#include <OpenSTA/search/Corner.hh>
 #include <OpenSTA/search/Search.hh>
 #include <OpenSTA/util/PatternMatch.hh>
-
 #include <algorithm>
 #include <set>
 
@@ -55,9 +56,15 @@ namespace psn
 OpenStaHandler::OpenStaHandler(sta::DatabaseSta* sta)
     : sta_(sta),
       db_(sta->db()),
-      min_max_(sta::MinMax::max()),
-      has_equiv_cells_(false)
+      has_equiv_cells_(false),
+      has_target_loads_(false)
 {
+    // Use default corner for now
+    corner_        = sta_->findCorner("default");
+    min_max_       = sta::MinMax::max();
+    dcalc_ap_      = corner_->findDcalcAnalysisPt(min_max_);
+    pvt_           = dcalc_ap_->operatingConditions();
+    parasitics_ap_ = corner_->findParasiticAnalysisPt(min_max_);
 }
 
 std::vector<InstanceTerm*>
@@ -107,14 +114,14 @@ std::vector<InstanceTerm*>
 OpenStaHandler::inputPins(Instance* inst) const
 {
     auto inst_pins = pins(inst);
-    return filterPins(inst_pins, PinDirection::output());
+    return filterPins(inst_pins, PinDirection::input());
 }
 
 std::vector<InstanceTerm*>
 OpenStaHandler::outputPins(Instance* inst) const
 {
     auto inst_pins = pins(inst);
-    return filterPins(inst_pins, PinDirection::input());
+    return filterPins(inst_pins, PinDirection::output());
 }
 
 std::vector<InstanceTerm*>
@@ -380,8 +387,8 @@ OpenStaHandler::pinCapacitance(InstanceTerm* term) const
 float
 OpenStaHandler::pinCapacitance(LibraryTerm* term) const
 {
-    float cap1 = term->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
-    float cap2 = term->capacitance(sta::RiseFall::fall(), sta::MinMax::max());
+    float cap1 = term->capacitance(sta::RiseFall::rise(), min_max_);
+    float cap2 = term->capacitance(sta::RiseFall::fall(), min_max_);
     return std::max(cap1, cap2);
 }
 
@@ -599,7 +606,7 @@ OpenStaHandler::maxLoad(LibraryCell* cell)
         {
             float limit;
             bool  exists;
-            port->capacitanceLimit(sta::MinMax::max(), limit, exists);
+            port->capacitanceLimit(min_max_, limit, exists);
             if (exists)
             {
                 return limit;
@@ -613,14 +620,13 @@ OpenStaHandler::maxLoad(LibraryTerm* term)
 {
     float limit;
     bool  exists;
-    term->capacitanceLimit(sta::MinMax::max(), limit, exists);
+    term->capacitanceLimit(min_max_, limit, exists);
     if (exists)
     {
         return limit;
     }
     return 0;
 }
-
 bool
 OpenStaHandler::isInput(InstanceTerm* term) const
 {
@@ -710,9 +716,198 @@ OpenStaHandler::allLibs() const
     return seq;
 }
 void
-OpenStaHandler::resetEquivalentCells()
+OpenStaHandler::resetCache()
 {
-    has_equiv_cells_ = false;
+    has_equiv_cells_  = false;
+    has_target_loads_ = false;
+    target_load_map_.clear();
+}
+void
+OpenStaHandler::findTargetLoads()
+{
+    auto all_libs = allLibs();
+    findTargetLoads(&all_libs);
+    has_target_loads_ = true;
+}
+
+/* The following is borrowed from James Cherry's Resizer Code */
+
+// Find a target slew for the libraries and then
+// a target load for each cell that gives the target slew.
+void
+OpenStaHandler::findTargetLoads(sta::LibertyLibrarySeq* resize_libs)
+{
+    // Find target slew across all buffers in the libraries.
+    findBufferTargetSlews(resize_libs);
+    for (auto lib : *resize_libs)
+        findTargetLoads(lib, target_slews_);
+}
+
+float
+OpenStaHandler::targetLoad(LibraryCell* cell)
+{
+    if (!has_target_loads_)
+    {
+        findTargetLoads();
+    }
+    if (target_load_map_.count(cell))
+    {
+        return target_load_map_[cell];
+    }
+    return 0.0;
+}
+
+void
+OpenStaHandler::findTargetLoads(Liberty* library, sta::Slew slews[])
+{
+    sta::LibertyCellIterator cell_iter(library);
+    while (cell_iter.hasNext())
+    {
+        auto cell = cell_iter.next();
+        findTargetLoad(cell, slews);
+    }
+}
+
+void
+OpenStaHandler::findTargetLoad(LibraryCell* cell, sta::Slew slews[])
+{
+    sta::LibertyCellTimingArcSetIterator arc_set_iter(cell);
+    float                                target_load_sum = 0.0;
+    int                                  arc_count       = 0;
+    while (arc_set_iter.hasNext())
+    {
+        auto arc_set = arc_set_iter.next();
+        auto role    = arc_set->role();
+        if (!role->isTimingCheck() &&
+            role != sta::TimingRole::tristateDisable() &&
+            role != sta::TimingRole::tristateEnable())
+        {
+            sta::TimingArcSetArcIterator arc_iter(arc_set);
+            while (arc_iter.hasNext())
+            {
+                sta::TimingArc* arc    = arc_iter.next();
+                sta::RiseFall*  in_rf  = arc->fromTrans()->asRiseFall();
+                sta::RiseFall*  out_rf = arc->toTrans()->asRiseFall();
+                float           arc_target_load = findTargetLoad(
+                    cell, arc, slews[in_rf->index()], slews[out_rf->index()]);
+                target_load_sum += arc_target_load;
+                arc_count++;
+            }
+        }
+    }
+    float target_load = (arc_count > 0) ? target_load_sum / arc_count : 0.0;
+    target_load_map_[cell] = target_load;
+}
+
+// Find the load capacitance that will cause the output slew
+// to be equal to out_slew.
+float
+OpenStaHandler::findTargetLoad(LibraryCell* cell, sta::TimingArc* arc,
+                               sta::Slew in_slew, sta::Slew out_slew)
+{
+    sta::GateTimingModel* model =
+        dynamic_cast<sta::GateTimingModel*>(arc->model());
+    if (model)
+    {
+        float cap_init = 1.0e-12;         // 1pF
+        float cap_tol  = cap_init * .001; // .1%
+        float load_cap = cap_init;
+        float cap_step = cap_init;
+        while (cap_step > cap_tol)
+        {
+            sta::ArcDelay arc_delay;
+            sta::Slew     arc_slew;
+            model->gateDelay(cell, pvt_, in_slew, load_cap, 0.0, false,
+                             arc_delay, arc_slew);
+            if (arc_slew > out_slew)
+            {
+                load_cap -= cap_step;
+                cap_step /= 2.0;
+            }
+            load_cap += cap_step;
+        }
+        return load_cap;
+    }
+    return 0.0;
+}
+
+////////////////////////////////////////////////////////////////
+
+sta::Slew
+OpenStaHandler::targetSlew(const sta::RiseFall* rf)
+{
+    return target_slews_[rf->index()];
+}
+
+// Find target slew across all buffers in the libraries.
+void
+OpenStaHandler::findBufferTargetSlews(sta::LibertyLibrarySeq* resize_libs)
+{
+    target_slews_[sta::RiseFall::riseIndex()] = 0.0;
+    target_slews_[sta::RiseFall::fallIndex()] = 0.0;
+    int tgt_counts[sta::RiseFall::index_count]{0};
+
+    for (auto lib : *resize_libs)
+    {
+        sta::Slew slews[sta::RiseFall::index_count]{0.0};
+        int       counts[sta::RiseFall::index_count]{0};
+
+        findBufferTargetSlews(lib, slews, counts);
+        for (auto rf : sta::RiseFall::rangeIndex())
+        {
+            target_slews_[rf] += slews[rf];
+            tgt_counts[rf] += counts[rf];
+            slews[rf] /= counts[rf];
+        }
+    }
+
+    for (auto rf : sta::RiseFall::rangeIndex())
+        target_slews_[rf] /= tgt_counts[rf];
+}
+bool
+OpenStaHandler::dontUse(LibraryCell* cell) const
+{
+    return false;
+}
+void
+OpenStaHandler::findBufferTargetSlews(Liberty* library,
+                                      // Return values.
+                                      sta::Slew slews[], int counts[])
+{
+    for (auto buffer : *library->buffers())
+    {
+        if (!dontUse(buffer))
+        {
+            sta::LibertyPort *input, *output;
+            buffer->bufferPorts(input, output);
+            auto arc_sets = buffer->timingArcSets(input, output);
+            if (arc_sets)
+            {
+                for (auto arc_set : *arc_sets)
+                {
+                    sta::TimingArcSetArcIterator arc_iter(arc_set);
+                    while (arc_iter.hasNext())
+                    {
+                        sta::TimingArc*       arc = arc_iter.next();
+                        sta::GateTimingModel* model =
+                            dynamic_cast<sta::GateTimingModel*>(arc->model());
+                        sta::RiseFall* in_rf  = arc->fromTrans()->asRiseFall();
+                        sta::RiseFall* out_rf = arc->toTrans()->asRiseFall();
+                        float in_cap   = input->capacitance(in_rf, min_max_);
+                        float load_cap = in_cap * 10.0; // "factor debatable"
+                        sta::ArcDelay arc_delay;
+                        sta::Slew     arc_slew;
+                        model->gateDelay(buffer, pvt_, 0.0, load_cap, 0.0,
+                                         false, arc_delay, arc_slew);
+                        model->gateDelay(buffer, pvt_, arc_slew, load_cap, 0.0,
+                                         false, arc_delay, arc_slew);
+                        slews[out_rf->index()] += arc_slew;
+                        counts[out_rf->index()]++;
+                    }
+                }
+            }
+        }
+    }
 }
 } // namespace psn
 #endif
