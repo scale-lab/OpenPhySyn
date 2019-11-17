@@ -74,6 +74,16 @@ set_max_area(float area)
     Psn::instance().settings()->setMaxArea(area);
     return 1;
 }
+int
+link(const char* top_module)
+{
+    return link_design(top_module);
+}
+int
+link_design(const char* top_module)
+{
+    return Psn::instance().linkDesign(top_module);
+}
 void
 version()
 {

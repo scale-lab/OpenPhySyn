@@ -34,11 +34,6 @@
 #include "Psn/Psn.hpp"
 #include "PsnException/ProgramOptionsException.hpp"
 
-extern "C"
-{
-    extern int Psn_Init(Tcl_Interp* interp);
-}
-
 int psnTclAppInit(Tcl_Interp* interp);
 
 int
@@ -78,15 +73,12 @@ psnTclAppInit(Tcl_Interp* interp)
         return TCL_ERROR;
     }
 
-    if (Psn_Init(interp) == TCL_ERROR)
-    {
-        return TCL_ERROR;
-    }
     psn::Psn::instance().loadTransforms();
     psn::Psn::instance().setupInterpreter(interp);
     psn::Psn::instance().processStartupProgramOptions();
-    psn::Psn::instance().setupInterpreterReadline(); // This should be that last
-                                                     // initialization step
-                                                     // because of the RL loop
+    // psn::Psn::instance().setupInterpreterReadline(); // This should be that
+    // last
+    //                                                  // initialization step
+    //                                                  // because of the RL loop
     return TCL_OK;
 }

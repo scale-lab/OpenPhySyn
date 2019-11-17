@@ -54,6 +54,15 @@ To get usage info of any transform:
 > transform <transform name> help
 ```
 
+To run OpenSTA commands:
+```bash
+> ./Psn
+> read_lef <lef file>
+> read_def <def file>
+> sta create_clock [sta get_ports clk]  -name core_clock  -period 10
+> sta report_checks
+```
+
 ## Dependencies
 
 OpenPhySyn depends on the following libraries:
@@ -78,8 +87,9 @@ Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/OpenPhySyn/
 -   [x] Integrate OpenSTA
 -   [x] Support reading scripts from file
 -   [x] Add unit tests
--   [ ] Add API documentation
 -   [x] Add Gate Cloning Transform
+-   [ ] Fix issues with OpenSTA commands integration
+-   [ ] Add API documentation
 -   [ ] Expose lower-level APIs through TCL/Python interface
 -   [ ] Add Optimization Transforms
 -   [ ] Add Coding Guideline and Contribution Guide

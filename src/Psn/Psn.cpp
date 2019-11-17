@@ -53,8 +53,21 @@
 #include "PsnException/TransformNotFoundException.hpp"
 #include "Transform/TransformHandler.hpp"
 #include "Utils/FileUtils.hpp"
+
+extern "C"
+{
+    extern int Psn_Init(Tcl_Interp* interp);
+    extern int Sta_Init(Tcl_Interp* interp);
+}
+namespace sta
+{
+extern void        evalTclInit(Tcl_Interp* interp, const char* inits[]);
+extern const char* tcl_inits[];
+} // namespace sta
 namespace psn
 {
+using sta::evalTclInit;
+using sta::tcl_inits;
 
 Psn::Psn(Database* db)
     : db_(db),
@@ -92,6 +105,7 @@ Psn::readDef(const char* path)
     {
         int rc = reader.read(path);
         sta_->readDefAfter();
+        // sta_->findDelays();
         return rc;
     }
     catch (FileException& e)
@@ -327,7 +341,9 @@ Psn::runTransform(std::string transform_name, std::vector<std::string> args)
         {
 
             PsnLogger::instance().info("Invoking {} transform", transform_name);
-            return transforms_[transform_name]->run(this, args);
+            int rc = transforms_[transform_name]->run(this, args);
+            sta_->ensureLevelized();
+            return rc;
         }
     }
     catch (PsnException& e)
@@ -346,13 +362,38 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
         PsnLogger::instance().warn("Multiple interpreter initialization!");
     }
     interp_ = interp;
-    sta_->setTclInterp(interp_);
-    const char* tcl_psn_setup =
-#include "Tcl/SetupPsn.tcl"
-        ;
-    if (Tcl_Eval(interp_, tcl_psn_setup) != TCL_OK)
+
+    if (Psn_Init(interp) == TCL_ERROR)
     {
         return TCL_ERROR;
+    }
+
+    sta_->setTclInterp(interp_);
+    if (setup_sta)
+    {
+        if (Sta_Init(interp) == TCL_ERROR)
+        {
+            return TCL_ERROR;
+        }
+        evalTclInit(interp, tcl_inits);
+
+        const char* tcl_psn_setup =
+#include "Tcl/SetupPsnSta.tcl"
+            ;
+        if (Tcl_Eval(interp_, tcl_psn_setup) != TCL_OK)
+        {
+            return TCL_ERROR;
+        }
+    }
+    else
+    {
+        const char* tcl_psn_setup =
+#include "Tcl/SetupPsn.tcl"
+            ;
+        if (Tcl_Eval(interp_, tcl_psn_setup) != TCL_OK)
+        {
+            return TCL_ERROR;
+        }
     }
     if (import_psn_namespace)
     {
@@ -370,16 +411,6 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
 #include "Tcl/PrintVersion.tcl"
             ;
         if (Tcl_Eval(interp_, tcl_print_version) != TCL_OK)
-        {
-            return TCL_ERROR;
-        }
-    }
-    if (setup_sta)
-    {
-        const char* tcl_setup_sta =
-#include "Tcl/SetupSta.tcl"
-            ;
-        if (Tcl_Eval(interp_, tcl_setup_sta) != TCL_OK)
         {
             return TCL_ERROR;
         }
@@ -455,6 +486,9 @@ Psn::printCommands(bool raw_str)
         "set_max_area <area>                   Set maximum design area\n"
         "transform <transform name> <args>     Run transform on the loaded "
         "design\n"
+        "link <design name>                    Link design top module\n"
+        "link_design <design name>             Link design top module\n"
+        "sta <OpenSTA commands>                Run OpenSTA commands\n"
         "set_log <log level>                   Set log level [trace, debug, "
         "info, "
         "warn, error, critical, off]\n"
@@ -635,6 +669,13 @@ Psn::setWireRC(float res_per_micon, float cap_per_micron)
     settings()
         ->setResistancePerMicron(res_per_micon)
         ->setCapacitancePerMicron(cap_per_micron);
+}
+int
+Psn::linkDesign(const char* design_name)
+{
+    int rc = sta_->linkDesign(design_name);
+    sta_->readDbAfter();
+    return rc;
 }
 // Private methods:
 

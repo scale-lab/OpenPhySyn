@@ -49,6 +49,8 @@ int  read_liberty(const char* lib_path);
 int  write_def(const char* def_path);
 int  set_wire_rc(float res_per_micon, float cap_per_micron);
 int  set_max_area(float area);
+int  link(const char* top_module);
+int  link_design(const char* top_module);
 int  set_log(const char* level);
 int  set_log_level(const char* level);
 int  set_log_pattern(const char* pattern);

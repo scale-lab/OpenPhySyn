@@ -85,7 +85,6 @@
     "*.cuh": "cpp",
     "*.in": "cpp"
   },
-  "editor.formatOnSave": true,
   "files.watcherExclude": {
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true,
@@ -94,5 +93,6 @@
     "external/OpenSTA/*/**": true,
     "external/doctest/*/**": true,
     "external/flue/*/**": true
-  }
+  },
+  "editor.formatOnSave": true
 }

@@ -59,6 +59,7 @@ OpenStaHandler::OpenStaHandler(sta::DatabaseSta* sta)
       has_equiv_cells_(false),
       has_target_loads_(false)
 {
+    // sta_->findDelays();
     // Use default corner for now
     corner_        = sta_->findCorner("default");
     min_max_       = sta::MinMax::max();
@@ -462,7 +463,9 @@ OpenStaHandler::disconnectAll(Net* net) const
 void
 OpenStaHandler::connect(Net* net, InstanceTerm* term) const
 {
-    network()->connect(network()->instance(term), network()->port(term), net);
+    auto inst      = network()->instance(term);
+    auto term_port = network()->port(term);
+    network()->connect(inst, term_port, net);
 }
 
 void
