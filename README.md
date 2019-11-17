@@ -1,6 +1,6 @@
 # OpenPhySyn
 
-OpenPhySyn is a plugin-based psnsical synthesis optimization kit developed as part of the [OpenROAD](https://theopenroadproject.org/) flow.
+OpenPhySyn is a plugin-based physical synthesis optimization kit developed as part of the [OpenROAD](https://theopenroadproject.org/) flow.
 
 ## Building
 
@@ -21,7 +21,7 @@ Example:
 
 ## Building Custom Transforms
 
-Psnsical Synthesis transforms libraries are loaded from the directory refered to by the variable `PSN_TRANSFORM_PATH`
+Physical Synthesis transforms libraries are loaded from the directory refered to by the variable `PSN_TRANSFORM_PATH`
 To build a new transform refer to the transform [template](https://github.com/The-OpenROAD-Project/OpenPhySynHelloTransform).
 
 ## Runing Transforms
