@@ -472,7 +472,7 @@ Psn::printCommands(bool raw_str)
     std::string commands_str;
     commands_str +=
         "print_version                         print version\n"
-        "print                                 print version\n"
+        "version                               print version\n"
         "help                                  print help\n"
         "print_usage                           print help\n"
         "print_transforms                      list loaded transforms\n"

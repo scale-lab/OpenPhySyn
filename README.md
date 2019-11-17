@@ -40,6 +40,22 @@ To list available commands:
 ```bash
 > ./Psn
 > help
+print_version                         print version
+help                                  print help
+print_transforms                      list loaded transforms
+read_lef <file path>                  load LEF file
+read_def <file path>                  load DEF file
+read_lib <file path>                  load a liberty file
+read_liberty <file path>              load a liberty file
+write_def <output file>               Write DEF file
+set_wire_rc <res> <cap>               Set resistance & capacitance per micron
+set_max_area <area>                   Set maximum design area
+transform <transform name> <args>     Run transform on the loaded design
+link_design <design name>             Link design top module
+sta <OpenSTA commands>                Run OpenSTA commands
+set_log <log level>                   Set log level [trace, debug, info, warn, error, critical, off]
+set_log_pattern <pattern>             Set log printing pattern, refer to spdlog logger for pattern formats
+
 ```
 
 To list loaded transforms:
@@ -62,6 +78,14 @@ To run OpenSTA commands:
 > sta create_clock [sta get_ports clk]  -name core_clock  -period 10
 > sta report_checks
 ```
+
+## Default Transforms
+
+By default, the following transforms are built with OpenPhySyn:
+
+-   `hello_transform`: a demo transform that adds a random wire.
+-   `buffer_fanout`: adds buffers to high fan-out nets.
+-   `gate_clone`: performs load driven gate cloning.
 
 ## Dependencies
 
