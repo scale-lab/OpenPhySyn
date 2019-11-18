@@ -702,6 +702,7 @@ Psn::clearDatabase()
 int
 Psn::initalizeFlute(const char* flue_init_dir)
 {
+#ifndef OPENROAD_BUILD
     std::string powv_file_path = std::string(flue_init_dir) + "/POWV9.dat";
     std::string post_file_path = std::string(flue_init_dir) + "/POST9.dat";
     if (!FileUtils::isDirectory(flue_init_dir) ||
@@ -716,6 +717,7 @@ Psn::initalizeFlute(const char* flue_init_dir)
     Flute::readLUT();
     chdir(cwd);
     free(cwd);
+#endif
     return 1;
 }
 } // namespace psn
