@@ -64,13 +64,13 @@ set_log_pattern <pattern>             Set log printing pattern, refer to spdlog 
 > print_transforms
 ```
 
-#### Print get usage info for a transform:
+### Print get usage info for a transform:
 ```bash
 > ./Psn
 > transform <transform name> help
 ```
 
-#### Running OpenSTA commands:
+### Running OpenSTA commands:
 ```bash
 > ./Psn
 > read_lef <lef file>
