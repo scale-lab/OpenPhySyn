@@ -62,6 +62,7 @@ DatabaseHandler& get_database_handler();
 Database&        get_database();
 Liberty&         get_liberty();
 SteinerTree*     create_steiner_tree(const char* pin_name);
+SteinerTree*     create_steiner_tree(Net* net);
 int              print_liberty_cells();
 } // namespace psn
 

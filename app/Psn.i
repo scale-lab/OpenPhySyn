@@ -31,18 +31,34 @@
 %module psn
 %{
 #include "Psn/Exports.hpp"
+#include <OpenPhySyn/Psn/Psn.hpp>
 #include "db.h"
 #include "dbShape.h"
 #include "geom.h"
+#include <memory>
+#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
+#include <OpenPhySyn/Database/DatabaseHandler.hpp>
 using namespace odb;
 using namespace psn;
+DatabaseHandler *handler() {
+   return Psn::instance().handler();
+}
 %}
+
+DatabaseHandler *handler();
+
+
+
+
 
 %include <stl.i>
 %include <typemaps.i>
 %include <std_string.i>
 %include <std_vector.i>
 %include <std_pair.i>
+%include <std_except.i>
+%include <src/Tcl/Swig/std_unique_ptr.i>
+
 %template(vector_str) std::vector<std::string>;
 
 %typemap(in) char ** {
@@ -71,9 +87,14 @@ using namespace psn;
 %typemap(in) (unsigned long) = (int);
 %typemap(in) (ulong) = (int);
 
+// wrap_unique_ptr(SteinerTreePtr, SteinerTree);
+// wrap_unique_ptr(SteinerTreePtr, psn::SteinerTree);
+// %include "include/OpenPhySyn/SteinerTree/SteinerTree.hpp"
+
 %include "external/OpenDB/src/swig/tcl/dbtypes.i"
 %include "external/OpenDB/include/opendb/geom.h"
 %include "external/OpenDB/include/opendb/db.h"
 %include "include/OpenPhySyn/Database/Types.hpp"
 %include "include/OpenPhySyn/Database/DatabaseHandler.hpp"
+%include "include/OpenPhySyn/Psn/Psn.hpp"
 %include "Psn/Exports.hpp"

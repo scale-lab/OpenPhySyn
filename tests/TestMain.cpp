@@ -40,8 +40,6 @@ main(int argc, char** argv)
 {
     doctest::Context context;
 
-    // !!! THIS IS JUST AN EXAMPLE SHOWING HOW DEFAULTS/OVERRIDES ARE SET !!!
-
     // defaults
     // context.addFilter("test-case-exclude", "*math*"); // exclude test cases
     // with "math" in their name context.setOption("abort-after", 5); // stop
@@ -50,7 +48,7 @@ main(int argc, char** argv)
 
     Tcl_Interp* interp = Tcl_CreateInterp();
     psn::Psn::instance().loadTransforms();
-    psn::Psn::instance().setupInterpreter(interp);
+    psn::Psn::instance().setupInterpreter(interp, true, false, false);
 
     context.applyCommandLine(argc, argv);
 
@@ -66,8 +64,6 @@ main(int argc, char** argv)
         return res;           // propagate the result of the tests
 
     int client_stuff_return_code = 0;
-    // your program - if the testing framework is integrated in your production
-    // code
 
     return res + client_stuff_return_code; // the result from doctest is
                                            // propagated here as well

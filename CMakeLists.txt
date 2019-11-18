@@ -145,7 +145,7 @@ set(PSN_TESTFILES        # All .cpp files in tests/
 )
 
 set(PSN_SWIG_FILES
-  app/Psn.i
+  ${PSN_HOME}/app/Psn.i
 )
 set(PSN_DEP_FILES
   ${PSN_SWIG_FILES}

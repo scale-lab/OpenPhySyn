@@ -31,6 +31,7 @@
 
 #include "Exports.hpp"
 #include <OpenPhySyn/Psn/Psn.hpp>
+#include <memory>
 #include "PsnLogger/PsnLogger.hpp"
 
 namespace psn
@@ -158,9 +159,18 @@ get_database_handler()
 }
 
 SteinerTree*
-create_steiner_tree(const char* pin_name)
+create_steiner_tree(const char* net_name)
 {
-    return nullptr;
+    auto net = Psn::instance().handler()->net(net_name);
+    return create_steiner_tree(net);
+}
+SteinerTree*
+create_steiner_tree(Net* net)
+{
+    auto         pt   = SteinerTree::create(net, &(Psn::instance()), 3);
+    SteinerTree* tree = pt.get();
+    pt.release();
+    return tree;
 }
 
 int

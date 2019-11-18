@@ -489,6 +489,8 @@ Psn::printCommands(bool raw_str)
         "link <design name>                    Link design top module\n"
         "link_design <design name>             Link design top module\n"
         "sta <OpenSTA commands>                Run OpenSTA commands\n"
+        "make_steiner_tree <net>               Construct steiner tree for the "
+        "provided net\n"
         "set_log <log level>                   Set log level [trace, debug, "
         "info, "
         "warn, error, critical, off]\n"

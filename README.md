@@ -53,6 +53,7 @@ set_max_area <area>                   Set maximum design area
 transform <transform name> <args>     Run transform on the loaded design
 link_design <design name>             Link design top module
 sta <OpenSTA commands>                Run OpenSTA commands
+make_steiner_tree <net>               Construct steiner tree for the provided net
 set_log <log level>                   Set log level [trace, debug, info, warn, error, critical, off]
 set_log_pattern <pattern>             Set log printing pattern, refer to spdlog logger for pattern formats
 
