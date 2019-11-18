@@ -54,6 +54,7 @@ protected:
 
 } // namespace sta
 #else
+#include "dbSdcNetwork.hh"
 namespace sta
 {
 class dbSdcNetwork;

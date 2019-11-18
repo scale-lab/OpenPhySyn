@@ -190,6 +190,7 @@ protected:
 
 } // namespace sta
 #else
+#include "db_sta/dbNetwork.hh"
 namespace sta
 {
 class dbNetwork;
