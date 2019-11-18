@@ -26,7 +26,7 @@ To build a new transform refer to the transform [template](https://github.com/Th
 
 ## Getting Started
 
-### Run a transorm:
+### Read design and run a transorm:
 
 ```bash
 > ./Psn
@@ -58,7 +58,7 @@ set_log_pattern <pattern>             Set log printing pattern, refer to spdlog 
 
 ```
 
-#### List loaded transforms:
+### List loaded transforms:
 ```bash
 > ./Psn
 > print_transforms
