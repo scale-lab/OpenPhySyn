@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#ifndef OPENROAD_BUILD
+
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
 #include "Liberty.hh"
 #include "Machine.hh"
@@ -1227,3 +1229,5 @@ DatabaseStaNetwork::dbToSta(dbSigType sig_type, dbIoType io_type) const
 }
 
 } // namespace sta
+
+#endif

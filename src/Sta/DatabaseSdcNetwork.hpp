@@ -17,6 +17,8 @@
 #ifndef __PSN_DATABASE_SDC_NETWORK_H__
 #define __PSN_DATABASE_SDC_NETWORK_H__
 
+#ifndef OPENROAD_BUILD
+
 // Temproary fix for OpenSTA
 #define THROW_DCL throw()
 
@@ -51,4 +53,11 @@ protected:
 };
 
 } // namespace sta
+#else
+namespace sta
+{
+class dbSdcNetwork;
+typdef dbSdcNetwork DatabaseSdcNetwork;
+} // namespace sta
+#endif
 #endif

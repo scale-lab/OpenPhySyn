@@ -79,10 +79,14 @@ set(SPD_LOG_HOME
 add_subdirectory(external/flute)
 
 # Add OpenDB
+if (NOT ${OPENROAD_BUILD})
 add_subdirectory(external/OpenDB)
+endif()
 
 # Add OpenSTA
+if (NOT ${OPENROAD_BUILD})
 add_subdirectory(external/OpenSTA)
+endif()
 
 # Add spdlog
 add_subdirectory(external/spdlog)
