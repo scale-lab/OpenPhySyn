@@ -115,7 +115,7 @@ Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/OpenPhySyn/
 -   [x] Add Gate Cloning Transform
 -   [ ] Fix issues with OpenSTA commands integration
 -   [ ] Support command line options for TCL functions instead of just positional arguments
--   [ ] Support passing parsed options to the transform body.
+-   [ ] Support passing parsed options to the transform body
 -   [ ] Expose lower-level APIs through TCL/Python interface
 -   [ ] Add API documentation
 -   [ ] Add Optimization Transforms
