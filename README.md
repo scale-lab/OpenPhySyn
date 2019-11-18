@@ -24,9 +24,9 @@ Example:
 Physical Synthesis transforms libraries are loaded from the directory refered to by the variable `PSN_TRANSFORM_PATH`
 To build a new transform refer to the transform [template](https://github.com/The-OpenROAD-Project/OpenPhySynHelloTransform).
 
-## Runing Transforms
+## Getting Started
 
-To run any transorm:
+### Run a transorm:
 
 ```bash
 > ./Psn
@@ -36,7 +36,7 @@ To run any transorm:
 > write_def <def file>
 ```
 
-To list available commands:
+### List available commands:
 ```bash
 > ./Psn
 > help
@@ -58,19 +58,19 @@ set_log_pattern <pattern>             Set log printing pattern, refer to spdlog 
 
 ```
 
-To list loaded transforms:
+#### List loaded transforms:
 ```bash
 > ./Psn
 > print_transforms
 ```
 
-To get usage info of any transform:
+#### Print get usage info for a transform:
 ```bash
 > ./Psn
 > transform <transform name> help
 ```
 
-To run OpenSTA commands:
+#### Running OpenSTA commands:
 ```bash
 > ./Psn
 > read_lef <lef file>
