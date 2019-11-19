@@ -92,12 +92,18 @@ public:
 
     virtual void clearDatabase();
 
-    virtual int initalizeFlute(const char* flue_init_dir);
+    virtual int initializeFlute(const char* flue_init_dir);
 
+#ifndef OPENROAD_BUILD
     static void initialize(Database* db = nullptr, bool load_transforms = true,
                            Tcl_Interp* interp = nullptr);
     static void initialize(sta::DatabaseSta* sta, bool load_transforms = true,
                            Tcl_Interp* interp = nullptr);
+#else
+    static void initialize(sta::DatabaseSta* sta             = nullptr,
+                           bool              load_transforms = true,
+                           Tcl_Interp*       interp          = nullptr);
+#endif
     ~Psn();
 
 private:
@@ -114,6 +120,7 @@ private:
     DatabaseHandler*  db_handler_;
 
     int initializeDatabase();
+    int initializeSta(Tcl_Interp* interp = nullptr);
 
     std::unordered_map<std::string, std::shared_ptr<PsnTransform>> transforms_;
     std::unordered_map<std::string, TransformInfo> transforms_info_;

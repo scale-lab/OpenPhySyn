@@ -132,6 +132,9 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Sta/DatabaseSdcNetwork.cpp
     ${PSN_HOME}/src/Sta/DatabaseStaNetwork.cpp
 )
+
+
+
 set(PSN_SOURCES_NO_MAIN
     ${PSN_SOURCES_NO_MAIN_NO_WRAP}
     ${PSN_WRAP}
@@ -140,6 +143,21 @@ set(PSN_SOURCES
     ${PSN_SOURCES_NO_MAIN}
     ${PSN_MAIN}
 )
+
+if (${OPENROAD_BUILD})
+# temporary bad fix..
+set(OPENSTA_UTIL_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenStaUtilTclInitVar.cc)
+
+add_custom_command(OUTPUT ${OPENSTA_UTIL_TCL_INIT}
+  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${OPENSTA_UTIL_TCL_INIT} opensta_util_tcl_inits ${OPENSTA_HOME}/tcl/Util.tcl
+  DEPENDS ${OPENSTA_HOME}/tcl/Util.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
+)
+
+set(PSN_SOURCES
+    ${PSN_SOURCES}
+    ${OPENSTA_UTIL_TCL_INIT}
+)
+endif()
 
 set(PSN_TESTFILES        # All .cpp files in tests/
     ${PROJECT_SOURCE_DIR}/tests/ReadLefDef.cpp
@@ -201,6 +219,10 @@ set(INCLUDE_DIRS
   ${OPENDB_HOME}/include
   flute3
 )
+set(PUBLIC_LIBRARIES
+dbSta
+${PUBLIC_LIBRARIES}
+)
 endif()
 # Compile all sources into a library.
 add_library(${LIBRARY_NAME} STATIC ${PSN_SOURCES})
@@ -237,7 +259,9 @@ add_custom_command(OUTPUT ${PSN_WRAP}
 
 install(TARGETS Psn DESTINATION bin)
 # Set up tests (see tests/CMakeLists.txt).
+if (NOT ${OPENROAD_BUILD})
 add_subdirectory(tests)
+endif()
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
   ${PSN_WRAP}
 )

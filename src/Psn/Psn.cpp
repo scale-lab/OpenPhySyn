@@ -64,6 +64,14 @@ namespace sta
 extern void        evalTclInit(Tcl_Interp* interp, const char* inits[]);
 extern const char* tcl_inits[];
 } // namespace sta
+
+#ifdef OPENROAD_BUILD
+
+namespace sta
+{
+extern const char* opensta_util_tcl_inits[];
+}
+#endif
 namespace psn
 {
 using sta::evalTclInit;
@@ -80,22 +88,10 @@ Psn::Psn(Database* db) : db_(db), interp_(nullptr)
         initializeDatabase();
     }
     settings_ = new DesignSettings();
-    sta::initSta();
-    sta_ = new sta::DatabaseSta(db_);
-    sta::Sta::setSta(sta_);
-    sta_->makeComponents();
+    initializeSta();
     db_handler_ = new DatabaseHandler(sta_);
-    initalizeFlute("../external/flute/etc");
+    initializeFlute("../external/flute/etc");
 }
-#endif
-
-Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(sta->db()), interp_(nullptr)
-{
-    settings_   = new DesignSettings();
-    db_handler_ = new DatabaseHandler(sta_);
-    initalizeFlute("../external/flute/etc");
-}
-
 void
 Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp)
 {
@@ -110,6 +106,21 @@ Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp)
     }
     is_initialized_ = true;
 }
+#endif
+
+Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
+{
+    if (sta == nullptr)
+    {
+        initializeDatabase();
+        initializeSta();
+    }
+    db_         = sta_->db();
+    settings_   = new DesignSettings();
+    db_handler_ = new DatabaseHandler(sta_);
+    initializeFlute("../external/flute/etc");
+}
+
 void
 Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp)
 {
@@ -743,6 +754,28 @@ Psn::initializeDatabase()
     }
     return 0;
 }
+int
+Psn::initializeSta(Tcl_Interp* interp)
+{
+#ifndef OPENROAD_BUILD
+    sta::initSta();
+    sta_ = new sta::DatabaseSta(db_);
+    sta::Sta::setSta(sta_);
+    sta_->makeComponents();
+#else
+    if (interp == nullptr)
+    {
+        // This is a very bad solution! but temporarily until
+        // dbSta can take a database without interp..
+        interp = Tcl_CreateInterp();
+        Tcl_Init(interp);
+        evalTclInit(interp, sta::opensta_util_tcl_inits);
+    }
+    sta_ = new sta::DatabaseSta;
+    sta_->init(interp, db_);
+#endif
+    return 0;
+}
 
 void
 Psn::clearDatabase()
@@ -751,7 +784,7 @@ Psn::clearDatabase()
 }
 
 int
-Psn::initalizeFlute(const char* flue_init_dir)
+Psn::initializeFlute(const char* flue_init_dir)
 {
 #ifndef OPENROAD_BUILD
     std::string powv_file_path = std::string(flue_init_dir) + "/POWV9.dat";

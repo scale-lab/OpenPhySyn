@@ -34,6 +34,7 @@
 
 #include <OpenPhySyn/Database/Types.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
+#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
 #include <OpenPhySyn/Utils/PsnGlobal.hpp>
 #include <PsnLogger/PsnLogger.hpp>
 #include <unordered_map>

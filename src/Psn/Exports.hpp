@@ -69,3 +69,14 @@ SteinerTree*     create_steiner_tree(Net* net);
 } // namespace psn
 
 #endif
+#ifdef SWIGIMPORTED
+asdasda
+#ifdef OPENROAD_BUILD
+%ignore read_def;
+%ignore     read_lef;
+%ignore     read_lib;
+%ignore     read_liberty;
+%ignore     write_def;
+%ignore     print_liberty_cells;
+#endif
+#endif
