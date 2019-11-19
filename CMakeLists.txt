@@ -27,6 +27,10 @@ if (${OPENROAD_BUILD})
 endif()
 message("Database handler: ${DATABASE_HANDLER}")
 
+set(PSN_HOME
+  ${PROJECT_SOURCE_DIR}
+)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/cmake")
 
 # Include stuff.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -59,9 +63,7 @@ find_package(ZLIB REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
 
 
-set(PSN_HOME
-  ${PROJECT_SOURCE_DIR}
-)
+
 set(OPENDB_HOME
   ${PROJECT_SOURCE_DIR}/external/OpenDB
 )
@@ -76,7 +78,9 @@ set(SPD_LOG_HOME
 )
 
 # Add Flute
+if (NOT ${OPENROAD_BUILD})
 add_subdirectory(external/flute)
+endif()
 
 # Add OpenDB
 if (NOT ${OPENROAD_BUILD})
@@ -188,7 +192,16 @@ set(PUBLIC_LIBRARIES
   dl
   doctest
 )
-
+if (${OPENROAD_BUILD})
+set(INCLUDE_DIRS
+  ${INCLUDE_DIRS}
+  ${OPENROAD_HOME}/include
+  PRIVATE
+  ${OPENROAD_HOME}/src
+  ${OPENDB_HOME}/include
+  flute3
+)
+endif()
 # Compile all sources into a library.
 add_library(${LIBRARY_NAME} STATIC ${PSN_SOURCES})
 add_executable(Psn ${PSN_SOURCES})  # Name of exec. and location of file.
@@ -196,7 +209,9 @@ add_executable(Psn ${PSN_SOURCES})  # Name of exec. and location of file.
 target_include_directories(${LIBRARY_NAME} PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES}) 
 target_include_directories(Psn PUBLIC ${INCLUDE_DIRS})
-target_link_libraries(Psn PUBLIC ${PUBLIC_LIBRARIES}) 
+target_link_libraries(Psn PUBLIC ${PUBLIC_LIBRARIES})
+
+
 
 include_directories (
   ${INCLUDE_DIRS}
@@ -229,6 +244,6 @@ set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
 
 option(PSN_STANDARD_TRANSFORMS "Build OpenPhySyn Standard Transforms" ON)
 if(PSN_STANDARD_TRANSFORMS)
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/external/StandardTransforms")
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/external/StandardTransforms")
     include(Transforms)
 endif()

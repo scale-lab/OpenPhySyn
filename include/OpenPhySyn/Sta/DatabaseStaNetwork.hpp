@@ -191,13 +191,10 @@ protected:
 } // namespace sta
 #else
 #include "db_sta/dbNetwork.hh"
-namespace psn
-{
 namespace sta
 {
 class dbNetwork;
-typdef dbNetwork DatabaseStaNetwork;
+typedef dbNetwork DatabaseStaNetwork;
 } // namespace sta
-} // namespace psn
 #endif
 #endif
