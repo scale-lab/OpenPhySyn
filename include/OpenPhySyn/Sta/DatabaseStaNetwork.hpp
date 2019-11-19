@@ -19,9 +19,6 @@
 
 #ifndef OPENROAD_BUILD
 
-// Temproary fix for OpenSTA
-#define THROW_DCL throw()
-
 #include "ConcreteNetwork.hh"
 #include "opendb/db.h"
 
@@ -193,7 +190,6 @@ protected:
 #include "db_sta/dbNetwork.hh"
 namespace sta
 {
-class dbNetwork;
 typedef dbNetwork DatabaseStaNetwork;
 } // namespace sta
 #endif

@@ -16,6 +16,9 @@
 
 #ifndef OPENROAD_BUILD
 
+// Temproary fix for OpenSTA
+#define THROW_DCL throw()
+
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
 #include "Liberty.hh"
 #include "Machine.hh"

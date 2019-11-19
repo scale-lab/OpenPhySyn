@@ -94,13 +94,19 @@ public:
 
     virtual int initalizeFlute(const char* flue_init_dir);
 
-    static void initialize(Database* db = nullptr, bool load_transforms = true);
-    static void initialize(sta::DatabaseSta* sta, bool load_transforms = true);
+    static void initialize(Database* db = nullptr, bool load_transforms = true,
+                           Tcl_Interp* interp = nullptr);
+    static void initialize(sta::DatabaseSta* sta, bool load_transforms = true,
+                           Tcl_Interp* interp = nullptr);
     ~Psn();
 
 private:
+#ifndef OPENROAD_BUILD
     Psn(Database* db = nullptr);
     Psn(sta::DatabaseSta* sta);
+#else
+    Psn(sta::DatabaseSta* sta = nullptr);
+#endif
     DesignSettings*   settings_;
     Liberty*          liberty_;
     sta::DatabaseSta* sta_;

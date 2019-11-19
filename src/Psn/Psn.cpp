@@ -72,6 +72,7 @@ using sta::tcl_inits;
 Psn* Psn::psn_instance_;
 bool Psn::is_initialized_ = false;
 
+#ifndef OPENROAD_BUILD
 Psn::Psn(Database* db) : db_(db), interp_(nullptr)
 {
     if (db_ == nullptr)
@@ -86,6 +87,8 @@ Psn::Psn(Database* db) : db_(db), interp_(nullptr)
     db_handler_ = new DatabaseHandler(sta_);
     initalizeFlute("../external/flute/etc");
 }
+#endif
+
 Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(sta->db()), interp_(nullptr)
 {
     settings_   = new DesignSettings();
@@ -94,22 +97,30 @@ Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(sta->db()), interp_(nullptr)
 }
 
 void
-Psn::initialize(Database* db, bool load_transforms)
+Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp)
 {
     psn_instance_ = new Psn(db);
     if (load_transforms)
     {
         psn_instance_->loadTransforms();
     }
+    if (interp != nullptr)
+    {
+        psn_instance_->setupInterpreter(interp);
+    }
     is_initialized_ = true;
 }
 void
-Psn::initialize(sta::DatabaseSta* sta, bool load_transforms)
+Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp)
 {
     psn_instance_ = new Psn(sta);
     if (load_transforms)
     {
         psn_instance_->loadTransforms();
+    }
+    if (interp != nullptr)
+    {
+        psn_instance_->setupInterpreter(interp);
     }
     is_initialized_ = true;
 }

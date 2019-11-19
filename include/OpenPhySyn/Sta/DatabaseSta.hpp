@@ -38,7 +38,10 @@ using odb::dbNet;
 class DatabaseSta : public Sta
 {
 public:
+    DatabaseSta();
     DatabaseSta(dbDatabase* db);
+    void init(Tcl_Interp* tcl_interp, dbDatabase* db);
+
     dbDatabase*
     db()
     {
@@ -75,7 +78,6 @@ protected:
 #include "db_sta/dbSta.hh"
 namespace sta
 {
-class dbSta;
 typedef dbSta DatabaseSta;
 } // namespace sta
 #endif

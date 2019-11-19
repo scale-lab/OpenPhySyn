@@ -17,15 +17,44 @@
 
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
+#include <Sta/DatabaseSdcNetwork.hpp>
+#include <tcl.h>
 #include "Machine.hh"
-#include "Sta/DatabaseSdcNetwork.hpp"
+#include "StaMain.hh"
 #include "opendb/db.h"
 
 namespace sta
 {
 
+extern "C"
+{
+    extern int Sta_Init(Tcl_Interp* interp);
+}
+
+extern const char* tcl_inits[];
+
+DatabaseSta::DatabaseSta() : Sta(), db_(nullptr)
+{
+}
 DatabaseSta::DatabaseSta(dbDatabase* db) : Sta(), db_(db)
 {
+}
+
+void
+DatabaseSta::init(Tcl_Interp* tcl_interp, dbDatabase* db)
+{
+    initSta();
+    Sta::setSta(this);
+    db_ = db;
+    makeComponents();
+    setTclInterp(tcl_interp);
+    // Define swig TCL commands.
+    Sta_Init(tcl_interp);
+    // Eval encoded sta TCL sources.
+    evalTclInit(tcl_interp, tcl_inits);
+    // Import exported commands from sta namespace to global namespace.
+    Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
+    Tcl_Eval(tcl_interp, "namespace import sta::*");
 }
 
 // Wrapper to init network db.
@@ -85,6 +114,6 @@ DatabaseSta::netSlack(const dbNet* db_net, const MinMax* min_max)
     const Net* net = db_network_->dbToSta(db_net);
     return netSlack(net, min_max);
 }
-} // namespace sta
 
+} // namespace sta
 #endif
