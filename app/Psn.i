@@ -91,6 +91,7 @@ DatabaseHandler *handler();
 // wrap_unique_ptr(SteinerTreePtr, psn::SteinerTree);
 // %include "include/OpenPhySyn/SteinerTree/SteinerTree.hpp"
 
+#ifdef OPENROAD_BUILD
 %#ifdef OPENROAD_BUILD
 %ignore read_def;
 %ignore     read_lef;
@@ -100,6 +101,7 @@ DatabaseHandler *handler();
 %ignore     print_liberty_cells;
 %ignore psn::Psn::initialize;
 %#endif OPENROAD_BUILD
+#endif
 
 %include "external/OpenDB/src/swig/tcl/dbtypes.i"
 %include "external/OpenDB/include/opendb/geom.h"
