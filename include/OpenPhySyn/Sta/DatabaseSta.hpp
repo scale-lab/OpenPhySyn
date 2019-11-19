@@ -73,10 +73,13 @@ protected:
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+namespace psn
+{
 namespace sta
 {
 class dbSta;
 typdef dbSta DatabaseSta;
 } // namespace sta
+} // namespace psn
 #endif
 #endif

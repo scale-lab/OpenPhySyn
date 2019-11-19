@@ -155,6 +155,8 @@ set(PSN_DEP_FILES
   ${PSN_SWIG_FILES}
   ${PSN_HOME}/src/Psn/Exports.cpp
   ${PSN_HOME}/src/Psn/Psn.cpp
+  ${PSN_HOME}/src/Psn/Exports.hpp
+  ${PSN_HOME}/src/Psn/Psn.hpp
 )
 set(LIBRARY_NAME ${PROJECT_NAME})  # Default name for the library built from src/*.cpp (change if you wish)
 # string(TOLOWER ${PROJECT_NAME} LIBRARY_NAME)

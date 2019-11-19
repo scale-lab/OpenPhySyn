@@ -37,6 +37,7 @@
 namespace psn
 {
 
+#ifndef OPENROAD_BUILD
 int
 read_def(const char* def_path)
 {
@@ -62,6 +63,26 @@ write_def(const char* lib_path)
 {
     return Psn::instance().writeDef(lib_path);
 }
+
+int
+print_liberty_cells()
+{
+    Liberty* liberty = Psn::instance().liberty();
+    if (!liberty)
+    {
+        PsnLogger::instance().error("Did not find any liberty files, use "
+                                    "read_liberty <file name> first.");
+        return -1;
+    }
+    sta::LibertyCellIterator cell_iter(liberty);
+    while (cell_iter.hasNext())
+    {
+        sta::LibertyCell* cell = cell_iter.next();
+        PsnLogger::instance().info("Cell: {}", cell->name());
+    }
+    return 1;
+}
+#endif
 int
 set_wire_rc(float res_per_micon, float cap_per_micron)
 {
@@ -171,25 +192,6 @@ create_steiner_tree(Net* net)
     SteinerTree* tree = pt.get();
     pt.release();
     return tree;
-}
-
-int
-print_liberty_cells()
-{
-    Liberty* liberty = Psn::instance().liberty();
-    if (!liberty)
-    {
-        PsnLogger::instance().error("Did not find any liberty files, use "
-                                    "read_liberty <file name> first.");
-        return -1;
-    }
-    sta::LibertyCellIterator cell_iter(liberty);
-    while (cell_iter.hasNext())
-    {
-        sta::LibertyCell* cell = cell_iter.next();
-        PsnLogger::instance().info("Cell: {}", cell->name());
-    }
-    return 1;
 }
 
 } // namespace psn

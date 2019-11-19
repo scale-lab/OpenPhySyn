@@ -42,20 +42,23 @@ void print_version();
 void help();
 void print_usage();
 void print_transforms();
-int  read_def(const char* def_path);
-int  read_lef(const char* lef_path, int ignore_routing_layers = true);
-int  read_lib(const char* lib_path); // Alias for read_liberty
-int  read_liberty(const char* lib_path);
-int  write_def(const char* def_path);
-int  set_wire_rc(float res_per_micon, float cap_per_micron);
-int  set_max_area(float area);
-int  link(const char* top_module);
-int  link_design(const char* top_module);
-int  set_log(const char* level);
-int  set_log_level(const char* level);
-int  set_log_pattern(const char* pattern);
-int  transform_internal(std::string              transform_name,
-                        std::vector<std::string> args);
+#ifndef OPENROAD_BUILD
+int read_def(const char* def_path);
+int read_lef(const char* lef_path, int ignore_routing_layers = true);
+int read_lib(const char* lib_path); // Alias for read_liberty
+int read_liberty(const char* lib_path);
+int write_def(const char* def_path);
+int print_liberty_cells();
+#endif
+int set_wire_rc(float res_per_micon, float cap_per_micron);
+int set_max_area(float area);
+int link(const char* top_module);
+int link_design(const char* top_module);
+int set_log(const char* level);
+int set_log_level(const char* level);
+int set_log_pattern(const char* pattern);
+int transform_internal(std::string              transform_name,
+                       std::vector<std::string> args);
 
 DatabaseHandler& get_handler();
 DatabaseHandler& get_database_handler();
@@ -63,7 +66,6 @@ Database&        get_database();
 Liberty&         get_liberty();
 SteinerTree*     create_steiner_tree(const char* pin_name);
 SteinerTree*     create_steiner_tree(Net* net);
-int              print_liberty_cells();
 } // namespace psn
 
 #endif

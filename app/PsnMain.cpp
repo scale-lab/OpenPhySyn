@@ -39,6 +39,7 @@ int psnTclAppInit(Tcl_Interp* interp);
 int
 main(int argc, char* argv[])
 {
+    psn::Psn::initialize();
     try
     {
         psn::Psn::instance().setProgramOptions(argc, argv);
@@ -73,7 +74,6 @@ psnTclAppInit(Tcl_Interp* interp)
         return TCL_ERROR;
     }
 
-    psn::Psn::instance().loadTransforms();
     psn::Psn::instance().setupInterpreter(interp);
     psn::Psn::instance().processStartupProgramOptions();
     // psn::Psn::instance().setupInterpreterReadline(); // This should be that

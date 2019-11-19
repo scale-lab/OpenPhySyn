@@ -45,9 +45,9 @@ main(int argc, char** argv)
     // with "math" in their name context.setOption("abort-after", 5); // stop
     // test execution after 5 failed assertions context.setOption("order-by",
     // "name");            // sort the test cases by their name
+    psn::Psn::initialize();
 
     Tcl_Interp* interp = Tcl_CreateInterp();
-    psn::Psn::instance().loadTransforms();
     psn::Psn::instance().setupInterpreter(interp, true, false, false);
 
     context.applyCommandLine(argc, argv);

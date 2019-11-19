@@ -49,6 +49,7 @@ class Psn
 {
 public:
     static Psn& instance();
+    static Psn* instancePtr();
 
     virtual ProgramOptions& programOptions();
 
@@ -87,24 +88,24 @@ public:
 
     virtual Database*          database() const;
     virtual Liberty*           liberty() const;
-    virtual Library*           library() const;
     virtual LibraryTechnology* tech() const;
 
     virtual void clearDatabase();
 
     virtual int initalizeFlute(const char* flue_init_dir);
 
+    static void initialize(Database* db = nullptr, bool load_transforms = true);
+    static void initialize(sta::DatabaseSta* sta, bool load_transforms = true);
     ~Psn();
 
 private:
     Psn(Database* db = nullptr);
-    Database*          db_;
-    DesignSettings*    settings_;
-    Liberty*           liberty_;
-    sta::DatabaseSta*  sta_;
-    DatabaseHandler*   db_handler_;
-    Library*           library_;
-    LibraryTechnology* tech_;
+    Psn(sta::DatabaseSta* sta);
+    DesignSettings*   settings_;
+    Liberty*          liberty_;
+    sta::DatabaseSta* sta_;
+    Database*         db_;
+    DatabaseHandler*  db_handler_;
 
     int initializeDatabase();
 
@@ -112,6 +113,8 @@ private:
     std::unordered_map<std::string, TransformInfo> transforms_info_;
     Tcl_Interp*                                    interp_;
     ProgramOptions                                 program_options_;
+    static Psn*                                    psn_instance_;
+    static bool                                    is_initialized_;
 };
 } // namespace psn
 #endif

@@ -69,14 +69,15 @@ namespace psn
 using sta::evalTclInit;
 using sta::tcl_inits;
 
-Psn::Psn(Database* db)
-    : db_(db),
-      liberty_(nullptr),
-      library_(nullptr),
-      tech_(nullptr),
-      interp_(nullptr)
+Psn* Psn::psn_instance_;
+bool Psn::is_initialized_ = false;
+
+Psn::Psn(Database* db) : db_(db), interp_(nullptr)
 {
-    initializeDatabase();
+    if (db_ == nullptr)
+    {
+        initializeDatabase();
+    }
     settings_ = new DesignSettings();
     sta::initSta();
     sta_ = new sta::DatabaseSta(db_);
@@ -85,16 +86,45 @@ Psn::Psn(Database* db)
     db_handler_ = new DatabaseHandler(sta_);
     initalizeFlute("../external/flute/etc");
 }
+Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(sta->db()), interp_(nullptr)
+{
+    settings_   = new DesignSettings();
+    db_handler_ = new DatabaseHandler(sta_);
+    initalizeFlute("../external/flute/etc");
+}
+
+void
+Psn::initialize(Database* db, bool load_transforms)
+{
+    psn_instance_ = new Psn(db);
+    if (load_transforms)
+    {
+        psn_instance_->loadTransforms();
+    }
+    is_initialized_ = true;
+}
+void
+Psn::initialize(sta::DatabaseSta* sta, bool load_transforms)
+{
+    psn_instance_ = new Psn(sta);
+    if (load_transforms)
+    {
+        psn_instance_->loadTransforms();
+    }
+    is_initialized_ = true;
+}
 
 Psn::~Psn()
 {
     delete settings_;
     delete db_handler_;
+#ifndef OPENROAD_BUILD
     delete sta_;
     if (db_ != nullptr)
     {
         Database::destroy(db_);
     }
+#endif
 }
 
 int
@@ -147,34 +177,36 @@ Psn::readLef(const char* path, bool read_library, bool read_tech)
     LefReader reader(db_);
     try
     {
+        Library*           library = nullptr;
+        LibraryTechnology* tech    = nullptr;
         if (read_library && read_tech)
         {
-            if (tech_ == nullptr)
+            if (tech == nullptr)
             {
-                library_ = reader.readLibAndTech(path);
-                tech_    = library_->getTech();
+                library = reader.readLibAndTech(path);
+                tech    = library->getTech();
             }
             else
             {
                 // Might consider adding a warning here
-                library_ = reader.readLib(path);
+                library = reader.readLib(path);
             }
-            if (library_)
+            if (library)
             {
-                sta_->readLefAfter(library_);
+                sta_->readLefAfter(library);
             }
         }
         else if (read_library)
         {
-            library_ = reader.readLib(path);
-            if (library_)
+            library = reader.readLib(path);
+            if (library)
             {
-                sta_->readLefAfter(library_);
+                sta_->readLefAfter(library);
             }
         }
         else if (read_tech)
         {
-            tech_ = reader.readTech(path);
+            tech = reader.readTech(path);
         }
         else
         {
@@ -214,15 +246,11 @@ Psn::liberty() const
 {
     return liberty_;
 }
-Library*
-Psn::library() const
-{
-    return library_;
-}
+
 LibraryTechnology*
 Psn::tech() const
 {
-    return tech_;
+    return db_->getTech();
 }
 
 ProgramOptions&
@@ -246,8 +274,20 @@ Psn::settings() const
 Psn&
 Psn::instance()
 {
-    static Psn psnSingelton;
-    return psnSingelton;
+    if (!is_initialized_)
+    {
+        PsnLogger::instance().critical("OpenPhySyn is not initialized!");
+    }
+    return *psn_instance_;
+}
+Psn*
+Psn::instancePtr()
+{
+    if (!is_initialized_)
+    {
+        PsnLogger::instance().critical("OpenPhySyn is not initialized!");
+    }
+    return psn_instance_;
 }
 
 int
@@ -284,7 +324,7 @@ Psn::loadTransforms()
             FileUtils::readDirectory(transform_parent_path.c_str());
         for (auto& path : transforms_paths)
         {
-            psn::PsnLogger::instance().debug("Reading transform {}", path);
+            PsnLogger::instance().debug("Reading transform {}", path);
             handlers.push_back(psn::TransformHandler(path));
         }
 
@@ -368,6 +408,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
         return TCL_ERROR;
     }
 
+#ifndef OPENROAD_BUILD
     sta_->setTclInterp(interp_);
     if (setup_sta)
     {
@@ -415,6 +456,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
             return TCL_ERROR;
         }
     }
+#endif
     return TCL_OK;
 }
 void
@@ -695,8 +737,6 @@ void
 Psn::clearDatabase()
 {
     handler()->clear();
-    library_ = nullptr;
-    tech_    = nullptr;
 }
 
 int
