@@ -25,7 +25,13 @@ endif()
 if (${OPENROAD_BUILD})
   add_definitions(-DOPENROAD_BUILD)
 endif()
-message("Database handler: ${DATABASE_HANDLER}")
+
+set(SWIG_FLAGS "")
+if (OPENROAD_BUILD)
+set(SWIG_FLAGS "-DOPENROAD_BUILD")
+endif()
+
+# message("Database handler: ${DATABASE_HANDLER}")
 
 set(PSN_HOME
   ${PROJECT_SOURCE_DIR}
@@ -252,7 +258,7 @@ set_property(TARGET Psn PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 
 add_custom_command(OUTPUT ${PSN_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_WRAP} ${PSN_SWIG_FILES}
+  COMMAND ${SWIG_EXECUTABLE} ${SWIG_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_WRAP} ${PSN_SWIG_FILES}
   WORKING_DIRECTORY ${PSN_HOME}
   DEPENDS ${PSN_SWIG_FILES}
 )

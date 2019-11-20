@@ -92,7 +92,6 @@ DatabaseHandler *handler();
 // %include "include/OpenPhySyn/SteinerTree/SteinerTree.hpp"
 
 #ifdef OPENROAD_BUILD
-%#ifdef OPENROAD_BUILD
 %ignore read_def;
 %ignore     read_lef;
 %ignore     read_lib;
@@ -100,7 +99,6 @@ DatabaseHandler *handler();
 %ignore     write_def;
 %ignore     print_liberty_cells;
 %ignore psn::Psn::initialize;
-%#endif OPENROAD_BUILD
 #endif
 
 %include "external/OpenDB/src/swig/tcl/dbtypes.i"
