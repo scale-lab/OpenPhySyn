@@ -101,6 +101,9 @@ endif()
 # Add spdlog
 add_subdirectory(external/spdlog)
 
+# Add cpp-taskflow
+add_subdirectory(external/cpp-taskflow)
+
 
 
 set(PSN_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap.cc)
@@ -111,7 +114,6 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Psn/Exports.cpp
     ${PSN_HOME}/src/Psn/ProgramOptions.cpp
     ${PSN_HOME}/src/Psn/DesignSettings.cpp
-    ${PSN_HOME}/src/Analyzer/Analyzer.cpp
     ${PSN_HOME}/src/SteinerTree/SteinerTree.cpp
     ${PSN_HOME}/src/PsnLogger/PsnLogger.cpp
     ${PSN_HOME}/src/Database/OpenDBHandler.cpp
@@ -215,6 +217,7 @@ set(PUBLIC_LIBRARIES
   ${Boost_LIBRARIES}
   dl
   doctest
+  Cpp-Taskflow
 )
 if (${OPENROAD_BUILD})
 set(INCLUDE_DIRS
