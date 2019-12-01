@@ -117,6 +117,7 @@ Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/OpenPhySyn/
 -   [ ] Support command line options for Tcl functions instead of just positional arguments
 -   [ ] Support passing parsed options to the transform body
 -   [ ] Expose lower-level APIs through Tcl/Python interface
+-   [ ] Add profiling tool (i.e. Valgrind).
 -   [ ] Add API documentation
 -   [ ] Add Optimization Transforms
 -   [ ] Add Coding Guideline and Contribution Guide
