@@ -141,6 +141,13 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Sta/DatabaseStaNetwork.cpp
 )
 
+if (${OPENROAD_BUILD})
+set(PSN_SOURCES_NO_MAIN_NO_WRAP
+    ${PSN_SOURCES_NO_MAIN_NO_WRAP}
+    ${PSN_HOME}/src/OpenROAD/MakeOpenPhySyn.cpp
+)
+endif()
+
 
 
 set(PSN_SOURCES_NO_MAIN
@@ -157,7 +164,7 @@ if (${OPENROAD_BUILD})
 set(OPENSTA_UTIL_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenStaUtilTclInitVar.cc)
 
 add_custom_command(OUTPUT ${OPENSTA_UTIL_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${OPENSTA_UTIL_TCL_INIT} opensta_util_tcl_inits ${OPENSTA_HOME}/tcl/Util.tcl
+  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${OPENSTA_UTIL_TCL_INIT} dbsta_tcl_inits ${OPENSTA_HOME}/tcl/Util.tcl
   DEPENDS ${OPENSTA_HOME}/tcl/Util.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
 )
 
@@ -191,11 +198,17 @@ set(PSN_DEP_FILES
 set(LIBRARY_NAME ${PROJECT_NAME})  # Default name for the library built from src/*.cpp (change if you wish)
 # string(TOLOWER ${PROJECT_NAME} LIBRARY_NAME)
 
-set(INCLUDE_DIRS
+set(PUBLIC_INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/include
   ${PROJECT_SOURCE_DIR}/include/OpenPhySyn
   ${PROJECT_SOURCE_DIR}/src
-  ${PROJECT_SOURCE_DIR}/external
+)
+set(PRIVATE_INCLUDE_DIRS
+  ${PROJECT_SOURCE_DIR}/external/cpp-taskflow
+  ${PROJECT_SOURCE_DIR}/external/doctest
+  ${PROJECT_SOURCE_DIR}/external/spdlog
+  ${PROJECT_SOURCE_DIR}/external/StandardTransforms
+  ${PROJECT_SOURCE_DIR}/external/flute
   ${TCL_INCLUDE_PATH}
   ${Boost_INCLUDE_DIR}
   ${SPD_LOG_HOME}/include
@@ -219,11 +232,18 @@ set(PUBLIC_LIBRARIES
   doctest
   Cpp-Taskflow
 )
+
+if (NOT ${OPENROAD_BUILD})
+set(PRIVATE_INCLUDE_DIRS
+  ${PRIVATE_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/external
+)
+endif()
+
 if (${OPENROAD_BUILD})
-set(INCLUDE_DIRS
-  ${INCLUDE_DIRS}
+set(PRIVATE_INCLUDE_DIRS
+  ${PRIVATE_INCLUDE_DIRS}
   ${OPENROAD_HOME}/include
-  PRIVATE
   ${OPENROAD_HOME}/src
   ${OPENDB_HOME}/include
   flute3
@@ -234,18 +254,21 @@ ${PUBLIC_LIBRARIES}
 )
 endif()
 # Compile all sources into a library.
-add_library(${LIBRARY_NAME} STATIC ${PSN_SOURCES})
+add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_WRAP})
 add_executable(Psn ${PSN_SOURCES})  # Name of exec. and location of file.
 
-target_include_directories(${LIBRARY_NAME} PUBLIC ${INCLUDE_DIRS})
+target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
 target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES}) 
-target_include_directories(Psn PUBLIC ${INCLUDE_DIRS})
+target_include_directories(Psn PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
 target_link_libraries(Psn PUBLIC ${PUBLIC_LIBRARIES})
 
 
 
 include_directories (
-  ${INCLUDE_DIRS}
+  PUBLIC
+  ${PUBLIC_INCLUDE_DIRS}
+  PRIVATE
+  ${PRIVATE_INCLUDE_DIRS}
 )
 
 set_target_properties(

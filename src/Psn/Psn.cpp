@@ -41,7 +41,7 @@
 #include <OpenSTA/search/Sta.hh>
 #include <Psn/Psn.hpp>
 #include <boost/algorithm/string.hpp>
-#include <flute/flute.h>
+#include <flute.h>
 #include <tcl.h>
 #include "DefReader/DefReader.hpp"
 #include "DefWriter/DefWriter.hpp"
@@ -66,10 +66,9 @@ extern const char* tcl_inits[];
 } // namespace sta
 
 #ifdef OPENROAD_BUILD
-
 namespace sta
 {
-extern const char* opensta_util_tcl_inits[];
+extern const char* dbsta_tcl_inits[];
 }
 #endif
 namespace psn
@@ -305,10 +304,12 @@ Psn::instance()
 Psn*
 Psn::instancePtr()
 {
+#ifndef OPENROAD_BUILD
     if (!is_initialized_)
     {
         PsnLogger::instance().critical("OpenPhySyn is not initialized!");
     }
+#endif
     return psn_instance_;
 }
 
@@ -769,7 +770,7 @@ Psn::initializeSta(Tcl_Interp* interp)
         // dbSta can take a database without interp..
         interp = Tcl_CreateInterp();
         Tcl_Init(interp);
-        evalTclInit(interp, sta::opensta_util_tcl_inits);
+        evalTclInit(interp, sta::dbsta_tcl_inits);
     }
     sta_ = new sta::DatabaseSta;
     sta_->init(interp, db_);

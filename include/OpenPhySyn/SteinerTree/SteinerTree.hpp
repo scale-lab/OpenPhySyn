@@ -32,7 +32,7 @@
 #ifndef __PSN_STEINER_TREE__
 #define __PSN_STEINER_TREE__
 #include <OpenPhySyn/Database/Types.hpp>
-#include <flute/flute.h>
+#include <flute.h>
 #include <memory>
 #include <unordered_map>
 

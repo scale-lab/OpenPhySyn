@@ -28,40 +28,40 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "LibertyReader.hpp"
-#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
-#include <OpenSTA/liberty/LeakagePower.hh>
-#include <OpenSTA/liberty/Liberty.hh>
-#include <OpenSTA/liberty/LibertyBuilder.hh>
-#include <OpenSTA/liberty/LibertyReader.hh>
-#include <OpenSTA/liberty/LibertyReaderPvt.hh>
-#include <OpenSTA/network/Network.hh>
-#include <OpenSTA/util/Error.hh>
-#include "PsnException/FileException.hpp"
-#include "PsnException/ParseLibertyException.hpp"
+
+#ifdef OPENROAD_BUILD
+
+#include <OpenPhySyn/OpenROAD/MakeOpenPhySyn.hpp>
+#include <OpenPhySyn/include/OpenPhySyn/Psn/Psn.hpp>
+#include "openroad/OpenRoad.hh"
+
 namespace psn
 {
-
-LibertyReader::LibertyReader(Database* db, sta::DatabaseSta* sta)
-    : db_(db), sta_(sta)
-{
+class Psn;
 }
 
-Liberty*
-LibertyReader::read(const char* path, bool infer_latches)
+namespace ord
 {
-    try
-    {
-        sta::LibertyBuilder builder;
-        sta::LibertyReader  reader(&builder);
-        Liberty*            liberty =
-            reader.readLibertyFile(path, infer_latches, sta_->getDbNetwork());
-        return liberty;
-    }
-    catch (sta::StaException& e)
-    {
-        throw ParseLibertyException(e.what());
-    }
+
+class OpenRoad;
+
+psn::Psn*
+makePsn()
+{
+    return psn::Psn::instancePtr();
 }
 
-} // namespace psn
+void
+deletePsn(psn::Psn* psn)
+{
+    delete psn;
+}
+
+void
+initPsn(OpenRoad* openroad)
+{
+    psn::Psn::initialize(openroad->getSta(), true, openroad->tclInterp());
+}
+
+} // namespace ord
+#endif
