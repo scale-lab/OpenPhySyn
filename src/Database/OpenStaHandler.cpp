@@ -38,6 +38,7 @@
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
 #include <OpenSTA/dcalc/DcalcAnalysisPt.hh>
+#include <OpenSTA/dcalc/GraphDelayCalc.hh>
 #include <OpenSTA/graph/Graph.hh>
 #include <OpenSTA/liberty/TimingArc.hh>
 #include <OpenSTA/liberty/TimingModel.hh>
@@ -689,6 +690,20 @@ bool
 OpenStaHandler::isTriState(LibraryTerm* term) const
 {
     return term->direction()->isTristate();
+}
+bool
+OpenStaHandler::hasMaxCapViolation(InstanceTerm* term) const
+{
+    LibraryTerm* port = network()->libertyPort(term);
+    if (port)
+    {
+        float load_cap = network()->graphDelayCalc()->loadCap(term, dcalc_ap_);
+        float cap_limit;
+        bool  exists;
+        port->capacitanceLimit(sta::MinMax::max(), cap_limit, exists);
+        return exists && load_cap > cap_limit;
+    }
+    return false;
 }
 void
 OpenStaHandler::makeEquivalentCells()

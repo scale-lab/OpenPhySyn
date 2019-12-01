@@ -438,6 +438,13 @@ OpenDBHandler::isTriState(LibraryTerm* term) const
     return false;
 }
 
+bool
+OpenDBHandler::hasMaxCapViolation(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, hasMaxCapViolation)
+    return false;
+}
+
 Instance*
 OpenDBHandler::instance(const char* name) const
 {

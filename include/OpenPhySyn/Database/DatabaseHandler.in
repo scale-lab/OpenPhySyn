@@ -81,6 +81,7 @@ virtual bool          isAnyInput(LibraryTerm* term) const;
 virtual bool          isAnyOutput(LibraryTerm* term) const;
 virtual bool          isBiDriect(LibraryTerm* term) const;
 virtual bool          isTriState(LibraryTerm* term) const;
+virtual bool          hasMaxCapViolation(InstanceTerm* term) const;
 virtual Instance*     createInstance(const char* inst_name, LibraryCell* cell);
 virtual Net*          createNet(const char* net_name);
 virtual void          connect(Net* net, InstanceTerm* term) const;
