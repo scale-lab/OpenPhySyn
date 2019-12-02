@@ -29,7 +29,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "DefReader.hpp"
-namespace phy
+#include "PsnException/FileException.hpp"
+#include "PsnException/NoTechException.hpp"
+#include "PsnLogger/PsnLogger.hpp"
+
+namespace psn
 {
 
 DefReader::DefReader(Database* db) : db_(db), parser_(db)
@@ -45,9 +49,9 @@ DefReader::read(const char* path)
         throw FileException();
     }
     fclose(fp);
-    LibertySet            lib_set = db_->getLibs();
-    LibertySet::iterator  itr;
-    std::vector<Liberty*> libs;
+    LibrarySet            lib_set = db_->getLibs();
+    LibrarySet::iterator  itr;
+    std::vector<Library*> libs;
     for (itr = lib_set.begin(); itr != lib_set.end(); ++itr)
     {
         libs.push_back(*itr);
@@ -60,4 +64,4 @@ DefReader::read(const char* path)
     return 1;
 }
 
-} // namespace phy
+} // namespace psn

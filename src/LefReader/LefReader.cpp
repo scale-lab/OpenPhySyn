@@ -29,16 +29,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "LefReader.hpp"
-#include <errno.h>
-namespace phy
+#include "PsnException/FileException.hpp"
+#include "Utils/FileUtils.hpp"
+
+namespace psn
 {
 
 LefReader::LefReader(Database* db) : db_(db), parser_(db, false)
 {
 }
 
-int
-LefReader::read(const char* path)
+Library*
+LefReader::readLib(const char* path)
 {
     FILE* fp = fopen(path, "r");
     if (!fp)
@@ -46,8 +48,29 @@ LefReader::read(const char* path)
         throw FileException();
     }
     fclose(fp);
-    parser_.createTechAndLib(path, path);
-    return 1;
+    return parser_.createLib(FileUtils::baseName(path).c_str(), path);
+}
+Library*
+LefReader::readLibAndTech(const char* path)
+{
+    FILE* fp = fopen(path, "r");
+    if (!fp)
+    {
+        throw FileException();
+    }
+    fclose(fp);
+    return parser_.createTechAndLib(FileUtils::baseName(path).c_str(), path);
+}
+LibraryTechnology*
+LefReader::readTech(const char* path)
+{
+    FILE* fp = fopen(path, "r");
+    if (!fp)
+    {
+        throw FileException();
+    }
+    fclose(fp);
+    return parser_.createTech(path);
 }
 
-} // namespace phy
+} // namespace psn

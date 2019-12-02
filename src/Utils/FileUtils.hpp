@@ -29,22 +29,26 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_FILE_UTILS__
-#define __PHY_FILE_UTILS__
-#include <filesystem>
-#include <fstream>
-#include <sys/stat.h>
+#ifndef __PSN_FILE_UTILS__
+#define __PSN_FILE_UTILS__
+#include <string>
 #include <vector>
 
-namespace phy
+namespace psn
 {
 class FileUtils
 {
 public:
-    static bool                     pathExists(const char* path);
-    static bool                     isDirectory(const char* path);
-    static std::vector<std::string> readDir(const char* path);
+    static bool pathExists(const char* path);
+    static bool isDirectory(const char* path);
+    static bool createDirectory(const char* path);
+    static bool createDirectoryIfNotExists(const char* path);
+    static std::vector<std::string> readDirectory(const char* path);
     static std::string              readFile(const char* path);
+    static std::string              homePath();
+    static std::string              joinPath(const char* first_path,
+                                             const char* second_path);
+    static std::string              baseName(const char* path);
 };
-} // namespace phy
+} // namespace psn
 #endif

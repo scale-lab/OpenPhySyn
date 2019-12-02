@@ -29,23 +29,23 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PHY_LEF_READER__
-#define __PHY_LEF_READER__
-#include "Database/Types.hpp"
-#include "PhyLogger/PhyLogger.hpp"
-#include "PhyException/FileException.hpp"
+#ifndef __PSN_LEF_READER__
+#define __PSN_LEF_READER__
+#include <OpenPhySyn/Database/Types.hpp>
 
-namespace phy
+namespace psn
 {
 class LefReader
 {
 public:
     LefReader(Database* db);
-    int read(const char* path);
+    Library*           readLib(const char* path);
+    Library*           readLibAndTech(const char* path);
+    LibraryTechnology* readTech(const char* path);
 
 private:
     Database* db_;
     LefParser parser_;
 };
-} // namespace phy
+} // namespace psn
 #endif

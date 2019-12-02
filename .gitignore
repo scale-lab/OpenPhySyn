@@ -25,6 +25,9 @@
 *.la
 *.a
 *.lib
+!tests/data/*.lib
+!tests/data/**/Nangate45/*.lib
+!tests/data/**/gscl45nm/*.lib
 
 # Executables
 *.exe
@@ -34,3 +37,4 @@
 
 # Build directory
 build/
+tests/results

@@ -1,8 +1,15 @@
 [submodule "external/OpenSTA"]
 	path = external/OpenSTA
-	url = git@github.com:The-OpenROAD-Project/OpenSTA
+	url = https://github.com/The-OpenROAD-Project/OpenSTA.git
 	branch = master
 [submodule "external/OpenDB"]
 	path = external/OpenDB
 	url = https://github.com/The-OpenROAD-Project/OpenDB.git
-	branch = feature/add-sylib
+	branch = develop
+[submodule "external/StandardTransforms/HelloTransform"]
+	path = external/StandardTransforms/HelloTransform
+	url = git@github.com:The-OpenROAD-Project/OpenPhySynHelloTransform.git
+	branch = master
+[submodule "external/cpp-taskflow"]
+	path = external/cpp-taskflow
+	url = https://github.com/cpp-taskflow/cpp-taskflow.git

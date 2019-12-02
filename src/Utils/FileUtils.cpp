@@ -30,8 +30,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "FileUtils.hpp"
-
-namespace phy
+#include <boost/filesystem.hpp>
+#include <filesystem>
+#include <fstream>
+#include <libgen.h>
+#include <sys/stat.h>
+#include "PsnException/FileException.hpp"
+namespace psn
 {
 bool
 FileUtils::pathExists(const char* path)
@@ -52,8 +57,32 @@ FileUtils::isDirectory(const char* path)
     }
     return false;
 }
+bool
+FileUtils::createDirectory(const char* path)
+{
+    return std::filesystem::create_directory(path);
+}
+bool
+FileUtils::createDirectoryIfNotExists(const char* path)
+{
+    if (pathExists(path))
+    {
+        if (isDirectory(path))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        return createDirectory(path);
+    }
+}
 std::vector<std::string>
-FileUtils::readDir(const char* path)
+FileUtils::readDirectory(const char* path)
 {
     std::vector<std::string> paths;
     for (const auto& entry : std::filesystem::directory_iterator(path))
@@ -66,8 +95,44 @@ std::string
 FileUtils::readFile(const char* path)
 {
     std::ifstream infile{path};
-    std::string   file_contents{std::istreambuf_iterator<char>(infile),
+    if (!infile.is_open())
+    {
+        throw FileException();
+    }
+    std::string file_contents{std::istreambuf_iterator<char>(infile),
                               std::istreambuf_iterator<char>()};
     return file_contents;
 }
-} // namespace phy
+std::string
+FileUtils::homePath()
+{
+    std::string home_path = std::getenv("HOME");
+    if (!home_path.length())
+    {
+        home_path = std::getenv("USERPROFILE");
+    }
+    if (!home_path.length())
+    {
+        home_path = std::getenv("HOMEDRIVE");
+    }
+    if (!home_path.length())
+    {
+        home_path = "/home/OpenPhySyn";
+    }
+    return home_path;
+}
+std::string
+FileUtils::joinPath(const char* first_path, const char* second_path)
+{
+    boost::filesystem::path base(first_path);
+    boost::filesystem::path appendee(second_path);
+    boost::filesystem::path full_path = base / appendee;
+    return full_path.generic_string();
+}
+
+std::string
+FileUtils::baseName(const char* path)
+{
+    return std::string(basename(const_cast<char*>(path)));
+}
+} // namespace psn
