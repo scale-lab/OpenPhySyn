@@ -5,9 +5,4 @@ namespace eval psn {
     namespace ensemble create
 }
 
-proc transform {transform_name args} {
-    psn::transform_internal $transform_name $args
-}
-
-
 )===<><>==="
