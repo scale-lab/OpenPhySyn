@@ -37,6 +37,8 @@ To build a new transform refer to the transform [template](https://github.com/Th
 ```
 
 ### List available commands:
+*The following commands are for the standalone version, for the OpenROAD version, please check the top-level [repository](https://github.com/The-OpenROAD-Project/OpenROAD).*
+
 ```bash
 > ./Psn
 > help
@@ -56,7 +58,6 @@ sta <OpenSTA commands>                Run OpenSTA commands
 make_steiner_tree <net>               Construct steiner tree for the provided net
 set_log <log level>                   Set log level [trace, debug, info, warn, error, critical, off]
 set_log_pattern <pattern>             Set log printing pattern, refer to spdlog logger for pattern formats
-
 ```
 
 ### List loaded transforms:

@@ -374,8 +374,9 @@ Psn::loadTransforms()
                 tr_name);
         }
     }
+#ifndef OPENROAD_BUILD
     psn::PsnLogger::instance().info("Loaded {} transforms.", load_count);
-
+#endif
     return load_count;
 }
 

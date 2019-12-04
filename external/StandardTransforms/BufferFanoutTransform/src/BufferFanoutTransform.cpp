@@ -81,7 +81,8 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
     {
         logger.info("Net: {} {}", handler.name(net), handler.fanoutCount(net));
     }
-    // To-Do: Remove clock net..
+    auto clock_pins = handler.clockPins();
+
     int create_buffer_count = 0;
 
     std::vector<int> current_buffer;
@@ -90,6 +91,10 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
         InstanceTerm* source_pin = handler.faninPin(net);
         if (source_pin)
         {
+            if (clock_pins.count(source_pin))
+            {
+                continue;
+            }
             logger.info("Buffering: {}", handler.name(net));
             auto fanout_pins        = handler.fanoutPins(net);
             int  net_sink_pin_count = fanout_pins.size();
