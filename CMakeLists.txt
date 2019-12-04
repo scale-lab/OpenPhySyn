@@ -28,7 +28,7 @@ endif()
 
 set(SWIG_FLAGS "")
 if (OPENROAD_BUILD)
-set(SWIG_FLAGS "-DOPENROAD_BUILD")
+set(SWIG_FLAGS "-DOPENROAD_BUILD -DSWIG_DIRECTOR_STATIC")
 endif()
 
 # message("Database handler: ${DATABASE_HANDLER}")

@@ -450,7 +450,19 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
             return TCL_ERROR;
         }
     }
-    else
+#endif
+
+    const char* tcl_define_cmds =
+#include "Tcl/DefinePSNCommands.tcl"
+        ;
+    if (Tcl_Eval(interp_, tcl_define_cmds) != TCL_OK)
+    {
+        return TCL_ERROR;
+    }
+
+
+#ifndef OPENROAD_BUILD
+    if (!setup_sta)
     {
         const char* tcl_psn_setup =
 #include "Tcl/SetupPsn.tcl"
@@ -481,13 +493,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
         }
     }
 #endif
-    const char* tcl_define_cmds =
-#include "Tcl/DefinePSNCommands.tcl"
-        ;
-    if (Tcl_Eval(interp_, tcl_define_cmds) != TCL_OK)
-    {
-        return TCL_ERROR;
-    }
+
     return TCL_OK;
 }
 void
