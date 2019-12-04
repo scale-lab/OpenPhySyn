@@ -42,10 +42,8 @@ int
 BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                               std::string buffer_cell,
                               std::string buffer_in_port,
-                              std::string buffer_out_port,
-                              std::string clock_port_name)
+                              std::string buffer_out_port)
 {
-    PSN_UNUSED(clock_port_name)
 
     PsnLogger&       logger  = PsnLogger::instance();
     DatabaseHandler& handler = *(psn_inst->handler());
@@ -268,10 +266,9 @@ int
 BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
 
-    if (args.size() == 5 && isNumber(args[0]))
+    if (args.size() == 4 && isNumber(args[0]))
     {
-        return buffer(psn_inst, stoi(args[0]), args[1], args[2], args[3],
-                      args[4]);
+        return buffer(psn_inst, stoi(args[0]), args[1], args[2], args[3]);
     }
     else
     {
@@ -280,7 +277,7 @@ BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
             "<net_name>\n transform hello_transform "
             "buffer "
             "<max_fanout> <buffer_cell> <buffer_in_port> "
-            "<buffer_out_port> <clock_port>");
+            "<buffer_out_port>");
     }
 
     return -1;
