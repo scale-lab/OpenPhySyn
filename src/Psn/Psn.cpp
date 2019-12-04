@@ -374,8 +374,9 @@ Psn::loadTransforms()
                 tr_name);
         }
     }
+#ifndef OPENROAD_BUILD
     psn::PsnLogger::instance().info("Loaded {} transforms.", load_count);
-
+#endif
     return load_count;
 }
 
@@ -480,6 +481,13 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
         }
     }
 #endif
+    const char* tcl_define_cmds =
+#include "Tcl/DefinePSNCommands.tcl"
+        ;
+    if (Tcl_Eval(interp_, tcl_define_cmds) != TCL_OK)
+    {
+        return TCL_ERROR;
+    }
     return TCL_OK;
 }
 void

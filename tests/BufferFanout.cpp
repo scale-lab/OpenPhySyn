@@ -41,16 +41,16 @@ TEST_CASE("Should add fan-out buffers")
     try
     {
         psn_inst.clearDatabase();
+        psn_inst.readLib("../tests/data/libraries/Nangate45/"
+                         "NangateOpenCellLibrary_typical.lib");
         psn_inst.readLef(
             "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
         psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
-        psn_inst.readLib("../tests/data/libraries/Nangate45/"
-                         "NangateOpenCellLibrary_typical.lib");
         CHECK(psn_inst.database()->getChip() != nullptr);
         psn::Psn::instance().loadTransforms();
         auto result = psn_inst.runTransform(
             "buffer_fanout",
-            std::vector<std::string>({"2", "BUF_X1", "A", "Z", "clk"}));
+            std::vector<std::string>({"2", "BUF_X1", "A", "Z"}));
         CHECK(result == 6);
     }
     catch (PsnException& e)

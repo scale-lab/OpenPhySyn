@@ -52,10 +52,8 @@ LibertyReader::read(const char* path, bool infer_latches)
 {
     try
     {
-        sta::LibertyBuilder builder;
-        sta::LibertyReader  reader(&builder);
-        Liberty*            liberty =
-            reader.readLibertyFile(path, infer_latches, sta_->getDbNetwork());
+        Liberty* liberty = sta_->readLiberty(
+            path, sta_->cmdCorner(), sta::MinMaxAll::all(), infer_latches);
         return liberty;
     }
     catch (sta::StaException& e)

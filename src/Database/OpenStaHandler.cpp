@@ -46,6 +46,7 @@
 #include <OpenSTA/liberty/Transition.hh>
 #include <OpenSTA/network/NetworkCmp.hh>
 #include <OpenSTA/network/PortDirection.hh>
+#include <OpenSTA/sdc/Sdc.hh>
 #include <OpenSTA/search/Corner.hh>
 #include <OpenSTA/search/Search.hh>
 #include <OpenSTA/util/PatternMatch.hh>
@@ -110,6 +111,23 @@ OpenStaHandler::connectedPins(Net* net) const
     }
     std::sort(terms.begin(), terms.end(), sta::PinPathNameLess(network()));
     return terms;
+}
+std::set<BlockTerm*>
+OpenStaHandler::clockPins() const
+{
+    std::set<BlockTerm*> clock_pins;
+    auto                 clk_iter = new sta::ClockIterator(network()->sdc());
+    while (clk_iter->hasNext())
+    {
+        auto clk  = clk_iter->next();
+        auto pins = clk->pins();
+        for (auto pin : pins)
+        {
+            clock_pins.insert(pin);
+        }
+    }
+    delete clk_iter;
+    return clock_pins;
 }
 
 std::vector<InstanceTerm*>

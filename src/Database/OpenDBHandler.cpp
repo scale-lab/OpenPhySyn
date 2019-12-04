@@ -78,6 +78,12 @@ OpenDBHandler::connectedPins(Net* net) const
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, connectedPins)
     return std::vector<InstanceTerm*>();
 }
+std::set<BlockTerm*>
+OpenDBHandler::clockPins() const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, clockPins)
+    return std::set<BlockTerm*>();
+}
 
 std::vector<InstanceTerm*>
 OpenDBHandler::inputPins(Instance* inst) const

@@ -42,6 +42,7 @@ virtual std::vector<InstanceTerm*> pins(Net* net) const;
 virtual std::vector<InstanceTerm*> pins(Instance* inst) const;
 virtual Net*                       net(InstanceTerm* term) const;
 virtual std::vector<InstanceTerm*> connectedPins(Net* net) const;
+virtual std::set<BlockTerm*>       clockPins() const;
 virtual Point                      location(InstanceTerm* term);
 virtual Point                      location(Instance* inst);
 virtual float                      area(Instance* inst);
