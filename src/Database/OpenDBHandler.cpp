@@ -172,7 +172,25 @@ OpenDBHandler::fanoutCount(Net* net) const
 {
     return fanoutPins(net).size();
 }
+std::vector<InstanceTerm*>
+OpenDBHandler::criticalPath() const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, criticalPath)
+    return std::vector<InstanceTerm*>();
+}
+std::vector<InstanceTerm*>
+OpenDBHandler::bestPath() const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestPath)
+    return std::vector<InstanceTerm*>();
+}
 
+bool
+OpenDBHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isCommutative)
+    return false;
+}
 Point
 OpenDBHandler::location(InstanceTerm* term)
 {

@@ -40,6 +40,7 @@
 #include <OpenSTA/dcalc/DcalcAnalysisPt.hh>
 #include <OpenSTA/dcalc/GraphDelayCalc.hh>
 #include <OpenSTA/graph/Graph.hh>
+#include <OpenSTA/liberty/FuncExpr.hh>
 #include <OpenSTA/liberty/TimingArc.hh>
 #include <OpenSTA/liberty/TimingModel.hh>
 #include <OpenSTA/liberty/TimingRole.hh>
@@ -48,9 +49,12 @@
 #include <OpenSTA/network/PortDirection.hh>
 #include <OpenSTA/sdc/Sdc.hh>
 #include <OpenSTA/search/Corner.hh>
+#include <OpenSTA/search/PathEnd.hh>
+#include <OpenSTA/search/PathExpanded.hh>
 #include <OpenSTA/search/Search.hh>
 #include <OpenSTA/util/PatternMatch.hh>
 #include <algorithm>
+#include <cmath>
 #include <set>
 
 namespace psn
@@ -149,6 +153,168 @@ OpenStaHandler::fanoutPins(Net* net) const
 {
     auto inst_pins = pins(net);
     return filterPins(inst_pins, PinDirection::input());
+}
+// TODO: Refactor to helper for criticalPath and bestPath
+std::vector<InstanceTerm*>
+OpenStaHandler::criticalPath() const
+{
+    sta_->ensureGraph();
+    sta_->searchPreamble();
+    std::vector<InstanceTerm*> pins;
+    sta::PathEndSeq*           path_ends =
+        sta_->search()->findPathEnds( // from, thrus, to, unconstrained
+            nullptr, nullptr, nullptr, false,
+            // corner, min_max,
+            corner_, sta::MinMaxAll::min(),
+            // group_count, endpoint_count, unique_pins
+            1, 1, false, -sta::INF, sta::INF, // slack_min, slack_max,
+            true,                             // sort_by_slack
+            nullptr,                          // group_names
+            // setup, hold, recovery, removal,
+            true, true, true, true,
+            // clk_gating_setup, clk_gating_hold
+            true, true);
+
+    if (!path_ends->size())
+    {
+        delete path_ends;
+        return pins;
+    }
+
+    auto              path_end = path_ends->at(0);
+    sta::PathExpanded expanded(path_end->path(), sta_);
+    for (int i = 1; i < expanded.size(); i++)
+    {
+        pins.push_back(expanded.path(i)->vertex(sta_)->pin());
+    }
+    delete path_ends;
+    return pins;
+}
+std::vector<InstanceTerm*>
+OpenStaHandler::bestPath() const
+{
+    sta_->ensureGraph();
+    sta_->searchPreamble();
+    std::vector<InstanceTerm*> pins;
+    sta::PathEndSeq*           path_ends =
+        sta_->search()->findPathEnds( // from, thrus, to, unconstrained
+            nullptr, nullptr, nullptr, false,
+            // corner, min_max,
+            corner_, sta::MinMaxAll::max(),
+            // group_count, endpoint_count, unique_pins
+            1, 1, false, -sta::INF, sta::INF, // slack_min, slack_max,
+            true,                             // sort_by_slack
+            nullptr,                          // group_names
+            // setup, hold, recovery, removal,
+            true, true, true, true,
+            // clk_gating_setup, clk_gating_hold
+            true, true);
+
+    if (!path_ends->size())
+    {
+        delete path_ends;
+        return pins;
+    }
+
+    auto              path_end = path_ends->at(0);
+    sta::PathExpanded expanded(path_end->path(), sta_);
+    for (int i = 1; i < expanded.size(); i++)
+    {
+        pins.push_back(expanded.path(i)->vertex(sta_)->pin());
+    }
+    delete path_ends;
+    return pins;
+}
+
+bool
+OpenStaHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
+{
+    auto inst = instance(first);
+    if (inst != instance(second))
+    {
+        return false;
+    }
+    if (first == second)
+    {
+        return true;
+    }
+    auto cell_lib = libraryCell(inst);
+    if (cell_lib->isClockGate() || cell_lib->isPad() || cell_lib->isMacro() ||
+        cell_lib->hasSequentials())
+    {
+        return false;
+    }
+    auto                      first_lib   = libraryPin(first);
+    auto                      second_lib  = libraryPin(second);
+    auto                      output_pins = outputPins(inst);
+    auto                      input_pins  = inputPins(inst);
+    std::vector<LibraryTerm*> remaining_pins;
+    for (auto& pin : input_pins)
+    {
+        if (pin != first && pin != second)
+        {
+            remaining_pins.push_back(libraryPin(pin));
+        }
+    }
+    for (auto& out : output_pins)
+    {
+        sta::FuncExpr* func = libraryPin(out)->function();
+        if (func->hasPort(first_lib) && func->hasPort(second_lib))
+        {
+            std::unordered_map<LibraryTerm*, int> sim_vals;
+            for (int i = 0; i < 2; i++)
+            {
+                for (int j = 0; j < 2; j++)
+                {
+                    if (remaining_pins.size())
+                    {
+                        for (int m = 0; m < std::pow(2, remaining_pins.size());
+                             m++)
+                        {
+                            sim_vals[first_lib]  = i;
+                            sim_vals[second_lib] = j;
+                            int temp             = m;
+                            for (auto& rp : remaining_pins)
+                            {
+                                sim_vals[rp] = temp & 1;
+                                temp         = temp >> 1;
+                            }
+                            int first_result =
+                                evaluateFunctionExpression(out, sim_vals);
+
+                            sim_vals[first_lib]  = j;
+                            sim_vals[second_lib] = i;
+                            int second_result =
+                                evaluateFunctionExpression(out, sim_vals);
+                            if (first_result != second_result ||
+                                first_result == -1 || second_result == -1)
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        sim_vals[first_lib]  = i;
+                        sim_vals[second_lib] = j;
+                        int first_result =
+                            evaluateFunctionExpression(out, sim_vals);
+
+                        sim_vals[first_lib]  = j;
+                        sim_vals[second_lib] = i;
+                        int second_result =
+                            evaluateFunctionExpression(out, sim_vals);
+                        if (first_result != second_result ||
+                            first_result == -1 || second_result == -1)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return true;
 }
 std::vector<InstanceTerm*>
 OpenStaHandler::levelDriverPins() const
@@ -811,6 +977,87 @@ OpenStaHandler::findTargetLoads()
     findTargetLoads(&all_libs);
     has_target_loads_ = true;
 }
+
+int
+OpenStaHandler::evaluateFunctionExpression(
+    InstanceTerm* term, std::unordered_map<LibraryTerm*, int>& inputs) const
+{
+    return evaluateFunctionExpression(libraryPin(term), inputs);
+}
+int
+OpenStaHandler::evaluateFunctionExpression(
+    LibraryTerm* term, std::unordered_map<LibraryTerm*, int>& inputs) const
+{
+    return evaluateFunctionExpression(term->function(), inputs);
+}
+int
+OpenStaHandler::evaluateFunctionExpression(
+    sta::FuncExpr* func, std::unordered_map<LibraryTerm*, int>& inputs) const
+{
+    int left;
+    int right;
+    switch (func->op())
+    {
+    case sta::FuncExpr::op_port:
+        if (inputs.count(func->port()))
+        {
+            return inputs[func->port()];
+        }
+        else
+        {
+            return -1;
+        }
+    case sta::FuncExpr::op_not:
+        left = evaluateFunctionExpression(func->left(), inputs);
+        if (left == -1)
+        {
+            return -1;
+        }
+        return !left;
+    case sta::FuncExpr::op_or:
+        left = evaluateFunctionExpression(func->left(), inputs);
+        if (left == -1)
+        {
+            return -1;
+        }
+        right = evaluateFunctionExpression(func->right(), inputs);
+        if (right == -1)
+        {
+            return -1;
+        }
+        return left | right;
+    case sta::FuncExpr::op_and:
+        left = evaluateFunctionExpression(func->left(), inputs);
+        if (left == -1)
+        {
+            return -1;
+        }
+        right = evaluateFunctionExpression(func->right(), inputs);
+        if (right == -1)
+        {
+            return -1;
+        }
+        return left & right;
+    case sta::FuncExpr::op_xor:
+        left = evaluateFunctionExpression(func->left(), inputs);
+        if (left == -1)
+        {
+            return -1;
+        }
+        right = evaluateFunctionExpression(func->right(), inputs);
+        if (right == -1)
+        {
+            return -1;
+        }
+        return left ^ right;
+    case sta::FuncExpr::op_one:
+        return 1;
+    case sta::FuncExpr::op_zero:
+        return 0;
+    default:
+        return -1;
+    }
+} // namespace psn
 
 /* The following is borrowed from James Cherry's Resizer Code */
 

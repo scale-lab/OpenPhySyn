@@ -52,8 +52,15 @@ public:
     sta::DatabaseSta*        sta() const;
     virtual ~OpenStaHandler();
 
+    int evaluateFunctionExpression(
+        InstanceTerm*                          term,
+        std::unordered_map<LibraryTerm*, int>& inputs) const;
+    int evaluateFunctionExpression(
+        LibraryTerm* term, std::unordered_map<LibraryTerm*, int>& inputs) const;
+    int evaluateFunctionExpression(
+        sta::FuncExpr*                         func,
+        std::unordered_map<LibraryTerm*, int>& inputs) const;
     void resetCache(); // Reset equivalent cells and target loads
-
 private:
     void                   makeEquivalentCells();
     sta::LibertyLibrarySeq allLibs() const;
