@@ -68,7 +68,7 @@ set_log_pattern <pattern>             Set log printing pattern, refer to spdlog 
 > print_transforms
 ```
 
-### Print get usage info for a transform:
+### Print usage information for a transform:
 ```bash
 > ./Psn
 > transform <transform name> help
@@ -116,9 +116,9 @@ Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/OpenPhySyn/
 -   [x] Support reading scripts from file
 -   [x] Add unit tests
 -   [x] Add Gate Cloning Transform
--   [ ] Fix issues with OpenSTA commands integration
--   [ ] Support command line options for Tcl functions instead of just positional arguments
--   [ ] Support passing parsed options to the transform body
+-   [x] Fix issues with OpenSTA commands integration
+-   [x] Support command line options for Tcl functions instead of just positional arguments
+-   [x] Support passing parsed options to the transform body
 -   [ ] Expose lower-level APIs through Tcl/Python interface
 -   [ ] Add profiling tool (i.e. Valgrind).
 -   [ ] Add API documentation
