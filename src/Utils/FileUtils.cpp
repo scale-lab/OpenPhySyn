@@ -29,12 +29,25 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "FileUtils.hpp"
-#include <boost/filesystem.hpp>
+#ifndef __has_include
+static_assert(false, "__has_include not supported");
+#else
+#if __has_include(<filesystem>)
 #include <filesystem>
+namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#elif __has_include(<boost/filesystem.hpp>)
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#endif
+#endif
+
 #include <fstream>
 #include <libgen.h>
 #include <sys/stat.h>
+#include "FileUtils.hpp"
 #include "PsnException/FileException.hpp"
 namespace psn
 {
@@ -60,7 +73,7 @@ FileUtils::isDirectory(const char* path)
 bool
 FileUtils::createDirectory(const char* path)
 {
-    return std::filesystem::create_directory(path);
+    return fs::create_directory(path);
 }
 bool
 FileUtils::createDirectoryIfNotExists(const char* path)
@@ -85,7 +98,7 @@ std::vector<std::string>
 FileUtils::readDirectory(const char* path)
 {
     std::vector<std::string> paths;
-    for (const auto& entry : std::filesystem::directory_iterator(path))
+    for (const auto& entry : fs::directory_iterator(path))
     {
         paths.push_back(entry.path());
     }
@@ -124,9 +137,9 @@ FileUtils::homePath()
 std::string
 FileUtils::joinPath(const char* first_path, const char* second_path)
 {
-    boost::filesystem::path base(first_path);
-    boost::filesystem::path appendee(second_path);
-    boost::filesystem::path full_path = base / appendee;
+    fs::path base(first_path);
+    fs::path appendee(second_path);
+    fs::path full_path = base / appendee;
     return full_path.generic_string();
 }
 

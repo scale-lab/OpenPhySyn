@@ -240,6 +240,7 @@ set(PUBLIC_LIBRARIES
   ${Boost_LIBRARIES}
   dl
   doctest
+  stdc++fs
 )
 if (${OPENPHYSYN_CPP_TASKFLOW_ENABLED})
 set(PUBLIC_LIBRARIES

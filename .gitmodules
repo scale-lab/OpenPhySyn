@@ -13,3 +13,5 @@
 [submodule "external/cpp-taskflow"]
 	path = external/cpp-taskflow
 	url = https://github.com/cpp-taskflow/cpp-taskflow.git
+	branch = master
+	ignore = dirty

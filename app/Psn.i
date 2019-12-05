@@ -60,7 +60,7 @@ DatabaseHandler *handler();
 %include <std_except.i>
 #ifndef OPENROAD_BUILD
 %include <stl.i>
-%include <src/Tcl/Swig/std_unique_ptr.i>
+//%include <src/Tcl/Swig/std_unique_ptr.i>
 %include <std_vector.i>
 #else
 %include <src/Tcl/Swig/std_vector.i>
