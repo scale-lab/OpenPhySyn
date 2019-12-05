@@ -266,37 +266,17 @@ OpenStaHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
             {
                 for (int j = 0; j < 2; j++)
                 {
-                    if (remaining_pins.size())
-                    {
-                        for (int m = 0; m < std::pow(2, remaining_pins.size());
-                             m++)
-                        {
-                            sim_vals[first_lib]  = i;
-                            sim_vals[second_lib] = j;
-                            int temp             = m;
-                            for (auto& rp : remaining_pins)
-                            {
-                                sim_vals[rp] = temp & 1;
-                                temp         = temp >> 1;
-                            }
-                            int first_result =
-                                evaluateFunctionExpression(out, sim_vals);
 
-                            sim_vals[first_lib]  = j;
-                            sim_vals[second_lib] = i;
-                            int second_result =
-                                evaluateFunctionExpression(out, sim_vals);
-                            if (first_result != second_result ||
-                                first_result == -1 || second_result == -1)
-                            {
-                                return false;
-                            }
-                        }
-                    }
-                    else
+                    for (int m = 0; m < std::pow(2, remaining_pins.size()); m++)
                     {
                         sim_vals[first_lib]  = i;
                         sim_vals[second_lib] = j;
+                        int temp             = m;
+                        for (auto& rp : remaining_pins)
+                        {
+                            sim_vals[rp] = temp & 1;
+                            temp         = temp >> 1;
+                        }
                         int first_result =
                             evaluateFunctionExpression(out, sim_vals);
 
