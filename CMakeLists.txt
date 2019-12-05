@@ -14,9 +14,10 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Tool build configuration
 option(OPENROAD_BUILD "Indicates if the tool is being built as a module in the top level application" OFF)
-set(DATABASE_HANDLER "OpenSTA" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
+option(OPENPHYSYN_CPP_TASKFLOW_ENABLED "Build and use cpp-taskflow" OFF)
+set(OPENPHYSYN_DATABASE_HANDLER "OpenSTA" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
 
-if (${DATABASE_HANDLER} STREQUAL "OpenDB")
+if (${OPENPHYSYN_DATABASE_HANDLER} STREQUAL "OpenDB")
   add_definitions(-DUSE_OPENDB_DB_HANDLER)
 else()
   add_definitions(-DUSE_OPENSTA_DB_HANDLER)
@@ -28,10 +29,10 @@ endif()
 
 set(SWIG_FLAGS "")
 if (OPENROAD_BUILD)
-set(SWIG_FLAGS "-DOPENROAD_BUILD")
+set(SWIG_FLAGS "-DOPENROAD_BUILD -DSWIG_DIRECTOR_STATIC")
 endif()
 
-# message("Database handler: ${DATABASE_HANDLER}")
+# message("Database handler: ${OPENPHYSYN_DATABASE_HANDLER}")
 
 set(PSN_HOME
   ${PROJECT_SOURCE_DIR}
@@ -102,7 +103,10 @@ endif()
 add_subdirectory(external/spdlog)
 
 # Add cpp-taskflow
+if (${OPENPHYSYN_CPP_TASKFLOW_ENABLED})
+add_definitions(-DCPP_TASKFLOW_ENABLED)
 add_subdirectory(external/cpp-taskflow)
+endif()
 
 
 
@@ -204,7 +208,6 @@ set(PUBLIC_INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/src
 )
 set(PRIVATE_INCLUDE_DIRS
-  ${PROJECT_SOURCE_DIR}/external/cpp-taskflow
   ${PROJECT_SOURCE_DIR}/external/doctest
   ${PROJECT_SOURCE_DIR}/external/spdlog
   ${PROJECT_SOURCE_DIR}/external/StandardTransforms
@@ -221,6 +224,13 @@ set(PRIVATE_INCLUDE_DIRS
   ${OPENDB_HOME}/src/defout
 )
 
+if (${OPENPHYSYN_CPP_TASKFLOW_ENABLED})
+set(PRIVATE_INCLUDE_DIRS
+  ${PROJECT_SOURCE_DIR}/external/cpp-taskflow
+  ${PRIVATE_INCLUDE_DIRS}
+)
+endif()
+
 set(PUBLIC_LIBRARIES
   flute
   opendb
@@ -230,8 +240,14 @@ set(PUBLIC_LIBRARIES
   ${Boost_LIBRARIES}
   dl
   doctest
+  stdc++fs
+)
+if (${OPENPHYSYN_CPP_TASKFLOW_ENABLED})
+set(PUBLIC_LIBRARIES
+  ${PUBLIC_LIBRARIES}
   Cpp-Taskflow
 )
+endif()
 
 if (NOT ${OPENROAD_BUILD})
 set(PRIVATE_INCLUDE_DIRS

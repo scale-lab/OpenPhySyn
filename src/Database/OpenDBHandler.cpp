@@ -219,6 +219,32 @@ OpenDBHandler::libraryPin(InstanceTerm* term) const
 {
     return term->getMTerm();
 }
+
+std::vector<LibraryTerm*>
+OpenDBHandler::libraryPins(Instance* inst) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, libraryPins);
+    return std::vector<LibraryTerm*>();
+}
+std::vector<LibraryTerm*>
+OpenDBHandler::libraryPins(LibraryCell* cell) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, libraryPins);
+    return std::vector<LibraryTerm*>();
+}
+std::vector<LibraryTerm*>
+OpenDBHandler::libraryInputPins(LibraryCell* cell) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, libraryInputPins);
+    return std::vector<LibraryTerm*>();
+}
+std::vector<LibraryTerm*>
+OpenDBHandler::libraryOutputPins(LibraryCell* cell) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, libraryOutputPins);
+    return std::vector<LibraryTerm*>();
+}
+
 bool
 OpenDBHandler::isClocked(InstanceTerm* term) const
 {

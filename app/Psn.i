@@ -60,11 +60,12 @@ DatabaseHandler *handler();
 %include <std_except.i>
 #ifndef OPENROAD_BUILD
 %include <stl.i>
+//%include <src/Tcl/Swig/std_unique_ptr.i>
 %include <std_vector.i>
-%include <src/Tcl/Swig/std_unique_ptr.i>
-
-%template(vector_str) std::vector<std::string>;
+#else
+%include <src/Tcl/Swig/std_vector.i>
 #endif
+%template(vector_str) std::vector<std::string>;
 %typemap(in) char ** {
      Tcl_Obj **listobjv;
      int       nitems;

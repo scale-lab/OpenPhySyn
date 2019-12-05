@@ -52,6 +52,8 @@ read_liberty <file path>              load a liberty file
 write_def <output file>               Write DEF file
 set_wire_rc <res> <cap>               Set resistance & capacitance per micron
 set_max_area <area>                   Set maximum design area
+optimize_design [<options>]           Perform timing optimization on the design
+optimize_fanout <options>             Buffer high-fanout nets
 transform <transform name> <args>     Run transform on the loaded design
 link_design <design name>             Link design top module
 sta <OpenSTA commands>                Run OpenSTA commands
