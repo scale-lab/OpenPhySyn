@@ -22,7 +22,7 @@ Example:
 ```bash
 > ./Psn
 > # Run simple buffering algorithm for cell with max-fanout 2
-> transform buffer_fanout 2 BUF_X1 A Z clk
+> transform buffer_fanout 2 BUF_X1
 > write_def out.def
 ```
 

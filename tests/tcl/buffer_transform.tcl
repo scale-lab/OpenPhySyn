@@ -4,7 +4,7 @@ read_def ../tests/data/designs/fanout/fanout_nan.def
 sta create_clock [sta get_ports clk] -name core_clock -period 10
 puts "Read ok!"
 # transform buffer_fanout 2 BUF_X1 A Z
-optimize_fanout -buffer_cell BUF_X1 -buffer_input_port A -buffer_output_port Z -max_fanout 2
+optimize_fanout -buffer_cell BUF_X1 -max_fanout 2
 write_def ./outputs/buffered.def
 puts "Buffer ok!"
 exit 0

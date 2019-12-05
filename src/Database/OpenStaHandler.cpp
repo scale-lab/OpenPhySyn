@@ -444,6 +444,52 @@ OpenStaHandler::libraryPin(LibraryCell* cell, const char* pin_name) const
     return cell->findLibertyPort(pin_name);
 }
 
+std::vector<LibraryTerm*>
+OpenStaHandler::libraryPins(Instance* inst) const
+{
+    return libraryPins(libraryCell(inst));
+}
+std::vector<LibraryTerm*>
+OpenStaHandler::libraryPins(LibraryCell* cell) const
+{
+    std::vector<LibraryTerm*>    pins;
+    sta::LibertyCellPortIterator itr(cell);
+    while (itr.hasNext())
+    {
+        auto port = itr.next();
+        pins.push_back(port);
+    }
+    return pins;
+}
+std::vector<LibraryTerm*>
+OpenStaHandler::libraryInputPins(LibraryCell* cell) const
+{
+    auto pins = libraryPins(cell);
+    for (auto it = pins.begin(); it != pins.end(); it++)
+    {
+        if (!((*it)->direction()->isAnyInput()))
+        {
+            it = pins.erase(it);
+            it--;
+        }
+    }
+    return pins;
+}
+std::vector<LibraryTerm*>
+OpenStaHandler::libraryOutputPins(LibraryCell* cell) const
+{
+    auto pins = libraryPins(cell);
+    for (auto it = pins.begin(); it != pins.end(); it++)
+    {
+        if (!((*it)->direction()->isAnyOutput()))
+        {
+            it = pins.erase(it);
+            it--;
+        }
+    }
+    return pins;
+}
+
 std::vector<InstanceTerm*>
 OpenStaHandler::filterPins(std::vector<InstanceTerm*>& terms,
                            PinDirection*               direction) const

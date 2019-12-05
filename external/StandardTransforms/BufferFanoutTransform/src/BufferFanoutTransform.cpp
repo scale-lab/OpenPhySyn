@@ -40,9 +40,7 @@ using namespace psn;
 
 int
 BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
-                              std::string buffer_cell,
-                              std::string buffer_in_port,
-                              std::string buffer_out_port)
+                              std::string buffer_cell)
 {
 
     PsnLogger&       logger  = PsnLogger::instance();
@@ -53,20 +51,23 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
         logger.error("Buffer {} not found!", buffer_cell);
         return -1;
     }
-    LibraryTerm* cell_in_pin = handler.libraryPin(cell, buffer_in_port.c_str());
-    LibraryTerm* cell_out_pin =
-        handler.libraryPin(cell, buffer_out_port.c_str());
-    if (!cell_in_pin)
+    auto buffer_input_pins  = handler.libraryInputPins(cell);
+    auto buffer_output_pins = handler.libraryOutputPins(cell);
+    if (buffer_input_pins.size() != 1)
     {
-        logger.error("Pin {} not found!", buffer_in_port);
+        logger.error("Invalid buffer cell, number of input pins is {}",
+                     buffer_input_pins.size());
         return -1;
     }
-    if (!cell_out_pin)
+    if (buffer_output_pins.size() != 1)
     {
-        logger.error("Pin {} not found!", buffer_out_port);
+        logger.error("Invalid buffer cell, number of output pins is {}",
+                     buffer_output_pins.size());
         return -1;
     }
-    auto              nets = handler.nets();
+    LibraryTerm*      cell_in_pin  = *(buffer_input_pins.begin());
+    LibraryTerm*      cell_out_pin = *(buffer_output_pins.begin());
+    auto              nets         = handler.nets();
     std::vector<Net*> high_fanout_nets;
     for (auto& net : nets)
     {
@@ -271,18 +272,16 @@ int
 BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
 
-    if (args.size() == 4 && isNumber(args[0]))
+    if (args.size() == 2 && isNumber(args[0]))
     {
-        return buffer(psn_inst, stoi(args[0]), args[1], args[2], args[3]);
+        return buffer(psn_inst, stoi(args[0]), args[1]);
     }
     else
     {
-        PsnLogger::instance().error(
-            "Usage:\n transform hello_transform "
-            "<net_name>\n transform hello_transform "
-            "buffer "
-            "<max_fanout> <buffer_cell> <buffer_in_port> "
-            "<buffer_out_port>");
+        PsnLogger::instance().error("Usage:\n transform buffer_fanout "
+                                    "<net_name>\n transform buffer_fanout "
+                                    "buffer "
+                                    "<max_fanout> <buffer_cell>");
     }
 
     return -1;

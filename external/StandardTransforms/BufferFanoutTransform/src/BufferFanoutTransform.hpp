@@ -41,8 +41,7 @@ private:
     bool isNumber(const std::string& s);
 
 public:
-    int buffer(psn::Psn* psn_inst, int max_fanout, std::string buffer_cell,
-               std::string buffer_in_port, std::string buffer_out_port);
+    int buffer(psn::Psn* psn_inst, int max_fanout, std::string buffer_cell);
 
     int         run(psn::Psn* psn_inst, std::vector<std::string> args) override;
     std::string bufferName(int index);
@@ -56,5 +55,4 @@ public:
 DEFINE_TRANSFORM(BufferFanoutTransform, "buffer_fanout", "1.0.0",
                  "Inserts buffers based on max fan-out",
                  "Usage: transform buffer_fanout "
-                 "<max_fanout> <buffer_cell> <buffer_in_port> "
-                 "<buffer_out_port>")
+                 "<max_fanout> <buffer_cell>")

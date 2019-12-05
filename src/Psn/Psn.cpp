@@ -460,7 +460,6 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
         return TCL_ERROR;
     }
 
-
 #ifndef OPENROAD_BUILD
     if (!setup_sta)
     {
@@ -563,6 +562,9 @@ Psn::printCommands(bool raw_str)
         "set_wire_rc <res> <cap>               Set resistance & capacitance "
         "per micron\n"
         "set_max_area <area>                   Set maximum design area\n"
+        "optimize_design [<options>]           Perform timing optimization on "
+        "the design\n"
+        "optimize_fanout <options>             Buffer high-fanout nets\n"
         "transform <transform name> <args>     Run transform on the loaded "
         "design\n"
         "link <design name>                    Link design top module\n"
