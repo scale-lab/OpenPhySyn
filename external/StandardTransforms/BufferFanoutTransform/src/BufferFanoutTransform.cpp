@@ -287,10 +287,7 @@ BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
     }
     else
     {
-        PsnLogger::instance().error("Usage:\n transform buffer_fanout "
-                                    "<net_name>\n transform buffer_fanout "
-                                    "buffer "
-                                    "<max_fanout> <buffer_cell>");
+        PsnLogger::instance().error(help());
     }
 
     return -1;

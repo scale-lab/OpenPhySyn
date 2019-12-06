@@ -28,6 +28,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+option(OPENPHYSYN_TRANSFORM_HELLO_ENABLED "Enable hello transform" ON)
+option(OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED "Enable buffer fanout transform" ON)
+option(OPENPHYSYN_TRANSFORM_GATE_CLONING_ENABLED "Enable gate cloning transform" ON)
+option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Enable pin swapping transform" ON)
+
 SUBDIRLIST(TRANSFORMS_DIRS ${CMAKE_SOURCE_DIR}/external/StandardTransforms)
 set(TRANSFORMS_BUILD_DIR "${CMAKE_BINARY_DIR}/transforms")
 
@@ -39,21 +44,34 @@ file(MAKE_DIRECTORY ${TRANSFORMS_BUILD_DIR})
 set(PSN_HOME ${CMAKE_CURRENT_SOURCE_DIR} CACHE FILEPATH "The path to OpenPhySyn includes")
 set(PSN_TRANSFORM_INSTALL_PATH "$ENV{HOME}/.OpenPhySyn/transforms" CACHE FILEPATH "Default path for transforms installation")
 
+if (${OPENPHYSYN_TRANSFORM_HELLO_ENABLED})
 add_subdirectory(external/StandardTransforms/HelloTransform)
 install(
   TARGETS hello_transform
   DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
 )
+endif()
 
-
+if (${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
 add_subdirectory(external/StandardTransforms/BufferFanoutTransform)
 install(
   TARGETS buffer_fanout
   DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
 )
+endif()
 
+if (${OPENPHYSYN_TRANSFORM_GATE_CLONING_ENABLED})
 add_subdirectory(external/StandardTransforms/GateCloningTransform)
 install(
   TARGETS gate_clone
   DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
 )
+endif()
+
+if (${OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED})
+add_subdirectory(external/StandardTransforms/PinSwapTransform)
+install(
+  TARGETS pin_swap
+  DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
+)
+endif()

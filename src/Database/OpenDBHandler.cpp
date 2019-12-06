@@ -363,9 +363,32 @@ OpenDBHandler::pinCapacitance(LibraryTerm* term) const
     return 0.0;
 }
 float
+OpenDBHandler::loadCapacitance(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, loadCapacitance)
+    return 0.0;
+}
+float
 OpenDBHandler::targetLoad(LibraryCell* cell)
 {
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, targetLoad)
+    return 0.0;
+}
+float
+OpenDBHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
+                         LibraryTerm* from)
+{
+    HANDLER_UNSUPPORTED_METHOD(
+        OpenDBHandler,
+        HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, targetLoad) return 0.0;)
+    return 0.0;
+}
+float
+OpenDBHandler::gateDelay(Instance* inst, InstanceTerm* to, LibraryTerm* from)
+{
+    HANDLER_UNSUPPORTED_METHOD(
+        OpenDBHandler,
+        HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, targetLoad) return 0.0;)
     return 0.0;
 }
 float
@@ -488,6 +511,12 @@ OpenDBHandler::isTriState(LibraryTerm* term) const
     return false;
 }
 
+bool
+OpenDBHandler::hasMaxCapViolation(InstanceTerm* term, float load_cap) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, hasMaxCapViolation)
+    return false;
+}
 bool
 OpenDBHandler::hasMaxCapViolation(InstanceTerm* term) const
 {

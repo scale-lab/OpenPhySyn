@@ -90,6 +90,7 @@ By default, the following transforms are built with OpenPhySyn:
 -   `hello_transform`: a demo transform that adds a random wire.
 -   `buffer_fanout`: adds buffers to high fan-out nets.
 -   `gate_clone`: performs load driven gate cloning.
+-   `pin_swap`: performs timing-driven commutative pin-swapping optimization.
 
 ## Dependencies
 

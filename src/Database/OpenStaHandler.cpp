@@ -37,6 +37,7 @@
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
+#include <OpenSTA/dcalc/ArcDelayCalc.hh>
 #include <OpenSTA/dcalc/DcalcAnalysisPt.hh>
 #include <OpenSTA/dcalc/GraphDelayCalc.hh>
 #include <OpenSTA/graph/Graph.hh>
@@ -557,7 +558,11 @@ OpenStaHandler::pinCapacitance(LibraryTerm* term) const
     float cap2 = term->capacitance(sta::RiseFall::fall(), min_max_);
     return std::max(cap1, cap2);
 }
-
+float
+OpenStaHandler::loadCapacitance(InstanceTerm* term) const
+{
+    return network()->graphDelayCalc()->loadCap(term, dcalc_ap_);
+}
 Instance*
 OpenStaHandler::instance(const char* name) const
 {
@@ -904,10 +909,15 @@ OpenStaHandler::isTriState(LibraryTerm* term) const
 bool
 OpenStaHandler::hasMaxCapViolation(InstanceTerm* term) const
 {
+    float load_cap = loadCapacitance(term);
+    return hasMaxCapViolation(term, load_cap);
+}
+bool
+OpenStaHandler::hasMaxCapViolation(InstanceTerm* term, float load_cap) const
+{
     LibraryTerm* port = network()->libertyPort(term);
     if (port)
     {
-        float load_cap = network()->graphDelayCalc()->loadCap(term, dcalc_ap_);
         float cap_limit;
         bool  exists;
         port->capacitanceLimit(sta::MinMax::max(), cap_limit, exists);
@@ -1065,7 +1075,89 @@ OpenStaHandler::targetLoad(LibraryCell* cell)
     }
     return 0.0;
 }
+float
+OpenStaHandler::gateDelay(Instance* inst, InstanceTerm* to, LibraryTerm* from)
+{
 
+    return gateDelay(inst, to, 0, from);
+    // {
+    // if (!has_target_loads_)
+    // {
+    //     findTargetLoads();
+    // }
+    // sta::Vertex *vertex, *bidirect_drvr_vertex;
+
+    // sta_->graph()->pinVertices(to, vertex, bidirect_drvr_vertex);
+
+    // sta::ArcDelay                        max      = -sta::INF;
+    // auto                                 lib_cell = libraryCell(inst);
+    // sta::LibertyCellTimingArcSetIterator itr(lib_cell);
+    // while (itr.hasNext())
+    // {
+    //     sta::TimingArcSet* arc_set = itr.next();
+    //     if (arc_set->to() == libraryPin(to))
+    //     {
+    //         sta::TimingArcSetArcIterator arc_it(arc_set);
+    //         while (arc_it.hasNext())
+    //         {
+    //             sta::TimingArc* arc = arc_it.next();
+
+    //             if (from && arc->from() != from)
+    //             {
+    //                 continue;
+    //             }
+    //             sta::RiseFall* in_rf    = arc->fromTrans()->asRiseFall();
+    //             float          load_cap = loadCapacitance(to);
+    //             sta::ArcDelay  gate_delay;
+    //             sta::Slew      slew;
+    //             int            slew_index = dcalc_ap_->checkDataSlewIndex();
+
+    //             const sta::Slew& from_slew =
+    //                 sta_->graph()->slew(vertex, in_rf, slew_index);
+    //             // sta::Slew from_slew = 0;
+
+    //             sta_->arcDelayCalc()->gateDelay(lib_cell, arc, from_slew,
+    //                                             load_cap, nullptr, 0.0, pvt_,
+    //                                             dcalc_ap_, gate_delay, slew);
+    //             max = std::max(max, gate_delay);
+    //         }
+    //     }
+    // }
+    // return max;
+}
+float
+OpenStaHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
+                          LibraryTerm* from)
+{
+    sta::ArcDelay                        max      = -sta::INF;
+    auto                                 lib_cell = libraryCell(inst);
+    sta::LibertyCellTimingArcSetIterator itr(lib_cell);
+    while (itr.hasNext())
+    {
+        sta::TimingArcSet* arc_set = itr.next();
+        if (arc_set->to() == libraryPin(to))
+        {
+            sta::TimingArcSetArcIterator arc_it(arc_set);
+            while (arc_it.hasNext())
+            {
+                sta::TimingArc* arc = arc_it.next();
+                if (from && arc->from() != from)
+                {
+                    continue;
+                }
+                sta::RiseFall* in_rf    = arc->fromTrans()->asRiseFall();
+                float          load_cap = loadCapacitance(to);
+                sta::ArcDelay  gate_delay;
+                sta::Slew      slew;
+                sta_->arcDelayCalc()->gateDelay(lib_cell, arc, in_slew,
+                                                load_cap, nullptr, 0.0, pvt_,
+                                                dcalc_ap_, gate_delay, slew);
+                max = std::max(max, gate_delay);
+            }
+        }
+    }
+    return max;
+}
 void
 OpenStaHandler::findTargetLoads(Liberty* library, sta::Slew slews[])
 {

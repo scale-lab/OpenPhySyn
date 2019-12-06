@@ -278,9 +278,7 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
     if (args.size() > 2)
     {
-        PsnLogger::instance().error(
-            "Usage: transform gate_clone "
-            "<float: max-cap-factor> <boolean: clone-gates-only>");
+        PsnLogger::instance().error(help());
         return -1;
     }
     float cap_factor         = 1.4;
@@ -289,8 +287,7 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
     {
         if (!isNumber(args[0]))
         {
-            PsnLogger::instance().error(
-                "Expected number for max-cap-factor, got {}", args[0]);
+            PsnLogger::instance().error(help());
             return -1;
         }
         cap_factor = std::stof(args[0].c_str());
@@ -308,8 +305,7 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
             }
             else
             {
-                PsnLogger::instance().error(
-                    "Expected boolean for clone-gates-only, got {}", args[0]);
+                PsnLogger::instance().error(help());
                 return -1;
             }
         }
