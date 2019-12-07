@@ -638,7 +638,7 @@ OpenStaHandler::pinTabelAverage(LibraryTerm* from, LibraryTerm* to,
     {
         return sta::INF;
     }
-    return 0.0;
+    return sum / count;
 }
 float
 OpenStaHandler::loadCapacitance(InstanceTerm* term) const
