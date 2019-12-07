@@ -95,6 +95,7 @@ private:
                                     int counts[]);
     float     pinTabelAverage(LibraryTerm* from, LibraryTerm* to,
                               bool is_delay = true, bool is_rise = true) const;
+    std::vector<PathPoint> getPath(bool get_max, int path_count = 1) const;
 };
 
 } // namespace psn

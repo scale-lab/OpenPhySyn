@@ -53,7 +53,7 @@ void
 PinSwapTransform::swapPins(psn::Psn* psn_inst, psn::InstanceTerm* first,
                            psn::InstanceTerm* second)
 {
-    PsnLogger&       logger     = PsnLogger::instance();
+    // PsnLogger&       logger     = PsnLogger::instance();
     DatabaseHandler& handler    = *(psn_inst->handler());
     auto             first_net  = handler.net(first);
     auto             second_net = handler.net(second);
@@ -71,7 +71,78 @@ PinSwapTransform::pinSwap(psn::Psn* psn_inst)
     DatabaseHandler& handler = *(psn_inst->handler());
     auto             cp      = handler.criticalPath();
     auto             bp      = handler.bestPath();
+    // std::reverse(cp.begin(), cp.end());
+    // std::reverse(bp.begin(), bp.end());
+    int br = 2;
+    for (auto& point : cp)
+    {
 
+        auto pin      = std::get<0>(point);
+        auto is_rise  = std::get<1>(point);
+        is_rise       = true;
+        auto inst     = handler.instance(pin);
+        auto lib_cell = handler.libraryCell(inst);
+        if (!handler.isInput(pin))
+        {
+            continue;
+        }
+        auto input_pins  = handler.inputPins(inst);
+        auto output_pins = handler.outputPins(inst);
+        if (input_pins.size() < 2 || output_pins.size() != 1)
+        {
+            continue;
+        }
+        auto out_pin = output_pins[0];
+        logger.info("{} ({})", handler.name(lib_cell), handler.name(pin));
+        InstanceTerm* swap_target = nullptr;
+        // float         best_avg_delay =
+        //     (handler.pinAverageRise(handler.libraryPin(pin),
+        //                             handler.libraryPin(out_pin)) +
+        //      handler.pinAverageFall(handler.libraryPin(pin),
+        //                             handler.libraryPin(out_pin))) /
+        //     2;
+        float best_avg_delay =
+            is_rise ? handler.pinAverageRise(handler.libraryPin(pin),
+                                             handler.libraryPin(out_pin))
+                    : handler.pinAverageFall(handler.libraryPin(pin),
+                                             handler.libraryPin(out_pin));
+        logger.info("Current Avg. {}", best_avg_delay);
+        for (auto& in_pin : input_pins)
+        {
+            if (in_pin != pin && handler.isCommutative(in_pin, pin))
+            {
+                float pin_delay =
+                    is_rise
+                        ? handler.pinAverageRise(handler.libraryPin(in_pin),
+                                                 handler.libraryPin(out_pin))
+                        : handler.pinAverageFall(handler.libraryPin(in_pin),
+                                                 handler.libraryPin(out_pin));
+                // float pin_delay =
+                //     (handler.pinAverageRise(handler.libraryPin(in_pin),
+                //                             handler.libraryPin(out_pin)) +
+                //      handler.pinAverageFall(handler.libraryPin(in_pin),
+                //                             handler.libraryPin(out_pin))) /
+                //     2;
+                logger.info("New Avg. {}", pin_delay);
+                if (pin_delay < best_avg_delay)
+                {
+                    best_avg_delay = pin_delay;
+                    swap_target    = in_pin;
+                }
+            }
+        }
+        if (swap_target)
+        {
+            logger.info("Confirmed Swap..{} {}", handler.name(pin),
+                        handler.name(swap_target));
+            swapPins(psn_inst, pin, swap_target);
+            if (!br)
+            {
+                break;
+            }
+            br--;
+        }
+    }
     return 0;
 }
 
@@ -86,16 +157,16 @@ PinSwapTransform::isNumber(const std::string& s)
 int
 PinSwapTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
-    // if (args.size() > 1)
-    // {
-    //     PsnLogger::instance().error(help());
-    //     return -1;
-    // }
-    // else if (args.size() && !isNumber(args[0]))
-    // {
-    //     PsnLogger::instance().error(help());
-    //     return -1;
-    // }
+    if (args.size() > 1)
+    {
+        PsnLogger::instance().error(help());
+        return -1;
+    }
+    else if (args.size() && !isNumber(args[0]))
+    {
+        PsnLogger::instance().error(help());
+        return -1;
+    }
 
     return pinSwap(psn_inst);
 }

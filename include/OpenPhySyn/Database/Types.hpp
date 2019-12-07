@@ -41,6 +41,7 @@
 #include <opendb/defin.h>
 #include <opendb/defout.h>
 #include <opendb/lefin.h>
+#include <tuple>
 #include <unordered_map>
 
 namespace psn
@@ -65,13 +66,14 @@ typedef odb::defout         DefOut;
 typedef odb::lefin          LefParser;
 typedef sta::LibertyLibrary Liberty;
 
-typedef odb::dbSet<Library>      LibrarySet;
-typedef odb::dbSet<Net>          NetSet;
-typedef odb::dbSet<BlockTerm>    BlockTermSet;
-typedef odb::dbSet<InstanceTerm> InstanceTermSet;
-typedef odb::dbIoType::Value     PinDirection;
-typedef odb::adsPoint            Point;
-typedef OpenDBHandler            DatabaseHandler;
+typedef odb::dbSet<Library>                           LibrarySet;
+typedef odb::dbSet<Net>                               NetSet;
+typedef odb::dbSet<BlockTerm>                         BlockTermSet;
+typedef odb::dbSet<InstanceTerm>                      InstanceTermSet;
+typedef odb::dbIoType::Value                          PinDirection;
+typedef odb::adsPoint                                 Point;
+typedef OpenDBHandler                                 DatabaseHandler;
+typedef std::tuple<InstanceTerm*, bool, float, float> PathPoint;
 #else
 // Default is OpenSTA handler
 typedef odb::dbDatabase     Database;
@@ -90,13 +92,15 @@ typedef odb::defout         DefOut;
 typedef odb::lefin          LefParser;
 typedef sta::LibertyLibrary Liberty;
 
-typedef odb::dbSet<Library> LibrarySet;
-typedef sta::NetSet         NetSet;
-typedef sta::PinSet         BlockTermSet;
-typedef sta::PinSet         InstanceTermSet;
-typedef sta::PortDirection  PinDirection;
-typedef odb::adsPoint       Point;
-typedef OpenStaHandler      DatabaseHandler;
+typedef odb::dbSet<Library>                           LibrarySet;
+typedef sta::NetSet                                   NetSet;
+typedef sta::PinSet                                   BlockTermSet;
+typedef sta::PinSet                                   InstanceTermSet;
+typedef sta::PortDirection                            PinDirection;
+typedef odb::adsPoint                                 Point;
+typedef OpenStaHandler                                DatabaseHandler;
+typedef std::tuple<InstanceTerm*, bool, float, float> PathPoint;
+
 #endif
 
 class PointHash

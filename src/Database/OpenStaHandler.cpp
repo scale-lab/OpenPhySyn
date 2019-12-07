@@ -157,58 +157,31 @@ OpenStaHandler::fanoutPins(Net* net) const
     auto inst_pins = pins(net);
     return filterPins(inst_pins, PinDirection::input());
 }
-// TODO: Refactor to helper for criticalPath and bestPath
-std::vector<InstanceTerm*>
-OpenStaHandler::criticalPath() const
+std::vector<PathPoint>
+OpenStaHandler::criticalPath(int path_count) const
 {
-    sta_->ensureGraph();
-    sta_->searchPreamble();
-    std::vector<InstanceTerm*> pins;
-    sta::PathEndSeq*           path_ends =
-        sta_->search()->findPathEnds( // from, thrus, to, unconstrained
-            nullptr, nullptr, nullptr, false,
-            // corner, min_max,
-            corner_, sta::MinMaxAll::min(),
-            // group_count, endpoint_count, unique_pins
-            1, 1, false, -sta::INF, sta::INF, // slack_min, slack_max,
-            true,                             // sort_by_slack
-            nullptr,                          // group_names
-            // setup, hold, recovery, removal,
-            true, true, true, true,
-            // clk_gating_setup, clk_gating_hold
-            true, true);
-
-    if (!path_ends->size())
-    {
-        delete path_ends;
-        return pins;
-    }
-
-    auto              path_end = path_ends->at(0);
-    sta::PathExpanded expanded(path_end->path(), sta_);
-    for (int i = 1; i < expanded.size(); i++)
-    {
-
-        pins.push_back(expanded.path(i)->vertex(sta_)->pin());
-    }
-    delete path_ends;
-    return pins;
+    return getPath(false, path_count);
 }
-std::vector<InstanceTerm*>
-OpenStaHandler::bestPath() const
+std::vector<PathPoint>
+OpenStaHandler::bestPath(int path_count) const
+{
+    return getPath(true, path_count);
+}
+std::vector<PathPoint>
+OpenStaHandler::getPath(bool get_max, int path_count) const
 {
     sta_->ensureGraph();
     sta_->searchPreamble();
-    std::vector<InstanceTerm*> pins;
-    sta::PathEndSeq*           path_ends =
+    std::vector<PathPoint> points;
+    sta::PathEndSeq*       path_ends =
         sta_->search()->findPathEnds( // from, thrus, to, unconstrained
             nullptr, nullptr, nullptr, false,
             // corner, min_max,
-            corner_, sta::MinMaxAll::max(),
+            corner_, get_max ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
             // group_count, endpoint_count, unique_pins
-            1, 1, false, -sta::INF, sta::INF, // slack_min, slack_max,
-            true,                             // sort_by_slack
-            nullptr,                          // group_names
+            1, path_count, false, -sta::INF, sta::INF, // slack_min, slack_max,
+            true,                                      // sort_by_slack
+            nullptr,                                   // group_names
             // setup, hold, recovery, removal,
             true, true, true, true,
             // clk_gating_setup, clk_gating_hold
@@ -217,17 +190,22 @@ OpenStaHandler::bestPath() const
     if (!path_ends->size())
     {
         delete path_ends;
-        return pins;
+        return points;
     }
 
     auto              path_end = path_ends->at(0);
     sta::PathExpanded expanded(path_end->path(), sta_);
     for (int i = 1; i < expanded.size(); i++)
     {
-        pins.push_back(expanded.path(i)->vertex(sta_)->pin());
+        auto ref       = expanded.path(i);
+        auto pin       = ref->vertex(sta_)->pin();
+        auto is_rising = ref->transition(sta_) == sta::RiseFall::rise();
+        auto arrival   = ref->arrival(sta_);
+        auto required  = ref->required(sta_);
+        points.push_back(std::make_tuple(pin, is_rising, arrival, required));
     }
     delete path_ends;
-    return pins;
+    return points;
 }
 
 bool
@@ -621,10 +599,16 @@ OpenStaHandler::pinTabelAverage(LibraryTerm* from, LibraryTerm* to,
             {
                 auto axis1 = delay_slew_model->axis1();
                 auto axis2 = delay_slew_model->axis2();
-                for (int i = 0; i < axis1->size(); i++)
+                for (size_t i = 0; i < axis1->size(); i++)
                 {
-                    for (int j = 0; j < axis2->size(); j++)
+                    for (size_t j = 0; j < axis2->size(); j++)
                     {
+                        // printf("[%0.2e, %0.2e] %0.2e\n", axis1->axisValue(i),
+                        //        axis2->axisValue(j),
+                        //        delay_slew_model->findValue(
+                        //            lib_cell->libertyLibrary(), lib_cell,
+                        //            pvt_, axis1->axisValue(i),
+                        //            axis2->axisValue(j), 0));
                         sum += delay_slew_model->findValue(
                             lib_cell->libertyLibrary(), lib_cell, pvt_,
                             axis1->axisValue(i), axis2->axisValue(j), 0);

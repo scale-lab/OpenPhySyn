@@ -102,15 +102,15 @@ virtual bool      hasMaxCapViolation(InstanceTerm* term) const;
 virtual Instance* createInstance(const char* inst_name, LibraryCell* cell);
 virtual Net*      createNet(const char* net_name);
 virtual void      connect(Net* net, InstanceTerm* term) const;
-virtual InstanceTerm*              connect(Net* net, Instance* inst,
-                                           LibraryTerm* port) const;
-virtual void                       disconnect(InstanceTerm* term) const;
-virtual int                        disconnectAll(Net* net) const;
-virtual void                       del(Net* net) const;
-virtual void                       clear() const;
-virtual unsigned int               fanoutCount(Net* net) const;
-virtual std::vector<InstanceTerm*> criticalPath() const;
-virtual std::vector<InstanceTerm*> bestPath() const;
+virtual InstanceTerm*          connect(Net* net, Instance* inst,
+                                       LibraryTerm* port) const;
+virtual void                   disconnect(InstanceTerm* term) const;
+virtual int                    disconnectAll(Net* net) const;
+virtual void                   del(Net* net) const;
+virtual void                   clear() const;
+virtual unsigned int           fanoutCount(Net* net) const;
+virtual std::vector<PathPoint> criticalPath(int path_count = 1) const;
+virtual std::vector<PathPoint> bestPath(int path_count = 1) const;
 virtual bool isCommutative(InstanceTerm* first, InstanceTerm* second) const;
 virtual bool dontUse(LibraryCell* cell) const;
 virtual void resetDelays();

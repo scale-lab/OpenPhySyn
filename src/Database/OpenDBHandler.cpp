@@ -177,17 +177,17 @@ OpenDBHandler::fanoutCount(Net* net) const
 {
     return fanoutPins(net).size();
 }
-std::vector<InstanceTerm*>
-OpenDBHandler::criticalPath() const
+std::vector<PathPoint>
+OpenDBHandler::criticalPath(int path_count) const
 {
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, criticalPath)
-    return std::vector<InstanceTerm*>();
+    return std::vector<PathPoint>();
 }
-std::vector<InstanceTerm*>
-OpenDBHandler::bestPath() const
+std::vector<PathPoint>
+OpenDBHandler::bestPath(int path_count) const
 {
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestPath)
-    return std::vector<InstanceTerm*>();
+    return std::vector<PathPoint>();
 }
 
 bool
