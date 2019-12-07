@@ -38,6 +38,7 @@ virtual std::vector<Instance*>     fanoutInstances(Net* net) const;
 virtual std::vector<InstanceTerm*> levelDriverPins() const;
 virtual std::vector<Instance*>     driverInstances() const;
 virtual InstanceTerm*              faninPin(Net* net) const;
+virtual InstanceTerm*              faninPin(InstanceTerm* term) const;
 virtual std::vector<InstanceTerm*> pins(Net* net) const;
 virtual std::vector<InstanceTerm*> pins(Instance* inst) const;
 virtual Net*                       net(InstanceTerm* term) const;
@@ -61,15 +62,20 @@ virtual Instance*                  instance(InstanceTerm* term) const;
 virtual Instance*                  instance(const char* name) const;
 virtual float                      pinCapacitance(InstanceTerm* term) const;
 virtual float                      pinCapacitance(LibraryTerm* term) const;
-virtual float                      loadCapacitance(InstanceTerm* term) const;
-virtual float                      maxLoad(LibraryCell* cell);
-virtual float                      targetLoad(LibraryCell* cell);
-virtual float                      gateDelay(Instance* inst, InstanceTerm* to,
-                                             LibraryTerm* from = nullptr);
-virtual float        gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
-                               LibraryTerm* from = nullptr);
-virtual float        maxLoad(LibraryTerm* term);
-virtual Net*         net(const char* name) const;
+virtual float pinAverageRise(LibraryTerm* from, LibraryTerm* to) const;
+virtual float pinAverageFall(LibraryTerm* from, LibraryTerm* to) const;
+virtual float pinAverageRiseTransition(LibraryTerm* from,
+                                       LibraryTerm* to) const;
+virtual float pinAverageFallTransition(LibraryTerm* from,
+                                       LibraryTerm* to) const;
+virtual float loadCapacitance(InstanceTerm* term) const;
+virtual float maxLoad(LibraryCell* cell);
+virtual float targetLoad(LibraryCell* cell);
+virtual float gateDelay(Instance* inst, InstanceTerm* to, float in_slew = 0,
+                        LibraryTerm* from = nullptr, float* drvr_slew = nullptr,
+                        int rise_fall = -1);
+virtual float maxLoad(LibraryTerm* term);
+virtual Net*  net(const char* name) const;
 virtual LibraryTerm* libraryPin(const char* cell_name,
                                 const char* pin_name) const;
 virtual LibraryTerm* libraryPin(LibraryCell* cell, const char* pin_name) const;
@@ -107,6 +113,8 @@ virtual std::vector<InstanceTerm*> criticalPath() const;
 virtual std::vector<InstanceTerm*> bestPath() const;
 virtual bool isCommutative(InstanceTerm* first, InstanceTerm* second) const;
 virtual bool dontUse(LibraryCell* cell) const;
+virtual void resetDelays();
+virtual void resetDelays(InstanceTerm* term);
 virtual std::vector<Net*>  nets() const;
 virtual Block*             top() const;
 virtual Library*           library() const;

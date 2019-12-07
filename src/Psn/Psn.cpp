@@ -407,6 +407,7 @@ Psn::runTransform(std::string transform_name, std::vector<std::string> args)
             PsnLogger::instance().info("Invoking {} transform", transform_name);
             int rc = transforms_[transform_name]->run(this, args);
             sta_->ensureLevelized();
+            handler()->resetDelays();
             return rc;
         }
     }

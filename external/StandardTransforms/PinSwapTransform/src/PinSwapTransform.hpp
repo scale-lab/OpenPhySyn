@@ -40,9 +40,10 @@
 class PinSwapTransform : public psn::PsnTransform
 {
 private:
-    bool isNumber(const std::string& s);
-    void swapPins(psn::Psn* psn_inst, psn::InstanceTerm* first,
-                  psn::InstanceTerm* second);
+    bool  isNumber(const std::string& s);
+    void  swapPins(psn::Psn* psn_inst, psn::InstanceTerm* first,
+                   psn::InstanceTerm* second);
+    float swap_count_;
 
 public:
     PinSwapTransform();

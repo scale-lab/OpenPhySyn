@@ -117,6 +117,11 @@ OpenDBHandler::levelDriverPins() const
 }
 
 InstanceTerm*
+OpenDBHandler::faninPin(InstanceTerm* term) const
+{
+    return faninPin(net(term));
+}
+InstanceTerm*
 OpenDBHandler::faninPin(Net* net) const
 {
     InstanceTermSet terms = net->getITerms();
@@ -363,6 +368,30 @@ OpenDBHandler::pinCapacitance(LibraryTerm* term) const
     return 0.0;
 }
 float
+OpenDBHandler::pinAverageRise(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageRise)
+    return 0.0;
+}
+float
+OpenDBHandler::pinAverageFall(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageFall)
+    return 0.0;
+}
+float
+OpenDBHandler::pinAverageRiseTransition(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageRiseTransition)
+    return 0.0;
+}
+float
+OpenDBHandler::pinAverageFallTransition(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageFallTransition)
+    return 0.0;
+}
+float
 OpenDBHandler::loadCapacitance(InstanceTerm* term) const
 {
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, loadCapacitance)
@@ -376,21 +405,12 @@ OpenDBHandler::targetLoad(LibraryCell* cell)
 }
 float
 OpenDBHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
-                         LibraryTerm* from)
+                         LibraryTerm* from, int rise_fall)
 {
-    HANDLER_UNSUPPORTED_METHOD(
-        OpenDBHandler,
-        HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, targetLoad) return 0.0;)
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, gateDelay);
     return 0.0;
 }
-float
-OpenDBHandler::gateDelay(Instance* inst, InstanceTerm* to, LibraryTerm* from)
-{
-    HANDLER_UNSUPPORTED_METHOD(
-        OpenDBHandler,
-        HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, targetLoad) return 0.0;)
-    return 0.0;
-}
+
 float
 OpenDBHandler::maxLoad(LibraryCell* cell)
 {
@@ -714,6 +734,17 @@ OpenDBHandler::dontUse(LibraryCell* cell) const
 {
     return false;
 }
+void
+OpenDBHandler::resetDelays()
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, resetDelays);
+}
+void
+OpenDBHandler::resetDelays(InstanceTerm* term)
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, resetDelays);
+}
+
 LibraryTechnology*
 OpenDBHandler::technology() const
 {

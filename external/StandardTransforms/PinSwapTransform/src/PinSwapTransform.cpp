@@ -46,15 +46,22 @@
 
 using namespace psn;
 
-PinSwapTransform::PinSwapTransform()
+PinSwapTransform::PinSwapTransform() : swap_count_(0)
 {
 }
 void
 PinSwapTransform::swapPins(psn::Psn* psn_inst, psn::InstanceTerm* first,
                            psn::InstanceTerm* second)
 {
-    PsnLogger&       logger  = PsnLogger::instance();
-    DatabaseHandler& handler = *(psn_inst->handler());
+    PsnLogger&       logger     = PsnLogger::instance();
+    DatabaseHandler& handler    = *(psn_inst->handler());
+    auto             first_net  = handler.net(first);
+    auto             second_net = handler.net(second);
+    handler.disconnect(first);
+    handler.disconnect(second);
+    handler.connect(first_net, second);
+    handler.connect(second_net, first);
+    handler.resetDelays();
 }
 
 int
@@ -64,12 +71,7 @@ PinSwapTransform::pinSwap(psn::Psn* psn_inst)
     DatabaseHandler& handler = *(psn_inst->handler());
     auto             cp      = handler.criticalPath();
     auto             bp      = handler.bestPath();
-    // logger.info("{}, {}", cp.size(), bp.size());
-    for (auto& pin : cp)
-    {
-        auto inst     = handler.instance(pin);
-        auto lib_cell = handler.libraryCell(inst);
-    }
+
     return 0;
 }
 

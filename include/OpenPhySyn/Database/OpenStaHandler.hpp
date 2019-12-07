@@ -75,6 +75,8 @@ private:
 
     void findTargetLoads();
 
+    sta::Vertex* vertex(InstanceTerm* term) const;
+
     /* The following code is borrowed from James Cherry's Resizer Code */
     const sta::Corner*              corner_;
     const sta::DcalcAnalysisPt*     dcalc_ap_;
@@ -91,6 +93,8 @@ private:
     void      findBufferTargetSlews(sta::LibertyLibrarySeq* resize_libs);
     void      findBufferTargetSlews(Liberty* library, sta::Slew slews[],
                                     int counts[]);
+    float     pinTabelAverage(LibraryTerm* from, LibraryTerm* to,
+                              bool is_delay = true, bool is_rise = true) const;
 };
 
 } // namespace psn
