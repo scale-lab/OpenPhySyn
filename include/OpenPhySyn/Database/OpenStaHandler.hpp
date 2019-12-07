@@ -93,8 +93,11 @@ private:
     void      findBufferTargetSlews(sta::LibertyLibrarySeq* resize_libs);
     void      findBufferTargetSlews(Liberty* library, sta::Slew slews[],
                                     int counts[]);
-    float     pinTabelAverage(LibraryTerm* from, LibraryTerm* to,
+    float     pinTableAverage(LibraryTerm* from, LibraryTerm* to,
                               bool is_delay = true, bool is_rise = true) const;
+    float     pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,
+                             float cap, bool is_delay = true,
+                             bool is_rise = true) const;
     std::vector<PathPoint> getPath(bool get_max, int path_count = 1) const;
 };
 

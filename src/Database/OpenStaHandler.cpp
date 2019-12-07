@@ -546,28 +546,65 @@ OpenStaHandler::pinCapacitance(LibraryTerm* term) const
 float
 OpenStaHandler::pinAverageRise(LibraryTerm* from, LibraryTerm* to) const
 {
-    return pinTabelAverage(from, to, true, true);
+    return pinTableAverage(from, to, true, true);
 
 } // namespace psn
 float
 OpenStaHandler::pinAverageFall(LibraryTerm* from, LibraryTerm* to) const
 {
-    return pinTabelAverage(from, to, true, false);
+    return pinTableAverage(from, to, true, false);
 }
 float
 OpenStaHandler::pinAverageRiseTransition(LibraryTerm* from,
                                          LibraryTerm* to) const
 {
-    return pinTabelAverage(from, to, false, true);
+    return pinTableAverage(from, to, false, true);
 }
 float
 OpenStaHandler::pinAverageFallTransition(LibraryTerm* from,
                                          LibraryTerm* to) const
 {
-    return pinTabelAverage(from, to, false, false);
+    return pinTableAverage(from, to, false, false);
 }
 float
-OpenStaHandler::pinTabelAverage(LibraryTerm* from, LibraryTerm* to,
+OpenStaHandler::pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,
+                               float cap, bool is_delay, bool is_rise) const
+{
+    auto                  lib_cell        = from->libertyCell();
+    sta::TimingArcSetSeq* timing_arc_sets = lib_cell->timingArcSets(from, to);
+    if (!timing_arc_sets)
+    {
+        return sta::INF;
+    }
+    for (auto& arc_set : *timing_arc_sets)
+    {
+        sta::TimingArcSetArcIterator itr(arc_set);
+        while (itr.hasNext())
+        {
+            sta::TimingArc* arc = itr.next();
+            if ((is_rise &&
+                 arc->toTrans()->asRiseFall() != sta::RiseFall::rise()) ||
+                (!is_rise &&
+                 arc->toTrans()->asRiseFall() != sta::RiseFall::fall()))
+            {
+                continue;
+            }
+            sta::GateTableModel* model =
+                dynamic_cast<sta::GateTableModel*>(arc->model());
+            auto delay_slew_model =
+                is_delay ? model->delayModel() : model->slewModel();
+            if (model)
+            {
+                return delay_slew_model->findValue(
+                    lib_cell->libertyLibrary(), lib_cell, pvt_, slew, cap, 0);
+            }
+        }
+    }
+
+    return sta::INF;
+}
+float
+OpenStaHandler::pinTableAverage(LibraryTerm* from, LibraryTerm* to,
                                 bool is_delay, bool is_rise) const
 {
     auto                  lib_cell        = from->libertyCell();
@@ -603,12 +640,6 @@ OpenStaHandler::pinTabelAverage(LibraryTerm* from, LibraryTerm* to,
                 {
                     for (size_t j = 0; j < axis2->size(); j++)
                     {
-                        // printf("[%0.2e, %0.2e] %0.2e\n", axis1->axisValue(i),
-                        //        axis2->axisValue(j),
-                        //        delay_slew_model->findValue(
-                        //            lib_cell->libertyLibrary(), lib_cell,
-                        //            pvt_, axis1->axisValue(i),
-                        //            axis2->axisValue(j), 0));
                         sum += delay_slew_model->findValue(
                             lib_cell->libertyLibrary(), lib_cell, pvt_,
                             axis1->axisValue(i), axis2->axisValue(j), 0);
