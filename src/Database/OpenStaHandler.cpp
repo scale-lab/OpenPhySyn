@@ -1204,17 +1204,18 @@ OpenStaHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
                 if (rise_fall != -1)
                 {
                     if (rise_fall)
-                    { // 1 is falling edge
+                    { //  1 is rising edge
                         if (arc->toTrans()->asRiseFall() !=
-                            sta::RiseFall::fall())
+                            sta::RiseFall::rise())
                         {
                             continue;
                         }
                     }
                     else
-                    { // 0 is rising edge
+                    { // 0 is falling edge
+
                         if (arc->toTrans()->asRiseFall() !=
-                            sta::RiseFall::rise())
+                            sta::RiseFall::fall())
                         {
                             continue;
                         }

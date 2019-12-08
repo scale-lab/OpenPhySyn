@@ -74,12 +74,13 @@ PinSwapTransform::pinSwap(psn::Psn* psn_inst)
     // std::reverse(cp.begin(), cp.end());
     // std::reverse(bp.begin(), bp.end());
     int br = 2;
+
     for (auto& point : cp)
     {
 
-        auto pin      = std::get<0>(point);
-        auto is_rise  = std::get<1>(point);
-        is_rise       = true;
+        auto pin     = std::get<0>(point);
+        auto is_rise = std::get<1>(point);
+        // is_rise       = true;
         auto inst     = handler.instance(pin);
         auto lib_cell = handler.libraryCell(inst);
         if (!handler.isInput(pin))
