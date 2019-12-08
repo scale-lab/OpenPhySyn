@@ -36,5 +36,5 @@
 
 #define HANDLER_UNSUPPORTED_METHOD(HANDLER_NAME, METHOD_NAME)                  \
     psn::PsnLogger::instance().error("The method " #METHOD_NAME                \
-                                     "is not supported by " #HANDLER_NAME);
+                                     " is not supported by " #HANDLER_NAME);
 #endif

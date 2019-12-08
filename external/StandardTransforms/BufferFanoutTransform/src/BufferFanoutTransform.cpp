@@ -80,7 +80,7 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
     logger.info("High fanout nets [{}]: ", high_fanout_nets.size());
     for (auto& net : high_fanout_nets)
     {
-        logger.info("Net: {} {}", handler.name(net), handler.fanoutCount(net));
+        logger.debug("Net: {} {}", handler.name(net), handler.fanoutCount(net));
     }
     auto clock_pins = handler.clockPins();
 
@@ -96,10 +96,10 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
             {
                 continue;
             }
-            logger.info("Buffering: {}", handler.name(net));
+            logger.debug("Buffering: {}", handler.name(net));
             auto fanout_pins        = handler.fanoutPins(net);
             int  net_sink_pin_count = fanout_pins.size();
-            logger.info("Sink count: {}", net_sink_pin_count);
+            logger.debug("Sink count: {}", net_sink_pin_count);
             int              iter = net_sink_pin_count;
             std::vector<int> buffer_hier;
             while (iter > max_fanout)
@@ -164,6 +164,16 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                     handler.createInstance(buf_name.c_str(), cell);
                 create_buffer_count++;
                 Net* new_net = handler.createNet(net_name.c_str());
+                if (!new_buffer)
+                {
+                    logger.critical("Failed to create buffer {}", buf_name);
+                    return -1;
+                }
+                if (!new_net)
+                {
+                    logger.critical("Failed to create net {}", net_name);
+                    return -1;
+                }
                 handler.connect(new_net, new_buffer, cell_out_pin);
                 int sink_connect_count = std::min(
                     max_fanout, net_sink_pin_count - current_sink_count);
@@ -185,7 +195,6 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                                         .c_str()),
                         new_buffer, cell_in_pin);
                 }
-
                 current_buffer = nextBuffer(current_buffer, max_fanout);
             }
         }
@@ -278,10 +287,7 @@ BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
     }
     else
     {
-        PsnLogger::instance().error("Usage:\n transform buffer_fanout "
-                                    "<net_name>\n transform buffer_fanout "
-                                    "buffer "
-                                    "<max_fanout> <buffer_cell>");
+        PsnLogger::instance().error(help());
     }
 
     return -1;
