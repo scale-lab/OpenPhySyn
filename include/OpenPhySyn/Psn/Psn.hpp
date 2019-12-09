@@ -104,7 +104,7 @@ public:
                            bool              load_transforms = true,
                            Tcl_Interp*       interp          = nullptr);
 #endif
-    ~Psn();
+    virtual ~Psn();
 
 private:
 #ifndef OPENROAD_BUILD
