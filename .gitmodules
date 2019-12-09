@@ -8,7 +8,7 @@
 	branch = develop
 [submodule "external/StandardTransforms/HelloTransform"]
 	path = external/StandardTransforms/HelloTransform
-	url = git@github.com:The-OpenROAD-Project/OpenPhySynHelloTransform.git
+	url = https://github.com/The-OpenROAD-Project/OpenPhySynHelloTransform.git
 	branch = master
 [submodule "external/cpp-taskflow"]
 	path = external/cpp-taskflow
