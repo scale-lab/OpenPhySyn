@@ -114,7 +114,7 @@ virtual std::vector<PathPoint> bestPath(int path_count = 1) const;
 virtual bool isCommutative(InstanceTerm* first, InstanceTerm* second) const;
 virtual bool dontUse(LibraryCell* cell) const;
 virtual void resetDelays();
-virtual void resetDelays(InstanceTerm* term);
+virtual void resetDelays(InstanceTerm *term);
 virtual std::vector<Net*>  nets() const;
 virtual Block*             top() const;
 virtual Library*           library() const;

@@ -33,9 +33,9 @@
 #define THROW_DCL throw()
 
 #include <Config.hpp>
-#include <GraphDelayCalc.hh>
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
+#include <OpenSTA/dcalc/ArcDelayCalc.hh>
 #include <OpenSTA/network/ConcreteNetwork.hh>
 #include <OpenSTA/search/Search.hh>
 #include <OpenSTA/search/Sta.hh>
@@ -747,9 +747,7 @@ Psn::sourceTclScript(const char* script_path)
 void
 Psn::setWireRC(float res_per_micon, float cap_per_micron)
 {
-    sta_->graphDelayCalc()->delaysInvalid();
-    sta_->search()->arrivalsInvalid();
-
+    handler()->resetDelays();
     settings()
         ->setResistancePerMicron(res_per_micon)
         ->setCapacitancePerMicron(cap_per_micron);
@@ -787,7 +785,7 @@ Psn::initializeSta(Tcl_Interp* interp)
         // dbSta can take a database without interp..
         interp = Tcl_CreateInterp();
         Tcl_Init(interp);
-        evalTclInit(interp, sta::dbsta_tcl_inits);
+        // evalTclInit(interp, sta::dbsta_tcl_inits);
     }
     sta_ = new sta::DatabaseSta;
     sta_->init(interp, db_);

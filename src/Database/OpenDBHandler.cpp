@@ -744,7 +744,6 @@ OpenDBHandler::resetDelays(InstanceTerm* term)
 {
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, resetDelays);
 }
-
 LibraryTechnology*
 OpenDBHandler::technology() const
 {

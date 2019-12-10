@@ -71,18 +71,29 @@ INCLUDE(${SWIG_USE_FILE})
 
 
 
+if(NOT DEFINED OPENDB_HOME)
 set(OPENDB_HOME
-  ${PROJECT_SOURCE_DIR}/external/OpenDB
+${PROJECT_SOURCE_DIR}/external/OpenDB
 )
+endif()
+
+if(NOT DEFINED OPENSTA_HOME)
 set(OPENSTA_HOME
-  ${PROJECT_SOURCE_DIR}/external/OpenSTA
+${PROJECT_SOURCE_DIR}/external/OpenSTA
 )
+endif()
+
+if(NOT DEFINED FLUTE_HOME)
 set(FLUTE_HOME
-  ${PROJECT_SOURCE_DIR}/external/flute
+${PROJECT_SOURCE_DIR}/external/flute
 )
+endif()
+
+if(NOT DEFINED SPD_LOG_HOME)
 set(SPD_LOG_HOME
   ${PROJECT_SOURCE_DIR}/external/spdlog
 )
+endif()
 
 # Add Flute
 if (NOT ${OPENROAD_BUILD})
@@ -232,9 +243,7 @@ set(PRIVATE_INCLUDE_DIRS
 endif()
 
 set(PUBLIC_LIBRARIES
-  flute
   opendb
-  OpenSTA
   ${ZLIB_LIBRARIES}
   ${TCL_LIBRARY}
   ${Boost_LIBRARIES}
@@ -242,6 +251,11 @@ set(PUBLIC_LIBRARIES
   doctest
   stdc++fs
 )
+
+# Stand-alone executable specific libraries
+set(PUBLIC_EXEC_LIBRARIES
+)
+
 if (${OPENPHYSYN_CPP_TASKFLOW_ENABLED})
 set(PUBLIC_LIBRARIES
   ${PUBLIC_LIBRARIES}
@@ -249,25 +263,48 @@ set(PUBLIC_LIBRARIES
 )
 endif()
 
-if (NOT ${OPENROAD_BUILD})
-set(PRIVATE_INCLUDE_DIRS
-  ${PRIVATE_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}/external
-)
-endif()
 
 if (${OPENROAD_BUILD})
+
 set(PRIVATE_INCLUDE_DIRS
   ${PRIVATE_INCLUDE_DIRS}
   ${OPENROAD_HOME}/include
   ${OPENROAD_HOME}/src
   ${OPENDB_HOME}/include
+  ${OPENSTA_HOME}/app
+  ${OPENSTA_HOME}/dcalc
+  ${OPENSTA_HOME}/graph
+  ${OPENSTA_HOME}/liberty
+  ${OPENSTA_HOME}/network
+  ${OPENSTA_HOME}/parasitics
+  ${OPENSTA_HOME}/sdc
+  ${OPENSTA_HOME}/sdf
+  ${OPENSTA_HOME}/search
+  ${OPENSTA_HOME}/util
+  ${OPENSTA_HOME}/verilog
+  ${OPENSTA_HOME}/${CUDD_INCLUDE}
   flute3
 )
-set(PUBLIC_LIBRARIES
+
+set(PUBLIC_EXEC_LIBRARIES
 dbSta
+OpenSTA
+flute
+)
+
+else()
+
+set(PRIVATE_INCLUDE_DIRS
+  ${PRIVATE_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/external
+)
+
+set(PUBLIC_LIBRARIES
+OpenSTA
+flute
 ${PUBLIC_LIBRARIES}
 )
+
 endif()
 # Compile all sources into a library.
 add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_WRAP})
@@ -276,7 +313,7 @@ add_executable(Psn ${PSN_SOURCES})  # Name of exec. and location of file.
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
 target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES}) 
 target_include_directories(Psn PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
-target_link_libraries(Psn PUBLIC ${PUBLIC_LIBRARIES})
+target_link_libraries(Psn PUBLIC ${PUBLIC_EXEC_LIBRARIES} ${PUBLIC_LIBRARIES})
 
 
 
@@ -296,7 +333,6 @@ set_target_properties(
 )
 set_property(TARGET ${LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET Psn PROPERTY POSITION_INDEPENDENT_CODE ON)
-
 
 
 add_custom_command(OUTPUT ${PSN_WRAP}
