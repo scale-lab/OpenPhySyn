@@ -958,6 +958,14 @@ OpenStaHandler::findTargetLoads()
     has_target_loads_ = true;
 }
 
+sta::Vertex*
+OpenStaHandler::vertex(InstanceTerm* term) const
+{
+    sta::Vertex *vertex, *bidirect_drvr_vertex;
+    sta_->graph()->pinVertices(term, vertex, bidirect_drvr_vertex);
+    return vertex;
+}
+
 int
 OpenStaHandler::evaluateFunctionExpression(
     InstanceTerm* term, std::unordered_map<LibraryTerm*, int>& inputs) const
@@ -1177,6 +1185,22 @@ bool
 OpenStaHandler::dontUse(LibraryCell* cell) const
 {
     return false;
+}
+void
+OpenStaHandler::resetDelays()
+{
+    sta_->graphDelayCalc()->delaysInvalid();
+    sta_->search()->arrivalsInvalid();
+    sta_->search()->requiredsInvalid();
+    sta_->search()->endpointsInvalid();
+}
+void
+OpenStaHandler::resetDelays(InstanceTerm* term)
+{
+    sta::Vertex* vert = vertex(term);
+    sta_->graphDelayCalc()->delayInvalid(vert);
+    sta_->search()->arrivalInvalid(term);
+    sta_->search()->requiredInvalid(term);
 }
 void
 OpenStaHandler::findBufferTargetSlews(Liberty* library,

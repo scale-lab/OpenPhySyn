@@ -685,6 +685,16 @@ OpenDBHandler::dontUse(LibraryCell* cell) const
 {
     return false;
 }
+void
+OpenDBHandler::resetDelays()
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, resetDelays);
+}
+void
+OpenDBHandler::resetDelays(InstanceTerm* term)
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, resetDelays);
+}
 LibraryTechnology*
 OpenDBHandler::technology() const
 {
