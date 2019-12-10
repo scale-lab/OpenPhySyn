@@ -243,7 +243,6 @@ set(PRIVATE_INCLUDE_DIRS
 endif()
 
 set(PUBLIC_LIBRARIES
-  flute
   opendb
   ${ZLIB_LIBRARIES}
   ${TCL_LIBRARY}
@@ -290,6 +289,7 @@ set(PRIVATE_INCLUDE_DIRS
 set(PUBLIC_EXEC_LIBRARIES
 dbSta
 OpenSTA
+flute
 )
 
 else()
@@ -301,6 +301,7 @@ set(PRIVATE_INCLUDE_DIRS
 
 set(PUBLIC_LIBRARIES
 OpenSTA
+flute
 ${PUBLIC_LIBRARIES}
 )
 
