@@ -75,6 +75,8 @@ private:
 
     void findTargetLoads();
 
+    sta::Vertex* vertex(InstanceTerm* term) const;
+
     /* The following code is borrowed from James Cherry's Resizer Code */
     const sta::Corner*              corner_;
     const sta::DcalcAnalysisPt*     dcalc_ap_;
