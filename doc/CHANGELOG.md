@@ -5,11 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [1.1.0] - 12/11/2019
 
 ### Added
--   
+-   Directory search for FLUTE LUT files.
 
 
 ### Removed
--   Boost dependency
+-   Boost dependency.
 
 ### Changed
 
@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file.
 -   Renamed `read_liberty` to `import_liberty`
 -   Renamed `write_def` to `export_def`
 -   Renamed `write_lef` to `export_lef`
+-   Default build version is now `RELEASE`
 
 
 ## [1.0.0] - 10/14/2019

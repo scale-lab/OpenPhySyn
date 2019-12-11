@@ -89,7 +89,7 @@ Psn::Psn(Database* db) : db_(db), interp_(nullptr)
     settings_ = new DesignSettings();
     initializeSta();
     db_handler_ = new DatabaseHandler(sta_);
-    initializeFlute("../external/flute/etc");
+    initializeFlute();
 }
 void
 Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp)
@@ -802,17 +802,47 @@ int
 Psn::initializeFlute(const char* flue_init_dir)
 {
 #ifndef OPENROAD_BUILD
-    std::string powv_file_path = std::string(flue_init_dir) + "/POWV9.dat";
-    std::string post_file_path = std::string(flue_init_dir) + "/POST9.dat";
-    if (!FileUtils::isDirectory(flue_init_dir) ||
-        !FileUtils::pathExists(powv_file_path.c_str()) ||
-        !FileUtils::pathExists(post_file_path.c_str()))
+    bool        lut_found = false;
+    std::string flute_dir, powv_file_path, post_file_path;
+    if (flue_init_dir)
+    {
+        flute_dir      = std::string(flute_dir);
+        powv_file_path = FileUtils::joinPath(flute_dir.c_str(), "POWV9.dat");
+        post_file_path = FileUtils::joinPath(flute_dir.c_str(), "POST9.dat");
+        if (FileUtils::isDirectory(flute_dir.c_str()) &&
+            FileUtils::pathExists(powv_file_path.c_str()) &&
+            FileUtils::pathExists(post_file_path.c_str()))
+        {
+            lut_found = true;
+        }
+    }
+    else
+    {
+        for (auto& s :
+             std::vector<std::string>({"../external/flute/etc", "../etc", "."}))
+        {
+            flute_dir = s;
+            powv_file_path =
+                FileUtils::joinPath(flute_dir.c_str(), "POWV9.dat");
+            post_file_path =
+                FileUtils::joinPath(flute_dir.c_str(), "POST9.dat");
+            if (FileUtils::isDirectory(flute_dir.c_str()) &&
+                FileUtils::pathExists(powv_file_path.c_str()) &&
+                FileUtils::pathExists(post_file_path.c_str()))
+            {
+                lut_found = true;
+                break;
+            }
+        }
+    }
+    if (!lut_found)
     {
         PsnLogger::instance().error("Flute initialization failed");
         return -1;
     }
+
     char* cwd = getcwd(NULL, 0);
-    chdir(flue_init_dir);
+    chdir(flute_dir.c_str());
     Flute::readLUT();
     chdir(cwd);
     free(cwd);

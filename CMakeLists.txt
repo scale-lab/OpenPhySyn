@@ -8,7 +8,7 @@ option(ENABLE_WARNINGS_SETTINGS "Allow target_set_warnings to add flags and defi
 option(ENABLE_LTO "Enable link time optimization" ON)
 option(ENABLE_DOCTESTS "Include tests in the library. Setting this to OFF will remove all doctest related code.
                         Tests in tests/*.cpp will still be enabled." ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -ltcl -lz -lm -ldl -Wno-error -Wall -Wextra -Wno-unused-parameter")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -pthread -ltcl -lz -lm -ldl -Wno-error -Wall -Wextra -Wno-unused-parameter")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 
@@ -39,6 +39,12 @@ set(PSN_HOME
 )
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/cmake")
 
+
+# Default to bulding optimnized/release executable.
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE RELEASE)
+endif()
+
 # Include stuff.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 include(ConfigSafeGuards)
@@ -67,30 +73,35 @@ INCLUDE(${SWIG_USE_FILE})
 
 
 
+# Build OpenDB
 if(NOT DEFINED OPENDB_HOME)
 set(OPENDB_HOME
 ${PROJECT_SOURCE_DIR}/external/OpenDB
 )
 endif()
 
+# Build OpenSTA
 if(NOT DEFINED OPENSTA_HOME)
 set(OPENSTA_HOME
 ${PROJECT_SOURCE_DIR}/external/OpenSTA
 )
 endif()
 
+# Build Flute
 if(NOT DEFINED FLUTE_HOME)
 set(FLUTE_HOME
 ${PROJECT_SOURCE_DIR}/external/flute
 )
 endif()
 
+# Build spdlok
 if(NOT DEFINED SPD_LOG_HOME)
 set(SPD_LOG_HOME
   ${PROJECT_SOURCE_DIR}/external/spdlog
 )
 endif()
 
+# Build cxxopts
 if(NOT DEFINED CXXOPTS_HOME)
 set(CXXOPTS_HOME
   ${PROJECT_SOURCE_DIR}/external/cxxopts

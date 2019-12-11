@@ -44,13 +44,13 @@ RUN yum install -y tcl-devel tcl tk libstdc++ tk-devel pcre-devel
 
 # Install SWIG
 RUN yum remove -y swig \
-    && wget https://github.com/swig/swig/archive/rel-3.0.12.tar.gz \
-    && tar xfz rel-3.0.12.tar.gz \
-    && rm -rf rel-3.0.12.tar.gz \
-    && cd swig-rel-3.0.12 \
+    && wget https://github.com/swig/swig/archive/rel-4.0.1.tar.gz \
+    && tar xfz rel-4.0.1.tar.gz \
+    && rm -rf rel-4.0.1.tar.gz \
+    && cd swig-rel-4.0.1 \
     && ./autogen.sh && ./configure --prefix=/usr && make -j $(nproc) && make install \
     && cd /tmp \
-    && rm -rf swig-rel-3.0.12
+    && rm -rf swig-rel-4.0.1
 
 # Install python dev
 RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm && \

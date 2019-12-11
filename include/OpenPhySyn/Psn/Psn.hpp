@@ -92,7 +92,7 @@ public:
 
     virtual void clearDatabase();
 
-    virtual int initializeFlute(const char* flue_init_dir);
+    virtual int initializeFlute(const char* flue_init_dir = nullptr);
 
 #ifndef OPENROAD_BUILD
     static void initialize(Database* db = nullptr, bool load_transforms = true,
