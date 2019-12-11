@@ -42,18 +42,6 @@ RUN yum install -y epel-release-latest-7.noarch.rpm
 RUN yum install -y tcl-devel tcl tk libstdc++ tk-devel pcre-devel
 
 
-
-
-# Install Boost
-RUN wget http://downloads.sourceforge.net/project/boost/boost/1.67.0/boost_1_67_0.tar.gz \
-    && tar xfz boost_1_67_0.tar.gz \
-    && rm -f boost_1_67_0.tar.gz \
-    && cd boost_1_67_0 \
-    && ./bootstrap.sh --prefix=/usr --with-libraries=program_options,log,filesystem \
-    && ./b2 install -j $(nproc) \
-    && cd /tmp \
-    && rm -rf boost_1_67_0
-
 # Install SWIG
 RUN yum remove -y swig \
     && wget https://github.com/swig/swig/archive/rel-3.0.12.tar.gz \
@@ -77,4 +65,4 @@ WORKDIR /OpenPhySyn
 
 # Build
 RUN mkdir build
-RUN cd build && cmake .. && make -j 4
+RUN cd build && cmake .. -DCMAKE_BUILD_TYPE=release && make -j 4

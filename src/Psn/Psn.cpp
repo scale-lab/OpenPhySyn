@@ -40,7 +40,6 @@
 #include <OpenSTA/search/Search.hh>
 #include <OpenSTA/search/Sta.hh>
 #include <Psn/Psn.hpp>
-#include <boost/algorithm/string.hpp>
 #include <flute.h>
 #include <tcl.h>
 #include "DefReader/DefReader.hpp"
@@ -53,6 +52,7 @@
 #include "PsnException/TransformNotFoundException.hpp"
 #include "Transform/TransformHandler.hpp"
 #include "Utils/FileUtils.hpp"
+#include "Utils/StringUtils.hpp"
 
 extern "C"
 {
@@ -318,7 +318,6 @@ Psn::loadTransforms()
 {
 
     std::vector<psn::TransformHandler> handlers;
-    std::vector<std::string>           transforms_dirs;
     std::string                        transforms_paths(
         FileUtils::joinPath(FileUtils::homePath().c_str(),
                             ".OpenPhySyn/transforms") +
@@ -331,7 +330,8 @@ Psn::loadTransforms()
         transforms_paths = transforms_paths + ":" + std::string(env_path);
     }
 
-    boost::split(transforms_dirs, transforms_paths, boost::is_any_of(":"));
+    std::vector<std::string> transforms_dirs =
+        StringUtils::split(transforms_paths, ":");
 
     for (auto& transform_parent_path : transforms_dirs)
     {
@@ -450,7 +450,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
             return TCL_ERROR;
         }
     }
-#endif
+#endif // OPENROAD_BUILD
 
     const char* tcl_define_cmds =
 #include "Tcl/DefinePSNCommands.tcl"
@@ -491,7 +491,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
             return TCL_ERROR;
         }
     }
-#endif
+#endif // OPENROAD_BUILD
 
     return TCL_OK;
 }

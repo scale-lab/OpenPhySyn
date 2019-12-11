@@ -95,14 +95,14 @@ By default, the following transforms are built with OpenPhySyn:
 
 OpenPhySyn depends on the following libraries:
 
--   [Boost](https://www.boost.org/)
--   [CPP TaskFlow](https://github.com/cpp-taskflow/cpp-taskflow)
--   [Flute](https://github.com/The-OpenROAD-Project/flute3)
--   [OpenSTA](https://github.com/The-OpenROAD-Project/OpenSTA)
--   [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB)
+-   [CPP TaskFlow](https://github.com/cpp-taskflow/cpp-taskflow) [included, optional]
+-   [Flute](https://github.com/The-OpenROAD-Project/flute3) [included]
+-   [OpenSTA](https://github.com/The-OpenROAD-Project/OpenSTA) [included]
+-   [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) [included]
+-   [cxxopts](https://github.com/jarro2783/cxxopts) [included]
 -   [SWIG](http://www.swig.org/Doc1.3/Tcl.html)
--   [Doxygen](http://www.doxygen.nl) (optional)
--   [Doctests](https://github.com/onqtam/doctest) (optional)
+-   [Doxygen](http://www.doxygen.nl) [included, optional]
+-   [Doctests](https://github.com/onqtam/doctest) [included, optional]
 
 ## Issues
 

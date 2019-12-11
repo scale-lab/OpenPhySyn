@@ -59,10 +59,6 @@ find_lto(CXX)
 #Add TCL Package
 find_package(TCL REQUIRED)
 
-# Add Boost Package
-set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost COMPONENTS log program_options filesystem REQUIRED)
-
 #Add SWIG Package
 cmake_policy(SET CMP0078 NEW)
 find_package(SWIG REQUIRED)
@@ -95,6 +91,12 @@ set(SPD_LOG_HOME
 )
 endif()
 
+if(NOT DEFINED CXXOPTS_HOME)
+set(CXXOPTS_HOME
+  ${PROJECT_SOURCE_DIR}/external/cxxopts
+)
+endif()
+
 # Add Flute
 if (NOT ${OPENROAD_BUILD})
 add_subdirectory(external/flute)
@@ -112,6 +114,8 @@ endif()
 
 # Add spdlog
 add_subdirectory(external/spdlog)
+# Add cxxopts
+add_subdirectory(external/cxxopts)
 
 # Add cpp-taskflow
 if (${OPENPHYSYN_CPP_TASKFLOW_ENABLED})
@@ -141,6 +145,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Transform/TransformHandler.cpp
     ${PSN_HOME}/src/Transform/TransformInfo.cpp
     ${PSN_HOME}/src/Utils/FileUtils.cpp
+    ${PSN_HOME}/src/Utils/StringUtils.cpp
     ${PSN_HOME}/src/Utils/PsnGlobal.cpp
     ${PSN_HOME}/src/PsnException/Error.cpp
     ${PSN_HOME}/src/PsnException/FileException.cpp
@@ -150,7 +155,6 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/PsnException/PsnException.cpp
     ${PSN_HOME}/src/PsnException/ProgramOptionsException.cpp
     ${PSN_HOME}/src/PsnException/TransformNotFoundException.cpp
-
     ${PSN_HOME}/src/Sta/DatabaseSta.cpp
     ${PSN_HOME}/src/Sta/DatabaseSdcNetwork.cpp
     ${PSN_HOME}/src/Sta/DatabaseStaNetwork.cpp
@@ -221,10 +225,10 @@ set(PUBLIC_INCLUDE_DIRS
 set(PRIVATE_INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/external/doctest
   ${PROJECT_SOURCE_DIR}/external/spdlog
+  ${PROJECT_SOURCE_DIR}/external/cxxopts/include
   ${PROJECT_SOURCE_DIR}/external/StandardTransforms
   ${PROJECT_SOURCE_DIR}/external/flute
   ${TCL_INCLUDE_PATH}
-  ${Boost_INCLUDE_DIR}
   ${SPD_LOG_HOME}/include
   ${FLUTE_HOME}/include
   ${OPENDB_HOME}/include
@@ -246,7 +250,6 @@ set(PUBLIC_LIBRARIES
   opendb
   ${ZLIB_LIBRARIES}
   ${TCL_LIBRARY}
-  ${Boost_LIBRARIES}
   dl
   doctest
   stdc++fs
