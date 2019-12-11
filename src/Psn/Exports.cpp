@@ -39,27 +39,27 @@ namespace psn
 
 #ifndef OPENROAD_BUILD
 int
-read_def(const char* def_path)
+import_def(const char* def_path)
 {
     return Psn::instance().readDef(def_path);
 }
 int
-read_lef(const char* lef_path, int ignore_routing_layers)
+import_lef(const char* lef_path, int ignore_routing_layers)
 {
     return Psn::instance().readLef(lef_path);
 }
 int
-read_lib(const char* lib_path)
+import_lib(const char* lib_path)
 {
-    return read_liberty(lib_path);
+    return import_liberty(lib_path);
 }
 int
-read_liberty(const char* lib_path)
+import_liberty(const char* lib_path)
 {
     return Psn::instance().readLib(lib_path);
 }
 int
-write_def(const char* lib_path)
+export_def(const char* lib_path)
 {
     return Psn::instance().writeDef(lib_path);
 }
@@ -71,7 +71,7 @@ print_liberty_cells()
     if (!liberty)
     {
         PsnLogger::instance().error("Did not find any liberty files, use "
-                                    "read_liberty <file name> first.");
+                                    "import_liberty <file name> first.");
         return -1;
     }
     sta::LibertyCellIterator cell_iter(liberty);

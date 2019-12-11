@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-project(OpenPhySyn VERSION 1.0.0 LANGUAGES CXX)
+project(OpenPhySyn VERSION 1.1.0 LANGUAGES CXX)
 
 
 option(ENABLE_WARNINGS_SETTINGS "Allow target_set_warnings to add flags and defines.
@@ -8,7 +8,7 @@ option(ENABLE_WARNINGS_SETTINGS "Allow target_set_warnings to add flags and defi
 option(ENABLE_LTO "Enable link time optimization" ON)
 option(ENABLE_DOCTESTS "Include tests in the library. Setting this to OFF will remove all doctest related code.
                         Tests in tests/*.cpp will still be enabled." ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -ltcl -lz -lm -ldl -Wno-error -Wall -Wextra -Wno-unused-parameter")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -pthread -ltcl -lz -lm -ldl -Wno-error -Wall -Wextra -Wno-unused-parameter")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 
@@ -39,6 +39,12 @@ set(PSN_HOME
 )
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/cmake")
 
+
+# Default to bulding optimnized/release executable.
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE RELEASE)
+endif()
+
 # Include stuff.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 include(ConfigSafeGuards)
@@ -59,10 +65,6 @@ find_lto(CXX)
 #Add TCL Package
 find_package(TCL REQUIRED)
 
-# Add Boost Package
-set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost COMPONENTS log program_options filesystem REQUIRED)
-
 #Add SWIG Package
 cmake_policy(SET CMP0078 NEW)
 find_package(SWIG REQUIRED)
@@ -71,27 +73,38 @@ INCLUDE(${SWIG_USE_FILE})
 
 
 
+# Build OpenDB
 if(NOT DEFINED OPENDB_HOME)
 set(OPENDB_HOME
 ${PROJECT_SOURCE_DIR}/external/OpenDB
 )
 endif()
 
+# Build OpenSTA
 if(NOT DEFINED OPENSTA_HOME)
 set(OPENSTA_HOME
 ${PROJECT_SOURCE_DIR}/external/OpenSTA
 )
 endif()
 
+# Build Flute
 if(NOT DEFINED FLUTE_HOME)
 set(FLUTE_HOME
 ${PROJECT_SOURCE_DIR}/external/flute
 )
 endif()
 
+# Build spdlok
 if(NOT DEFINED SPD_LOG_HOME)
 set(SPD_LOG_HOME
   ${PROJECT_SOURCE_DIR}/external/spdlog
+)
+endif()
+
+# Build cxxopts
+if(NOT DEFINED CXXOPTS_HOME)
+set(CXXOPTS_HOME
+  ${PROJECT_SOURCE_DIR}/external/cxxopts
 )
 endif()
 
@@ -112,6 +125,8 @@ endif()
 
 # Add spdlog
 add_subdirectory(external/spdlog)
+# Add cxxopts
+add_subdirectory(external/cxxopts)
 
 # Add cpp-taskflow
 if (${OPENPHYSYN_CPP_TASKFLOW_ENABLED})
@@ -141,6 +156,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Transform/TransformHandler.cpp
     ${PSN_HOME}/src/Transform/TransformInfo.cpp
     ${PSN_HOME}/src/Utils/FileUtils.cpp
+    ${PSN_HOME}/src/Utils/StringUtils.cpp
     ${PSN_HOME}/src/Utils/PsnGlobal.cpp
     ${PSN_HOME}/src/PsnException/Error.cpp
     ${PSN_HOME}/src/PsnException/FileException.cpp
@@ -150,7 +166,6 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/PsnException/PsnException.cpp
     ${PSN_HOME}/src/PsnException/ProgramOptionsException.cpp
     ${PSN_HOME}/src/PsnException/TransformNotFoundException.cpp
-
     ${PSN_HOME}/src/Sta/DatabaseSta.cpp
     ${PSN_HOME}/src/Sta/DatabaseSdcNetwork.cpp
     ${PSN_HOME}/src/Sta/DatabaseStaNetwork.cpp
@@ -221,10 +236,10 @@ set(PUBLIC_INCLUDE_DIRS
 set(PRIVATE_INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/external/doctest
   ${PROJECT_SOURCE_DIR}/external/spdlog
+  ${PROJECT_SOURCE_DIR}/external/cxxopts/include
   ${PROJECT_SOURCE_DIR}/external/StandardTransforms
   ${PROJECT_SOURCE_DIR}/external/flute
   ${TCL_INCLUDE_PATH}
-  ${Boost_INCLUDE_DIR}
   ${SPD_LOG_HOME}/include
   ${FLUTE_HOME}/include
   ${OPENDB_HOME}/include
@@ -246,7 +261,6 @@ set(PUBLIC_LIBRARIES
   opendb
   ${ZLIB_LIBRARIES}
   ${TCL_LIBRARY}
-  ${Boost_LIBRARIES}
   dl
   doctest
   stdc++fs
@@ -304,6 +318,8 @@ OpenSTA
 flute
 ${PUBLIC_LIBRARIES}
 )
+
+install(FILES ../etc/POST9.dat ../etc/POWV9.dat DESTINATION etc)
 
 endif()
 # Compile all sources into a library.

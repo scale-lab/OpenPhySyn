@@ -29,59 +29,25 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <PsnLogger/PsnLogger.hpp>
-#include <tcl.h>
-#include "Psn/Psn.hpp"
-#include "PsnException/ProgramOptionsException.hpp"
-
-int psnTclAppInit(Tcl_Interp* interp);
-
-int
-main(int argc, char* argv[])
+#include "StringUtils.hpp"
+#include <fstream>
+#include <libgen.h>
+#include <sys/stat.h>
+namespace psn
 {
-#ifndef OPENROAD_BUILD
-    psn::Psn::initialize();
-    try
-    {
-        psn::Psn::instance().setProgramOptions(argc, argv);
-        if (psn::Psn::instance().programOptions().help())
-        {
-            psn::Psn::instance().printUsage(true, false, false);
-            return 0;
-        }
-        if (psn::Psn::instance().programOptions().version())
-        {
-            psn::Psn::instance().printVersion(true);
-            return 0;
-        }
-    }
-    catch (psn::ProgramOptionsException& e)
-    {
-        psn::PsnLogger::instance().error(e.what());
-        return -1;
-    }
-#endif
-    Tcl_Main(1, argv, psnTclAppInit);
-    return 0;
-}
-
-int
-psnTclAppInit(Tcl_Interp* interp)
+std::vector<std::string>
+StringUtils::split(std::string str, const std::string& delimiter)
 {
-    if (Tcl_Init(interp) == TCL_ERROR)
+    std::vector<std::string> tokens;
+    size_t                   pos = 0;
+    std::string              token;
+    while ((pos = str.find(delimiter)) != std::string::npos)
     {
-        return TCL_ERROR;
+        token = str.substr(0, pos);
+        tokens.push_back(token);
+        str.erase(0, pos + delimiter.length());
     }
-#ifndef OPENROAD_BUILD
-    psn::Psn::instance().setupInterpreter(interp);
-    psn::Psn::instance().processStartupProgramOptions();
-#else
-    psn::Psn::initialize(nullptr, true);
-    psn::Psn::instance().setupInterpreter(interp, true, false);
-#endif
-    // psn::Psn::instance().setupInterpreterReadline(); // This should be that
-    // last
-    //                                                  // initialization step
-    //                                                  // because of the RL loop
-    return TCL_OK;
+    tokens.push_back(str);
+    return tokens;
 }
+} // namespace psn
