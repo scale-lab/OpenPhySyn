@@ -40,7 +40,6 @@
 #include <OpenSTA/search/Search.hh>
 #include <OpenSTA/search/Sta.hh>
 #include <Psn/Psn.hpp>
-#include <boost/algorithm/string.hpp>
 #include <flute.h>
 #include <tcl.h>
 #include "DefReader/DefReader.hpp"
@@ -53,6 +52,7 @@
 #include "PsnException/TransformNotFoundException.hpp"
 #include "Transform/TransformHandler.hpp"
 #include "Utils/FileUtils.hpp"
+#include "Utils/StringUtils.hpp"
 
 extern "C"
 {
@@ -89,7 +89,7 @@ Psn::Psn(Database* db) : db_(db), interp_(nullptr)
     settings_ = new DesignSettings();
     initializeSta();
     db_handler_ = new DatabaseHandler(sta_);
-    initializeFlute("../external/flute/etc");
+    initializeFlute();
 }
 void
 Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp)
@@ -193,14 +193,14 @@ Psn::readLib(const char* path)
 }
 
 int
-Psn::readLef(const char* path, bool read_library, bool read_tech)
+Psn::readLef(const char* path, bool import_library, bool import_tech)
 {
     LefReader reader(db_);
     try
     {
         Library*           library = nullptr;
         LibraryTechnology* tech    = nullptr;
-        if (read_library && read_tech)
+        if (import_library && import_tech)
         {
             if (tech == nullptr)
             {
@@ -217,7 +217,7 @@ Psn::readLef(const char* path, bool read_library, bool read_tech)
                 sta_->readLefAfter(library);
             }
         }
-        else if (read_library)
+        else if (import_library)
         {
             library = reader.readLib(path);
             if (library)
@@ -225,7 +225,7 @@ Psn::readLef(const char* path, bool read_library, bool read_tech)
                 sta_->readLefAfter(library);
             }
         }
-        else if (read_tech)
+        else if (import_tech)
         {
             tech = reader.readTech(path);
         }
@@ -318,7 +318,6 @@ Psn::loadTransforms()
 {
 
     std::vector<psn::TransformHandler> handlers;
-    std::vector<std::string>           transforms_dirs;
     std::string                        transforms_paths(
         FileUtils::joinPath(FileUtils::homePath().c_str(),
                             ".OpenPhySyn/transforms") +
@@ -331,7 +330,8 @@ Psn::loadTransforms()
         transforms_paths = transforms_paths + ":" + std::string(env_path);
     }
 
-    boost::split(transforms_dirs, transforms_paths, boost::is_any_of(":"));
+    std::vector<std::string> transforms_dirs =
+        StringUtils::split(transforms_paths, ":");
 
     for (auto& transform_parent_path : transforms_dirs)
     {
@@ -451,7 +451,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
             return TCL_ERROR;
         }
     }
-#endif
+#endif // OPENROAD_BUILD
 
     const char* tcl_define_cmds =
 #include "Tcl/DefinePSNCommands.tcl"
@@ -492,7 +492,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
             return TCL_ERROR;
         }
     }
-#endif
+#endif // OPENROAD_BUILD
 
     return TCL_OK;
 }
@@ -555,11 +555,11 @@ Psn::printCommands(bool raw_str)
         "help                                  print help\n"
         "print_usage                           print help\n"
         "print_transforms                      list loaded transforms\n"
-        "read_lef <file path>                  load LEF file\n"
-        "read_def <file path>                  load DEF file\n"
-        "read_lib <file path>                  load a liberty file\n"
-        "read_liberty <file path>              load a liberty file\n"
-        "write_def <output file>               Write DEF file\n"
+        "import_lef <file path>                load LEF file\n"
+        "import_def <file path>                load DEF file\n"
+        "import_lib <file path>                load a liberty file\n"
+        "import_liberty <file path>            load a liberty file\n"
+        "export_def <output file>              Write DEF file\n"
         "set_wire_rc <res> <cap>               Set resistance & capacitance "
         "per micron\n"
         "set_max_area <area>                   Set maximum design area\n"
@@ -803,17 +803,47 @@ int
 Psn::initializeFlute(const char* flue_init_dir)
 {
 #ifndef OPENROAD_BUILD
-    std::string powv_file_path = std::string(flue_init_dir) + "/POWV9.dat";
-    std::string post_file_path = std::string(flue_init_dir) + "/POST9.dat";
-    if (!FileUtils::isDirectory(flue_init_dir) ||
-        !FileUtils::pathExists(powv_file_path.c_str()) ||
-        !FileUtils::pathExists(post_file_path.c_str()))
+    bool        lut_found = false;
+    std::string flute_dir, powv_file_path, post_file_path;
+    if (flue_init_dir)
+    {
+        flute_dir      = std::string(flute_dir);
+        powv_file_path = FileUtils::joinPath(flute_dir.c_str(), "POWV9.dat");
+        post_file_path = FileUtils::joinPath(flute_dir.c_str(), "POST9.dat");
+        if (FileUtils::isDirectory(flute_dir.c_str()) &&
+            FileUtils::pathExists(powv_file_path.c_str()) &&
+            FileUtils::pathExists(post_file_path.c_str()))
+        {
+            lut_found = true;
+        }
+    }
+    else
+    {
+        for (auto& s :
+             std::vector<std::string>({"../external/flute/etc", "../etc", "."}))
+        {
+            flute_dir = s;
+            powv_file_path =
+                FileUtils::joinPath(flute_dir.c_str(), "POWV9.dat");
+            post_file_path =
+                FileUtils::joinPath(flute_dir.c_str(), "POST9.dat");
+            if (FileUtils::isDirectory(flute_dir.c_str()) &&
+                FileUtils::pathExists(powv_file_path.c_str()) &&
+                FileUtils::pathExists(post_file_path.c_str()))
+            {
+                lut_found = true;
+                break;
+            }
+        }
+    }
+    if (!lut_found)
     {
         PsnLogger::instance().error("Flute initialization failed");
         return -1;
     }
+
     char* cwd = getcwd(NULL, 0);
-    chdir(flue_init_dir);
+    chdir(flute_dir.c_str());
     Flute::readLUT();
     chdir(cwd);
     free(cwd);

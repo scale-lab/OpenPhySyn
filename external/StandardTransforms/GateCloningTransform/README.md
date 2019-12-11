@@ -22,7 +22,7 @@ Example:
 ```bash
 > ./Psn
 > transform gate_clone 1.4 1
-> write_def out.def
+> export_def out.def
 ```
 
 Make sure to set `PSN_HOME` to OpenPhySyn source code path, `PSN_LIB` to the directory containing the built OpenPhySyn library file, `OPENDB_HOME` to [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) include path, `OPENDB_LIB` the directory containing the built [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) library files.

@@ -30,10 +30,10 @@ To build a new transform refer to the transform [template](https://github.com/Th
 
 ```bash
 > ./Psn
-> read_lef <lef file>
-> read_def <def file>
+> import_lef <lef file>
+> import_def <def file>
 > transform <transform name> <arguments...>
-> write_def <def file>
+> export_def <def file>
 ```
 
 ### List available commands:
@@ -45,11 +45,11 @@ To build a new transform refer to the transform [template](https://github.com/Th
 print_version                         print version
 help                                  print help
 print_transforms                      list loaded transforms
-read_lef <file path>                  load LEF file
-read_def <file path>                  load DEF file
-read_lib <file path>                  load a liberty file
-read_liberty <file path>              load a liberty file
-write_def <output file>               Write DEF file
+import_lef <file path>                  load LEF file
+import_def <file path>                  load DEF file
+import_lib <file path>                  load a liberty file
+import_liberty <file path>              load a liberty file
+export_def <output file>               Write DEF file
 set_wire_rc <res> <cap>               Set resistance & capacitance per micron
 set_max_area <area>                   Set maximum design area
 optimize_design [<options>]           Perform timing optimization on the design
@@ -77,8 +77,8 @@ set_log_pattern <pattern>             Set log printing pattern, refer to spdlog 
 ### Running OpenSTA commands:
 ```bash
 > ./Psn
-> read_lef <lef file>
-> read_def <def file>
+> import_lef <lef file>
+> import_def <def file>
 > sta create_clock [sta get_ports clk]  -name core_clock  -period 10
 > sta report_checks
 ```
@@ -96,14 +96,14 @@ By default, the following transforms are built with OpenPhySyn:
 
 OpenPhySyn depends on the following libraries:
 
--   [Boost](https://www.boost.org/)
--   [CPP TaskFlow](https://github.com/cpp-taskflow/cpp-taskflow)
--   [Flute](https://github.com/The-OpenROAD-Project/flute3)
--   [OpenSTA](https://github.com/The-OpenROAD-Project/OpenSTA)
--   [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB)
+-   [CPP TaskFlow](https://github.com/cpp-taskflow/cpp-taskflow) [included, optional]
+-   [Flute](https://github.com/The-OpenROAD-Project/flute3) [included]
+-   [OpenSTA](https://github.com/The-OpenROAD-Project/OpenSTA) [included]
+-   [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) [included]
+-   [cxxopts](https://github.com/jarro2783/cxxopts) [included]
 -   [SWIG](http://www.swig.org/Doc1.3/Tcl.html)
--   [Doxygen](http://www.doxygen.nl) (optional)
--   [Doctests](https://github.com/onqtam/doctest) (optional)
+-   [Doxygen](http://www.doxygen.nl) [included, optional]
+-   [Doctests](https://github.com/onqtam/doctest) [included, optional]
 
 ## Issues
 

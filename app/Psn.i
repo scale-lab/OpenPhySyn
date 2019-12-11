@@ -97,11 +97,11 @@ DatabaseHandler *handler();
 // %include "include/OpenPhySyn/SteinerTree/SteinerTree.hpp"
 
 #ifdef OPENROAD_BUILD
-%ignore read_def;
-%ignore     read_lef;
-%ignore     read_lib;
-%ignore     read_liberty;
-%ignore     write_def;
+%ignore     import_def;
+%ignore     import_lef;
+%ignore     import_lib;
+%ignore     import_liberty;
+%ignore     export_def;
 %ignore     print_liberty_cells;
 %ignore psn::Psn::initialize;
 #endif

@@ -43,11 +43,11 @@ void help();
 void print_usage();
 void print_transforms();
 #ifndef OPENROAD_BUILD
-int read_def(const char* def_path);
-int read_lef(const char* lef_path, int ignore_routing_layers = true);
-int read_lib(const char* lib_path); // Alias for read_liberty
-int read_liberty(const char* lib_path);
-int write_def(const char* def_path);
+int import_def(const char* def_path);
+int import_lef(const char* lef_path, int ignore_routing_layers = true);
+int import_lib(const char* lib_path); // Alias for import_liberty
+int import_liberty(const char* lib_path);
+int export_def(const char* def_path);
 int print_liberty_cells();
 #endif
 int set_wire_rc(float res_per_micon, float cap_per_micron);
@@ -72,11 +72,11 @@ SteinerTree*     create_steiner_tree(Net* net);
 #ifdef SWIGIMPORTED
 asdasda
 #ifdef OPENROAD_BUILD
-%ignore read_def;
-%ignore     read_lef;
-%ignore     read_lib;
-%ignore     read_liberty;
-%ignore     write_def;
-%ignore     print_liberty_cells;
+    % ignore import_def;
+% ignore     import_lef;
+% ignore     import_lib;
+% ignore     import_liberty;
+% ignore     export_def;
+% ignore     print_liberty_cells;
 #endif
 #endif

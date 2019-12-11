@@ -31,12 +31,10 @@
 
 #include <OpenPhySyn/Psn/ProgramOptions.hpp>
 
-#include <boost/program_options/options_description.hpp>
-#include <boost/program_options/parsers.hpp>
-#include <boost/program_options/variables_map.hpp>
+#include "cxxopts.hpp"
+
 #include <sstream>
 #include "PsnException/ProgramOptionsException.hpp"
-namespace po = boost::program_options;
 
 namespace psn
 {
@@ -55,79 +53,62 @@ ProgramOptions::ProgramOptions(int argc, char** argv)
       quiet_(false)
 {
 
-    po::command_line_style::style_t style = po::command_line_style::style_t(
-        po::command_line_style::unix_style |
-        po::command_line_style::case_insensitive |
-        po::command_line_style::allow_long_disguise);
-
-    po::options_description description("");
-    description.add_options()("help,h", "Display this help message and exit")(
-        "file", po::value<std::string>(), "Load TCL script")(
-        "log-file", po::value<std::string>(), "Write output to log file")(
-        "log-level", po::value<std::string>(),
-        "Default log level [info, warn, error, critical]")(
-        "version,v", "Display the version number")("verbose", "Verbose output")(
-        "quiet", "Disable output");
-
-    po::positional_options_description p;
-    p.add("file", 1);
-
-    if (argc)
+    try
     {
-        std::ostringstream stream;
-        stream << "Usage: " << argv_[0] << " [options] "
-               << "[file]" << std::endl
-               << description;
-        usage_ = stream.str();
-
-        po::variables_map vm;
-        try
+        cxxopts::Options options(
+            "OpenPhySyn", "OpenPhySyn - OpenROAD physical synthesis toolkit.");
+        options.add_options()("h,help", "Display this help message and exit")(
+            "file", "Load TCL script", cxxopts::value<std::string>())(
+            "log-file", "Write output to log file",
+            cxxopts::value<std::string>())(
+            "log-level", "Default log level [info, warn, error, critical]",
+            cxxopts::value<std::string>())("v,version",
+                                           "Display the version number")(
+            "verbose", "Verbose output")("quiet", "Disable output");
+        usage_ = options.help();
+        if (argc)
         {
-            po::store(po::command_line_parser(argc_, argv_)
-                          .options(description)
-                          .positional(p)
-                          .style(style)
-                          .run(),
-                      vm);
-
-            po::notify(vm);
-
-            if (vm.count("help"))
+            auto result = options.parse(argc, argv);
+            if (result.count("help"))
             {
                 help_ = true;
             }
-            if (vm.count("version"))
+            if (result.count("version"))
             {
                 version_ = true;
             }
-            if (vm.count("verbose"))
+            if (result.count("verbose"))
             {
                 verbose_ = true;
             }
-            if (vm.count("quiet"))
+            if (result.count("quiet"))
             {
                 quiet_ = true;
             }
-            if (vm.count("file"))
+            if (result.count("file"))
             {
                 has_file_ = true;
-                file_     = vm["file"].as<std::string>();
+                file_     = result["file"].as<std::string>();
             }
-            if (vm.count("log-file"))
+            if (result.count("log-file"))
             {
                 has_log_file_ = true;
-                log_file_     = vm["log-file"].as<std::string>();
+                log_file_     = result["log-file"].as<std::string>();
             }
-            if (vm.count("log-level"))
+            if (result.count("log-level"))
             {
                 has_log_level_ = true;
-                log_level_     = vm["log-level"].as<std::string>();
+                log_level_     = result["log-level"].as<std::string>();
             }
         }
-        catch (po::error& e)
-        {
-            throw ProgramOptionsException(e.what());
-        }
+    }
+    catch (cxxopts::OptionSpecException& e)
+    {
+        throw ProgramOptionsException(e.what());
+    }
+    catch (cxxopts::OptionParseException& e)
+    {
+        throw ProgramOptionsException(e.what());
     }
 }
 std::string

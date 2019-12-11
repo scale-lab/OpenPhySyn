@@ -29,59 +29,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <PsnLogger/PsnLogger.hpp>
-#include <tcl.h>
-#include "Psn/Psn.hpp"
-#include "PsnException/ProgramOptionsException.hpp"
+#ifndef __PSN_STRING_UTILS__
+#define __PSN_STRING_UTILS__
+#include <string>
+#include <vector>
 
-int psnTclAppInit(Tcl_Interp* interp);
-
-int
-main(int argc, char* argv[])
+namespace psn
 {
-#ifndef OPENROAD_BUILD
-    psn::Psn::initialize();
-    try
-    {
-        psn::Psn::instance().setProgramOptions(argc, argv);
-        if (psn::Psn::instance().programOptions().help())
-        {
-            psn::Psn::instance().printUsage(true, false, false);
-            return 0;
-        }
-        if (psn::Psn::instance().programOptions().version())
-        {
-            psn::Psn::instance().printVersion(true);
-            return 0;
-        }
-    }
-    catch (psn::ProgramOptionsException& e)
-    {
-        psn::PsnLogger::instance().error(e.what());
-        return -1;
-    }
-#endif
-    Tcl_Main(1, argv, psnTclAppInit);
-    return 0;
-}
-
-int
-psnTclAppInit(Tcl_Interp* interp)
+class StringUtils
 {
-    if (Tcl_Init(interp) == TCL_ERROR)
-    {
-        return TCL_ERROR;
-    }
-#ifndef OPENROAD_BUILD
-    psn::Psn::instance().setupInterpreter(interp);
-    psn::Psn::instance().processStartupProgramOptions();
-#else
-    psn::Psn::initialize(nullptr, true);
-    psn::Psn::instance().setupInterpreter(interp, true, false);
+public:
+    static std::vector<std::string> split(std::string        str,
+                                          const std::string& delimiter);
+};
+} // namespace psn
 #endif
-    // psn::Psn::instance().setupInterpreterReadline(); // This should be that
-    // last
-    //                                                  // initialization step
-    //                                                  // because of the RL loop
-    return TCL_OK;
-}

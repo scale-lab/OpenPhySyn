@@ -58,8 +58,8 @@ public:
     int setLogLevel(LogLevel level);
 
     virtual int readDef(const char* path);
-    virtual int readLef(const char* path, bool read_library = true,
-                        bool read_tech = true);
+    virtual int readLef(const char* path, bool import_library = true,
+                        bool import_tech = true);
     virtual int readLib(const char* path);
 
     virtual int writeDef(const char* path);
@@ -92,7 +92,7 @@ public:
 
     virtual void clearDatabase();
 
-    virtual int initializeFlute(const char* flue_init_dir);
+    virtual int initializeFlute(const char* flue_init_dir = nullptr);
 
 #ifndef OPENROAD_BUILD
     static void initialize(Database* db = nullptr, bool load_transforms = true,
