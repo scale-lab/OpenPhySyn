@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-project(OpenPhySyn VERSION 1.0.0 LANGUAGES CXX)
+project(OpenPhySyn VERSION 1.1.0 LANGUAGES CXX)
 
 
 option(ENABLE_WARNINGS_SETTINGS "Allow target_set_warnings to add flags and defines.
@@ -304,6 +304,8 @@ OpenSTA
 flute
 ${PUBLIC_LIBRARIES}
 )
+
+install(FILES ../etc/POST9.dat ../etc/POWV9.dat DESTINATION etc)
 
 endif()
 # Compile all sources into a library.

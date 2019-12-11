@@ -58,8 +58,8 @@ public:
     int setLogLevel(LogLevel level);
 
     virtual int readDef(const char* path);
-    virtual int readLef(const char* path, bool read_library = true,
-                        bool read_tech = true);
+    virtual int readLef(const char* path, bool import_library = true,
+                        bool import_tech = true);
     virtual int readLib(const char* path);
 
     virtual int writeDef(const char* path);

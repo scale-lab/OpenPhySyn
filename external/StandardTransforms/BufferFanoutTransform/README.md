@@ -23,7 +23,7 @@ Example:
 > ./Psn
 > # Run simple buffering algorithm for cell with max-fanout 2
 > transform buffer_fanout 2 BUF_X1
-> write_def out.def
+> export_def out.def
 ```
 
 Make sure to set `PSN_HOME` to OpenPhySyn source code path, `PSN_LIB` to the directory containing the built OpenPhySyn library file, `OPENDB_HOME` to [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) include path, `OPENDB_LIB` the directory containing the built [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) library files.

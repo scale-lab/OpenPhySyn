@@ -193,14 +193,14 @@ Psn::readLib(const char* path)
 }
 
 int
-Psn::readLef(const char* path, bool read_library, bool read_tech)
+Psn::readLef(const char* path, bool import_library, bool import_tech)
 {
     LefReader reader(db_);
     try
     {
         Library*           library = nullptr;
         LibraryTechnology* tech    = nullptr;
-        if (read_library && read_tech)
+        if (import_library && import_tech)
         {
             if (tech == nullptr)
             {
@@ -217,7 +217,7 @@ Psn::readLef(const char* path, bool read_library, bool read_tech)
                 sta_->readLefAfter(library);
             }
         }
-        else if (read_library)
+        else if (import_library)
         {
             library = reader.readLib(path);
             if (library)
@@ -225,7 +225,7 @@ Psn::readLef(const char* path, bool read_library, bool read_tech)
                 sta_->readLefAfter(library);
             }
         }
-        else if (read_tech)
+        else if (import_tech)
         {
             tech = reader.readTech(path);
         }
@@ -554,11 +554,11 @@ Psn::printCommands(bool raw_str)
         "help                                  print help\n"
         "print_usage                           print help\n"
         "print_transforms                      list loaded transforms\n"
-        "read_lef <file path>                  load LEF file\n"
-        "read_def <file path>                  load DEF file\n"
-        "read_lib <file path>                  load a liberty file\n"
-        "read_liberty <file path>              load a liberty file\n"
-        "write_def <output file>               Write DEF file\n"
+        "import_lef <file path>                load LEF file\n"
+        "import_def <file path>                load DEF file\n"
+        "import_lib <file path>                load a liberty file\n"
+        "import_liberty <file path>            load a liberty file\n"
+        "export_def <output file>              Write DEF file\n"
         "set_wire_rc <res> <cap>               Set resistance & capacitance "
         "per micron\n"
         "set_max_area <area>                   Set maximum design area\n"

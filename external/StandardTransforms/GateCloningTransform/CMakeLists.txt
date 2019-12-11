@@ -7,7 +7,7 @@ set(TRANSFORM_NAME gate_clone)
 set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS_INIT} -std=c++11 -fPIC")
 
 find_package(TCL REQUIRED)
-set(Boost_USE_STATIC_LIBS ON)
+# set(Boost_USE_STATIC_LIBS ON)
 
 
 set(PSN_HOME "/usr/include/OpenPhySyn" CACHE FILEPATH "The path to OpenPhySyn includes")

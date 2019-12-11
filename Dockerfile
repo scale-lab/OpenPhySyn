@@ -41,13 +41,16 @@ RUN yum install -y epel-release-latest-7.noarch.rpm
 # Install dev and runtime dependencies
 RUN yum install -y tcl-devel tcl tk libstdc++ tk-devel pcre-devel
 
+
+
+
 # Install Boost
 RUN wget http://downloads.sourceforge.net/project/boost/boost/1.67.0/boost_1_67_0.tar.gz \
     && tar xfz boost_1_67_0.tar.gz \
     && rm -f boost_1_67_0.tar.gz \
     && cd boost_1_67_0 \
     && ./bootstrap.sh --prefix=/usr --with-libraries=program_options,log,filesystem \
-    && ./b2 cxxflags=-fPIC install -j $(nproc) \
+    && ./b2 install -j $(nproc) \
     && cd /tmp \
     && rm -rf boost_1_67_0
 
@@ -61,11 +64,11 @@ RUN yum remove -y swig \
     && cd /tmp \
     && rm -rf swig-rel-3.0.12
 
-
 # Install python dev
 RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm && \
     yum update -y && \
     yum install -y python36u python36u-libs python36u-devel python36u-pip
+
 
 FROM base-dependencies AS builder
 
