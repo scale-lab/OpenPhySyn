@@ -22,7 +22,7 @@ if (${OPENPHYSYN_DATABASE_HANDLER} STREQUAL "OpenDB")
 else()
   add_definitions(-DUSE_OPENSTA_DB_HANDLER)
 endif()
-  
+
 if (${OPENROAD_BUILD})
   add_definitions(-DOPENROAD_BUILD)
 endif()
@@ -234,6 +234,10 @@ set(PSN_SOURCES
 set(PSN_TESTFILES
     ${PSN_TESTFILES}
     ${OPENSTA_UTIL_TCL_INIT}
+)
+add_custom_target(
+  opensta-tcl-init
+  DEPENDS ${OPENSTA_UTIL_TCL_INIT}
 )
 endif()
 
