@@ -29,9 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __has_include
-static_assert(false, "__has_include not supported");
-#endif
+#ifdef __has_include
 #if __cplusplus > 201402L
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -41,6 +39,10 @@ namespace fs = std::experimental::filesystem;
 #elif __has_include(<boost/filesystem.hpp>)
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
+#else
+#include <Utils/FilesystemLegacyHelpers.hpp>
+namespace fs = psn::filesystem;
+#endif
 #else
 #include <Utils/FilesystemLegacyHelpers.hpp>
 namespace fs = psn::filesystem;
