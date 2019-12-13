@@ -25,6 +25,7 @@ endif()
   
 if (${OPENROAD_BUILD})
   add_definitions(-DOPENROAD_BUILD)
+  set(ENABLE_DOCTESTS OFF)
 endif()
 
 set(SWIG_FLAGS "")
@@ -262,10 +263,14 @@ set(PUBLIC_LIBRARIES
   ${ZLIB_LIBRARIES}
   ${TCL_LIBRARY}
   dl
-  doctest
   stdc++fs
 )
-
+if (${ENABLE_DOCTESTS})
+set(PUBLIC_LIBRARIES
+  ${PUBLIC_LIBRARIES}
+  doctest
+)
+endif()
 # Stand-alone executable specific libraries
 set(PUBLIC_EXEC_LIBRARIES
 )
@@ -359,7 +364,7 @@ add_custom_command(OUTPUT ${PSN_WRAP}
 
 install(TARGETS Psn DESTINATION bin)
 # Set up tests (see tests/CMakeLists.txt).
-if (NOT ${OPENROAD_BUILD})
+if (${ENABLE_DOCTESTS})
 add_subdirectory(tests)
 endif()
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
