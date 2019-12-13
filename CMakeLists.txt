@@ -285,12 +285,18 @@ set(PRIVATE_INCLUDE_DIRS
 endif()
 
 set(PUBLIC_LIBRARIES
-  opendb
-  ${ZLIB_LIBRARIES}
-  ${TCL_LIBRARY}
-  dl
+opendb
+${ZLIB_LIBRARIES}
+${TCL_LIBRARY}
+dl
+)
+
+if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.1)
+set(PUBLIC_LIBRARIES
+  ${PUBLIC_LIBRARIES}
   stdc++fs
 )
+endif()
 
 # Stand-alone executable specific libraries
 set(PUBLIC_EXEC_LIBRARIES
