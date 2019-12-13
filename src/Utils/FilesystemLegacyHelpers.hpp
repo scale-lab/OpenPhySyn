@@ -28,33 +28,63 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "Psn/Psn.hpp"
-#include "PsnException/PsnException.hpp"
-#include "Utils/FileUtils.hpp"
-#include "doctest.h"
 
-using namespace psn;
+#ifndef __PSN_FILESYSTEM_LEGACY_HELPERS__
+#define __PSN_FILESYSTEM_LEGACY_HELPERS__
+#ifndef __has_include(<filesystem>)
+#ifndef __has_include(<experimental/filesystem>)
+#ifndef __has_include(<experimental/filesystem>)
 
-TEST_CASE("Should add fan-out buffers")
+#include <string>
+#include <vector>
+
+namespace psn
 {
-    Psn& psn_inst = Psn::instance();
-    try
+namespace filesystem
+{
+
+bool create_directory(const char* raw_path);
+
+class path
+{
+    std::string path_str_;
+
+public:
+    path(const std::string& raw_path);
+    path(const char* raw_path);
+    path        operator/(path const& other_path) const;
+    std::string generic_string() const;
+    operator std::string() const;
+    
+    static inline char
+    separator()
     {
-        psn_inst.clearDatabase();
-        psn_inst.readLib("../tests/data/libraries/Nangate45/"
-                         "NangateOpenCellLibrary_typical.lib");
-        psn_inst.readLef(
-            "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
-        psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
-        CHECK(psn_inst.database()->getChip() != nullptr);
-        psn::Psn::instance().loadTransforms();
-        CHECK(psn_inst.hasTransform("buffer_fanout"));
-        auto result = psn_inst.runTransform(
-            "buffer_fanout", std::vector<std::string>({"2", "BUF_X1"}));
-        CHECK(result == 6);
+#ifdef _WIN32
+        return '\\';
+#else
+        return '/';
+#endif
     }
-    catch (PsnException& e)
-    {
-        FAIL(e.what());
-    }
-}
+};
+
+class directory_entry{
+    typedef class path path_type;
+    path_type path_;
+public:
+    directory_entry(const std::string& p): path_(p){}
+    directory_entry(const char * p): path_(p){}
+    directory_entry(path_type p): path_(p){}
+    path_type path() const {return path_type(path_);}
+};
+
+std::vector<directory_entry> directory_iterator(const std::string target_path);
+std::vector<directory_entry> directory_iterator(const char* target_path);
+std::vector<directory_entry> directory_iterator(const path target_path);
+
+} // namespace filesystem
+
+} // namespace psn
+#endif
+#endif
+#endif
+#endif

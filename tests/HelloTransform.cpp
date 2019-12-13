@@ -46,6 +46,7 @@ TEST_CASE("Should add a signle net")
         psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
         CHECK(psn_inst.database()->getChip() != nullptr);
         psn::Psn::instance().loadTransforms();
+        CHECK(psn_inst.hasTransform("hello_transform"));
         auto result = psn_inst.runTransform("hello_transform",
                                             std::vector<std::string>({"net1"}));
         CHECK(result >= 1);
