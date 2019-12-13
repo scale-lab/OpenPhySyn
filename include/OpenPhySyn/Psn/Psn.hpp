@@ -65,6 +65,7 @@ public:
     virtual int writeDef(const char* path);
 
     int         loadTransforms();
+    bool        hasTransform(std::string transform_name);
     virtual int runTransform(std::string              transform_name,
                              std::vector<std::string> args);
 
@@ -96,13 +97,16 @@ public:
 
 #ifndef OPENROAD_BUILD
     static void initialize(Database* db = nullptr, bool load_transforms = true,
-                           Tcl_Interp* interp = nullptr);
+                           Tcl_Interp* interp     = nullptr,
+                           bool        init_flute = true);
     static void initialize(sta::DatabaseSta* sta, bool load_transforms = true,
-                           Tcl_Interp* interp = nullptr);
+                           Tcl_Interp* interp     = nullptr,
+                           bool        init_flute = true);
 #else
     static void initialize(sta::DatabaseSta* sta             = nullptr,
                            bool              load_transforms = true,
-                           Tcl_Interp*       interp          = nullptr);
+                           Tcl_Interp*       interp          = nullptr,
+                           bool              init_flute      = true);
 #endif
     virtual ~Psn();
 
