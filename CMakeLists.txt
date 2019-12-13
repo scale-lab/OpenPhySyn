@@ -6,7 +6,7 @@ project(OpenPhySyn VERSION 1.1.0 LANGUAGES CXX)
 option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add flags and defines.
                                  Set this to OFF if you want to provide your own warning parameters." ON)
 option(OPENPHYSYN_LTO_ENABLED "Enable link time optimization" ON)
-option(OPENPHYSYN_UNIT_TESTS_ENABHLED "Include tests in the library. Setting this to OFF will remove all doctest related code.
+option(OPENPHYSYN_UNIT_TESTS_ENABLED "Include tests in the library. Setting this to OFF will remove all doctest related code.
                         Tests in tests/*.cpp will still be enabled." ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -pthread -ltcl -lz -lm -ldl -Wno-error -Wall -Wextra -Wno-unused-parameter")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -25,7 +25,6 @@ endif()
   
 if (${OPENROAD_BUILD})
   add_definitions(-DOPENROAD_BUILD)
-  set(OPENPHYSYN_UNIT_TESTS_ENABHLED OFF)
 endif()
 
 set(SWIG_FLAGS "")
@@ -173,6 +172,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Transform/TransformHandler.cpp
     ${PSN_HOME}/src/Transform/TransformInfo.cpp
     ${PSN_HOME}/src/Utils/FileUtils.cpp
+    ${PSN_HOME}/src/Utils/FilesystemLegacyHelpers.cpp
     ${PSN_HOME}/src/Utils/StringUtils.cpp
     ${PSN_HOME}/src/Utils/PsnGlobal.cpp
     ${PSN_HOME}/src/PsnException/Error.cpp
@@ -206,6 +206,17 @@ set(PSN_SOURCES
     ${PSN_MAIN}
 )
 
+set(PSN_TESTFILES        # All .cpp files in tests/
+    ${PROJECT_SOURCE_DIR}/tests/ReadLefDef.cpp
+    ${PROJECT_SOURCE_DIR}/tests/WriteDef.cpp
+    ${PROJECT_SOURCE_DIR}/tests/ReadLiberty.cpp
+    ${PROJECT_SOURCE_DIR}/tests/BufferFanout.cpp
+    ${PROJECT_SOURCE_DIR}/tests/SteinerTree.cpp
+    ${PROJECT_SOURCE_DIR}/tests/GateClone.cpp
+    ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
+    ${PROJECT_SOURCE_DIR}/tests/TestMain.cpp
+)
+
 if (${OPENROAD_BUILD})
 # temporary bad fix..
 set(OPENSTA_UTIL_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenStaUtilTclInitVar.cc)
@@ -219,18 +230,13 @@ set(PSN_SOURCES
     ${PSN_SOURCES}
     ${OPENSTA_UTIL_TCL_INIT}
 )
+
+set(PSN_TESTFILES
+    ${PSN_TESTFILES}
+    ${OPENSTA_UTIL_TCL_INIT}
+)
 endif()
 
-set(PSN_TESTFILES        # All .cpp files in tests/
-    ${PROJECT_SOURCE_DIR}/tests/ReadLefDef.cpp
-    ${PROJECT_SOURCE_DIR}/tests/WriteDef.cpp
-    ${PROJECT_SOURCE_DIR}/tests/ReadLiberty.cpp
-    ${PROJECT_SOURCE_DIR}/tests/BufferFanout.cpp
-    ${PROJECT_SOURCE_DIR}/tests/SteinerTree.cpp
-    ${PROJECT_SOURCE_DIR}/tests/GateClone.cpp
-    ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
-    ${PROJECT_SOURCE_DIR}/tests/TestMain.cpp
-)
 
 set(PSN_SWIG_FILES
   ${PSN_HOME}/app/Psn.i
@@ -281,12 +287,7 @@ set(PUBLIC_LIBRARIES
   dl
   stdc++fs
 )
-if (${OPENPHYSYN_UNIT_TESTS_ENABHLED})
-set(PUBLIC_LIBRARIES
-  ${PUBLIC_LIBRARIES}
-  doctest
-)
-endif()
+
 # Stand-alone executable specific libraries
 set(PUBLIC_EXEC_LIBRARIES
 )
@@ -364,7 +365,7 @@ include_directories (
 set_target_properties(
     ${LIBRARY_NAME} Psn
       PROPERTIES 
-        CXX_STANDARD 17 
+        CXX_STANDARD 14
         CXX_STANDARD_REQUIRED YES 
         CXX_EXTENSIONS NO
 )
@@ -379,10 +380,12 @@ add_custom_command(OUTPUT ${PSN_WRAP}
 )
 
 install(TARGETS Psn DESTINATION bin)
+
 # Set up tests (see tests/CMakeLists.txt).
-if (${OPENPHYSYN_UNIT_TESTS_ENABHLED})
+if (${OPENPHYSYN_UNIT_TESTS_ENABLED})
 add_subdirectory(tests)
 endif()
+
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
   ${PSN_WRAP}
 )
