@@ -1,5 +1,5 @@
 FROM centos:centos7 AS base-dependencies
-LABEL maintainer "Ahmed Agiza <ahmed_agiza@brown.edu>"
+LABEL maintainer="Abdelrahman Hosny <abdelrahman_hosny@brown.edu>"
 
 # Install dev and runtime dependencies
 RUN yum group install -y "Development Tools" \
