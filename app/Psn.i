@@ -115,7 +115,8 @@ DatabaseHandler *handler();
 %rename(pt_eq) psn::PointEqual::operator()(const Point& pt1, const Point& pt2);
 %rename(pt_hash) psn::PointHash::operator()(const Point& pt);
 %include "include/OpenPhySyn/Database/DatabaseHandler.hpp"
+#ifndef OPENROAD_BUILD //Temp. removed until SWIG is upgraded in the Dockerfile
 %include "include/OpenPhySyn/Psn/Psn.hpp"
-
+#endif
 
 %include "Psn/Exports.hpp"
