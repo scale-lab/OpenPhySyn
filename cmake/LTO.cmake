@@ -31,7 +31,7 @@
 
 # Usage :
 #
-# Variable : ENABLE_LTO | Enable or disable LTO support for this build
+# Variable : OPENPHYSYN_LTO_ENABLED | Enable or disable LTO support for this build
 #
 # find_lto(lang)
 # - lang is C or CXX (the language to test LTO for)
@@ -41,7 +41,7 @@
 # The 2nd parameter has the same meaning as in target_link_libraries, and is used to enable LTO only for those build configurations
 # 'debug' is by default the Debug configuration, and 'optimized' all the other configurations
 #
-# if ENABLE_LTO is set to false, an empty macro will be generated
+# if OPENPHYSYN_LTO_ENABLED is set to false, an empty macro will be generated
 #
 # Then to enable LTO for your target use
 #
@@ -84,7 +84,7 @@
 
 
 macro(find_lto lang)
-    if(ENABLE_LTO AND NOT LTO_${lang}_CHECKED)
+    if(OPENPHYSYN_LTO_ENABLED AND NOT LTO_${lang}_CHECKED)
 
       #LTO support was added for clang/gcc in 3.9
       if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.9)
@@ -213,10 +213,10 @@ macro(find_lto lang)
                 set(CMAKE_RANLIB ${CMAKE_GCC_RANLIB} CACHE FILEPATH "Forcing gcc-ranlib instead of ranlib" FORCE)
             endif()
       endif(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.9)
-    endif(ENABLE_LTO AND NOT LTO_${lang}_CHECKED)
+    endif(OPENPHYSYN_LTO_ENABLED AND NOT LTO_${lang}_CHECKED)
 
 
-    if(ENABLE_LTO)
+    if(OPENPHYSYN_LTO_ENABLED)
       #Special case for cmake older than 3.9, using a library for gcc/clang, but could setup the flags directly.
       #Taking advantage of the [debug,optimized] parameter of target_link_libraries
       if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.9)

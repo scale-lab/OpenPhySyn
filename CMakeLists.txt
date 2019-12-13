@@ -3,10 +3,10 @@ cmake_minimum_required(VERSION 3.13.4)
 project(OpenPhySyn VERSION 1.1.0 LANGUAGES CXX)
 
 
-option(ENABLE_WARNINGS_SETTINGS "Allow target_set_warnings to add flags and defines.
+option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add flags and defines.
                                  Set this to OFF if you want to provide your own warning parameters." ON)
-option(ENABLE_LTO "Enable link time optimization" ON)
-option(ENABLE_DOCTESTS "Include tests in the library. Setting this to OFF will remove all doctest related code.
+option(OPENPHYSYN_LTO_ENABLED "Enable link time optimization" ON)
+option(OPENPHYSYN_UNIT_TESTS_ENABHLED "Include tests in the library. Setting this to OFF will remove all doctest related code.
                         Tests in tests/*.cpp will still be enabled." ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -pthread -ltcl -lz -lm -ldl -Wno-error -Wall -Wextra -Wno-unused-parameter")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -14,7 +14,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Tool build configuration
 option(OPENROAD_BUILD "Indicates if the tool is being built as a module in the top level application" OFF)
-option(OPENPHYSYN_CPP_TASKFLOW_ENABLED "Build and use cpp-taskflow" OFF)
+option(OPENPHYSYN_TF_ENABLED "Build and use cpp-taskflow" OFF)
 set(OPENPHYSYN_DATABASE_HANDLER "OpenSTA" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
 
 if (${OPENPHYSYN_DATABASE_HANDLER} STREQUAL "OpenDB")
@@ -25,7 +25,7 @@ endif()
   
 if (${OPENROAD_BUILD})
   add_definitions(-DOPENROAD_BUILD)
-  set(ENABLE_DOCTESTS OFF)
+  set(OPENPHYSYN_UNIT_TESTS_ENABHLED OFF)
 endif()
 
 set(SWIG_FLAGS "")
@@ -129,10 +129,26 @@ add_subdirectory(external/spdlog)
 # Add cxxopts
 add_subdirectory(external/cxxopts)
 
-# Add cpp-taskflow
-if (${OPENPHYSYN_CPP_TASKFLOW_ENABLED})
-add_definitions(-DCPP_TASKFLOW_ENABLED)
+#Add cpp-taskflow
+if (${OPENPHYSYN_TF_ENABLED})
+
+add_definitions(-DTF_ENABLED)
+set(TF_BUILD_EXAMPLES OFF)
+set(TF_BUILD_TESTS OFF)
+set(TF_BUILD_BENCHMARKS OFF)
+
+if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9)
+set(TF_HOME ${PROJECT_SOURCE_DIR}/external/cpp-taskflow)
 add_subdirectory(external/cpp-taskflow)
+
+else()
+
+set(TF_HOME ${PROJECT_SOURCE_DIR}/external/cpp-taskflow/cpp-taskflow-cpp14)
+add_subdirectory(external/cpp-taskflow)
+set(OPENPHYSYN_TF_14 ON)
+
+endif()
+
 endif()
 
 
@@ -251,9 +267,9 @@ set(PRIVATE_INCLUDE_DIRS
   ${OPENDB_HOME}/src/defout
 )
 
-if (${OPENPHYSYN_CPP_TASKFLOW_ENABLED})
+if (${OPENPHYSYN_TF_ENABLED})
 set(PRIVATE_INCLUDE_DIRS
-  ${PROJECT_SOURCE_DIR}/external/cpp-taskflow
+  ${TF_HOME}
   ${PRIVATE_INCLUDE_DIRS}
 )
 endif()
@@ -265,7 +281,7 @@ set(PUBLIC_LIBRARIES
   dl
   stdc++fs
 )
-if (${ENABLE_DOCTESTS})
+if (${OPENPHYSYN_UNIT_TESTS_ENABHLED})
 set(PUBLIC_LIBRARIES
   ${PUBLIC_LIBRARIES}
   doctest
@@ -275,7 +291,7 @@ endif()
 set(PUBLIC_EXEC_LIBRARIES
 )
 
-if (${OPENPHYSYN_CPP_TASKFLOW_ENABLED})
+if (${OPENPHYSYN_TF_ENABLED})
 set(PUBLIC_LIBRARIES
   ${PUBLIC_LIBRARIES}
   Cpp-Taskflow
@@ -364,7 +380,7 @@ add_custom_command(OUTPUT ${PSN_WRAP}
 
 install(TARGETS Psn DESTINATION bin)
 # Set up tests (see tests/CMakeLists.txt).
-if (${ENABLE_DOCTESTS})
+if (${OPENPHYSYN_UNIT_TESTS_ENABHLED})
 add_subdirectory(tests)
 endif()
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
