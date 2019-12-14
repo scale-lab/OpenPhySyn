@@ -48,6 +48,7 @@ TEST_CASE("Should add fan-out buffers")
         psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
         CHECK(psn_inst.database()->getChip() != nullptr);
         psn::Psn::instance().loadTransforms();
+        CHECK(psn_inst.hasTransform("buffer_fanout"));
         auto result = psn_inst.runTransform(
             "buffer_fanout", std::vector<std::string>({"2", "BUF_X1"}));
         CHECK(result == 6);

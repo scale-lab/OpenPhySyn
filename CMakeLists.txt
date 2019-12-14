@@ -3,10 +3,10 @@ cmake_minimum_required(VERSION 3.13.4)
 project(OpenPhySyn VERSION 1.1.0 LANGUAGES CXX)
 
 
-option(ENABLE_WARNINGS_SETTINGS "Allow target_set_warnings to add flags and defines.
+option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add flags and defines.
                                  Set this to OFF if you want to provide your own warning parameters." ON)
-option(ENABLE_LTO "Enable link time optimization" ON)
-option(ENABLE_DOCTESTS "Include tests in the library. Setting this to OFF will remove all doctest related code.
+option(OPENPHYSYN_LTO_ENABLED "Enable link time optimization" ON)
+option(OPENPHYSYN_UNIT_TESTS_ENABLED "Include tests in the library. Setting this to OFF will remove all doctest related code.
                         Tests in tests/*.cpp will still be enabled." ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -pthread -ltcl -lz -lm -ldl -Wno-error -Wall -Wextra -Wno-unused-parameter")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -14,17 +14,18 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Tool build configuration
 option(OPENROAD_BUILD "Indicates if the tool is being built as a module in the top level application" OFF)
-option(OPENPHYSYN_CPP_TASKFLOW_ENABLED "Build and use cpp-taskflow" OFF)
+option(OPENPHYSYN_TF_ENABLED "Build and use cpp-taskflow" OFF)
 set(OPENPHYSYN_DATABASE_HANDLER "OpenSTA" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
 
 if (${OPENPHYSYN_DATABASE_HANDLER} STREQUAL "OpenDB")
-  add_definitions(-DUSE_OPENDB_DB_HANDLER)
+add_definitions(-DUSE_OPENDB_DB_HANDLER)
 else()
-  add_definitions(-DUSE_OPENSTA_DB_HANDLER)
+add_definitions(-DUSE_OPENSTA_DB_HANDLER)
 endif()
-  
+
 if (${OPENROAD_BUILD})
-  add_definitions(-DOPENROAD_BUILD)
+add_definitions(-DOPENROAD_BUILD)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
 endif()
 
 set(SWIG_FLAGS "")
@@ -128,10 +129,26 @@ add_subdirectory(external/spdlog)
 # Add cxxopts
 add_subdirectory(external/cxxopts)
 
-# Add cpp-taskflow
-if (${OPENPHYSYN_CPP_TASKFLOW_ENABLED})
-add_definitions(-DCPP_TASKFLOW_ENABLED)
+#Add cpp-taskflow
+if (${OPENPHYSYN_TF_ENABLED})
+
+add_definitions(-DTF_ENABLED)
+set(TF_BUILD_EXAMPLES OFF)
+set(TF_BUILD_TESTS OFF)
+set(TF_BUILD_BENCHMARKS OFF)
+
+if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9.2)
+set(TF_HOME ${PROJECT_SOURCE_DIR}/external/cpp-taskflow)
 add_subdirectory(external/cpp-taskflow)
+
+else()
+
+set(TF_HOME ${PROJECT_SOURCE_DIR}/external/cpp-taskflow/cpp-taskflow-cpp14)
+add_subdirectory(external/cpp-taskflow)
+set(OPENPHYSYN_TF_14 ON)
+
+endif()
+
 endif()
 
 
@@ -156,6 +173,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Transform/TransformHandler.cpp
     ${PSN_HOME}/src/Transform/TransformInfo.cpp
     ${PSN_HOME}/src/Utils/FileUtils.cpp
+    ${PSN_HOME}/src/Utils/FilesystemLegacyHelpers.cpp
     ${PSN_HOME}/src/Utils/StringUtils.cpp
     ${PSN_HOME}/src/Utils/PsnGlobal.cpp
     ${PSN_HOME}/src/PsnException/Error.cpp
@@ -189,6 +207,17 @@ set(PSN_SOURCES
     ${PSN_MAIN}
 )
 
+set(PSN_TESTFILES        # All .cpp files in tests/
+    ${PROJECT_SOURCE_DIR}/tests/ReadLefDef.cpp
+    ${PROJECT_SOURCE_DIR}/tests/WriteDef.cpp
+    ${PROJECT_SOURCE_DIR}/tests/ReadLiberty.cpp
+    ${PROJECT_SOURCE_DIR}/tests/BufferFanout.cpp
+    ${PROJECT_SOURCE_DIR}/tests/SteinerTree.cpp
+    ${PROJECT_SOURCE_DIR}/tests/GateClone.cpp
+    ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
+    ${PROJECT_SOURCE_DIR}/tests/TestMain.cpp
+)
+
 if (${OPENROAD_BUILD})
 # temporary bad fix..
 set(OPENSTA_UTIL_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenStaUtilTclInitVar.cc)
@@ -202,18 +231,17 @@ set(PSN_SOURCES
     ${PSN_SOURCES}
     ${OPENSTA_UTIL_TCL_INIT}
 )
+
+set(PSN_TESTFILES
+    ${PSN_TESTFILES}
+    ${OPENSTA_UTIL_TCL_INIT}
+)
+add_custom_target(
+  opensta-tcl-init
+  DEPENDS ${OPENSTA_UTIL_TCL_INIT}
+)
 endif()
 
-set(PSN_TESTFILES        # All .cpp files in tests/
-    ${PROJECT_SOURCE_DIR}/tests/ReadLefDef.cpp
-    ${PROJECT_SOURCE_DIR}/tests/WriteDef.cpp
-    ${PROJECT_SOURCE_DIR}/tests/ReadLiberty.cpp
-    ${PROJECT_SOURCE_DIR}/tests/BufferFanout.cpp
-    ${PROJECT_SOURCE_DIR}/tests/SteinerTree.cpp
-    ${PROJECT_SOURCE_DIR}/tests/GateClone.cpp
-    ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
-    ${PROJECT_SOURCE_DIR}/tests/TestMain.cpp
-)
 
 set(PSN_SWIG_FILES
   ${PSN_HOME}/app/Psn.i
@@ -250,27 +278,34 @@ set(PRIVATE_INCLUDE_DIRS
   ${OPENDB_HOME}/src/defout
 )
 
-if (${OPENPHYSYN_CPP_TASKFLOW_ENABLED})
+if (${OPENPHYSYN_TF_ENABLED})
 set(PRIVATE_INCLUDE_DIRS
-  ${PROJECT_SOURCE_DIR}/external/cpp-taskflow
+  ${TF_HOME}
   ${PRIVATE_INCLUDE_DIRS}
 )
 endif()
 
 set(PUBLIC_LIBRARIES
-  opendb
-  ${ZLIB_LIBRARIES}
-  ${TCL_LIBRARY}
-  dl
-  doctest
+opendb
+${ZLIB_LIBRARIES}
+${TCL_LIBRARY}
+dl
+)
+
+CHECK_SYMBOL_EXISTS(std::filesystem::path::preferred_separator filesystem cxx17fs)
+
+if(cxx17fs)
+set(PUBLIC_LIBRARIES
+  ${PUBLIC_LIBRARIES}
   stdc++fs
 )
+endif()
 
 # Stand-alone executable specific libraries
 set(PUBLIC_EXEC_LIBRARIES
 )
 
-if (${OPENPHYSYN_CPP_TASKFLOW_ENABLED})
+if (${OPENPHYSYN_TF_ENABLED})
 set(PUBLIC_LIBRARIES
   ${PUBLIC_LIBRARIES}
   Cpp-Taskflow
@@ -340,13 +375,15 @@ include_directories (
   ${PRIVATE_INCLUDE_DIRS}
 )
 
+if (NOT ${OPENROAD_BUILD})
 set_target_properties(
     ${LIBRARY_NAME} Psn
       PROPERTIES 
-        CXX_STANDARD 17 
+        CXX_STANDARD 14
         CXX_STANDARD_REQUIRED YES 
         CXX_EXTENSIONS NO
 )
+endif()
 set_property(TARGET ${LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET Psn PROPERTY POSITION_INDEPENDENT_CODE ON)
 
@@ -358,10 +395,12 @@ add_custom_command(OUTPUT ${PSN_WRAP}
 )
 
 install(TARGETS Psn DESTINATION bin)
+
 # Set up tests (see tests/CMakeLists.txt).
-if (NOT ${OPENROAD_BUILD})
+if (${OPENPHYSYN_UNIT_TESTS_ENABLED})
 add_subdirectory(tests)
 endif()
+
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
   ${PSN_WRAP}
 )

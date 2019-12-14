@@ -8,20 +8,32 @@ set(PSN_TEST_WRAP ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap_t
 add_executable(${TEST_MAIN} ${PSN_TESTFILES} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_TEST_WRAP})
 
 add_custom_command(OUTPUT ${PSN_TEST_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_TEST_WRAP} ${PSN_SWIG_FILES}
+  COMMAND ${SWIG_EXECUTABLE} ${SWIG_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PSN_HOME}/src -o ${PSN_TEST_WRAP} ${PSN_SWIG_FILES}
   WORKING_DIRECTORY ${PSN_HOME}
   DEPENDS ${PSN_SWIG_FILES}
 )
 
-target_link_libraries(${TEST_MAIN} PRIVATE doctest PUBLIC ${PUBLIC_LIBRARIES})
+if (${OPENROAD_BUILD})
+set_source_files_properties(
+  ${OPENSTA_UTIL_TCL_INIT}
+  PROPERTIES GENERATED TRUE
+  )
+target_link_libraries(${TEST_MAIN} PUBLIC OpenPhySyn)
+endif()
+
+target_link_libraries(${TEST_MAIN} PRIVATE doctest PUBLIC ${PUBLIC_EXEC_LIBRARIES} ${PUBLIC_LIBRARIES})
 set_target_properties(${TEST_MAIN} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 # target_set_warnings(${TEST_MAIN} ENABLE ALL AS_ERROR ALL DISABLE Annoying) # Set warnings (if needed).
 
+if (${OPENROAD_BUILD})
+add_dependencies(${TEST_MAIN} opensta-tcl-init)
+else()
 set_target_properties(${TEST_MAIN} PROPERTIES 
-    CXX_STANDARD 17 
+    CXX_STANDARD 14
     CXX_STANDARD_REQUIRED YES 
     CXX_EXTENSIONS NO
 )
+endif()
 
 add_test(
     NAME ${LIBRARY_NAME}.${TEST_MAIN}

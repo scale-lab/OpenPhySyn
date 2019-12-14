@@ -29,9 +29,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-if(ENABLE_DOCTESTS)
+if(OPENPHYSYN_UNIT_TESTS_ENABLED)
     add_definitions(-DENABLE_DOCTEST_IN_LIBRARY)
+    add_library(doctest INTERFACE)
+    target_include_directories(doctest INTERFACE ${PROJECT_SOURCE_DIR}/external/doctest/doctest)
 endif()
 
-add_library(doctest INTERFACE)
-target_include_directories(doctest INTERFACE ${PROJECT_SOURCE_DIR}/external/doctest/doctest)

@@ -89,10 +89,10 @@ Psn::Psn(Database* db) : db_(db), interp_(nullptr)
     settings_ = new DesignSettings();
     initializeSta();
     db_handler_ = new DatabaseHandler(sta_);
-    initializeFlute();
 }
 void
-Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp)
+Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp,
+                bool init_flute)
 {
     psn_instance_ = new Psn(db);
     if (load_transforms)
@@ -102,6 +102,10 @@ Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp)
     if (interp != nullptr)
     {
         psn_instance_->setupInterpreter(interp);
+    }
+    if (init_flute)
+    {
+        psn_instance_->initializeFlute();
     }
     is_initialized_ = true;
 }
@@ -117,11 +121,11 @@ Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
     db_         = sta_->db();
     settings_   = new DesignSettings();
     db_handler_ = new DatabaseHandler(sta_);
-    initializeFlute("../external/flute/etc");
 }
 
 void
-Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp)
+Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
+                bool init_flute)
 {
     psn_instance_ = new Psn(sta);
     if (load_transforms)
@@ -131,6 +135,10 @@ Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp)
     if (interp != nullptr)
     {
         psn_instance_->setupInterpreter(interp);
+    }
+    if (init_flute)
+    {
+        psn_instance_->initializeFlute();
     }
     is_initialized_ = true;
 }
@@ -378,6 +386,12 @@ Psn::loadTransforms()
     psn::PsnLogger::instance().info("Loaded {} transforms.", load_count);
 #endif
     return load_count;
+}
+
+bool
+Psn::hasTransform(std::string transform_name)
+{
+    return transforms_.count(transform_name);
 }
 
 int
@@ -802,7 +816,6 @@ Psn::clearDatabase()
 int
 Psn::initializeFlute(const char* flue_init_dir)
 {
-#ifndef OPENROAD_BUILD
     bool        lut_found = false;
     std::string flute_dir, powv_file_path, post_file_path;
     if (flue_init_dir)
@@ -847,7 +860,6 @@ Psn::initializeFlute(const char* flue_init_dir)
     Flute::readLUT();
     chdir(cwd);
     free(cwd);
-#endif
     return 1;
 }
 } // namespace psn
