@@ -29,10 +29,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __has_include(<filesystem>)
-#ifndef __has_include(<experimental/filesystem>)
-#ifndef __has_include(<experimental/filesystem>)
-
 #include <Utils/FilesystemLegacyHelpers.hpp>
 #include <cstring>
 #include <sys/stat.h>
@@ -148,7 +144,3 @@ path::operator std::string() const
 
 } // namespace filesystem
 } // namespace psn
-
-#endif
-#endif
-#endif

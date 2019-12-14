@@ -31,9 +31,6 @@
 
 #ifndef __PSN_FILESYSTEM_LEGACY_HELPERS__
 #define __PSN_FILESYSTEM_LEGACY_HELPERS__
-#ifndef __has_include(<filesystem>)
-#ifndef __has_include(<experimental/filesystem>)
-#ifndef __has_include(<experimental/filesystem>)
 
 #include <string>
 #include <vector>
@@ -84,7 +81,4 @@ std::vector<directory_entry> directory_iterator(const path target_path);
 } // namespace filesystem
 
 } // namespace psn
-#endif
-#endif
-#endif
 #endif
