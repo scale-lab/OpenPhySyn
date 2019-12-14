@@ -27,13 +27,13 @@ set_target_properties(${TEST_MAIN} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT
 
 if (${OPENROAD_BUILD})
 add_dependencies(${TEST_MAIN} opensta-tcl-init)
-endif()
-
+else()
 set_target_properties(${TEST_MAIN} PROPERTIES 
     CXX_STANDARD 14
     CXX_STANDARD_REQUIRED YES 
     CXX_EXTENSIONS NO
 )
+endif()
 
 add_test(
     NAME ${LIBRARY_NAME}.${TEST_MAIN}

@@ -18,13 +18,14 @@ option(OPENPHYSYN_TF_ENABLED "Build and use cpp-taskflow" OFF)
 set(OPENPHYSYN_DATABASE_HANDLER "OpenSTA" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
 
 if (${OPENPHYSYN_DATABASE_HANDLER} STREQUAL "OpenDB")
-  add_definitions(-DUSE_OPENDB_DB_HANDLER)
+add_definitions(-DUSE_OPENDB_DB_HANDLER)
 else()
-  add_definitions(-DUSE_OPENSTA_DB_HANDLER)
+add_definitions(-DUSE_OPENSTA_DB_HANDLER)
 endif()
 
 if (${OPENROAD_BUILD})
-  add_definitions(-DOPENROAD_BUILD)
+add_definitions(-DOPENROAD_BUILD)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
 endif()
 
 set(SWIG_FLAGS "")
@@ -136,7 +137,7 @@ set(TF_BUILD_EXAMPLES OFF)
 set(TF_BUILD_TESTS OFF)
 set(TF_BUILD_BENCHMARKS OFF)
 
-if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9)
+if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9.2)
 set(TF_HOME ${PROJECT_SOURCE_DIR}/external/cpp-taskflow)
 add_subdirectory(external/cpp-taskflow)
 
@@ -291,7 +292,9 @@ ${TCL_LIBRARY}
 dl
 )
 
-if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.1)
+CHECK_SYMBOL_EXISTS(std::filesystem::path::preferred_separator filesystem cxx17fs)
+
+if(cxx17fs)
 set(PUBLIC_LIBRARIES
   ${PUBLIC_LIBRARIES}
   stdc++fs
@@ -372,6 +375,7 @@ include_directories (
   ${PRIVATE_INCLUDE_DIRS}
 )
 
+if (NOT ${OPENROAD_BUILD})
 set_target_properties(
     ${LIBRARY_NAME} Psn
       PROPERTIES 
@@ -379,6 +383,7 @@ set_target_properties(
         CXX_STANDARD_REQUIRED YES 
         CXX_EXTENSIONS NO
 )
+endif()
 set_property(TARGET ${LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET Psn PROPERTY POSITION_INDEPENDENT_CODE ON)
 
