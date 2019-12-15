@@ -189,6 +189,54 @@ OpenDBHandler::bestPath(int path_count) const
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestPath)
     return std::vector<PathPoint>();
 }
+std::vector<PathPoint>
+OpenDBHandler::worstSlackPath(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, worstSlackPath)
+    return std::vector<PathPoint>();
+}
+std::vector<PathPoint>
+OpenDBHandler::worstArrivalPath(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, worstArrivalPath)
+    return std::vector<PathPoint>();
+}
+std::vector<PathPoint>
+OpenDBHandler::bestSlackPath(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestSlackPath)
+    return std::vector<PathPoint>();
+}
+std::vector<PathPoint>
+OpenDBHandler::bestArrivalPath(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestArrivalPath)
+    return std::vector<PathPoint>();
+}
+float
+OpenDBHandler::slack(InstanceTerm* term, bool is_rise, bool worst) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, slack)
+    return 0;
+}
+float
+OpenDBHandler::slack(InstanceTerm* term, bool worst) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, slack)
+    return 0;
+}
+float
+OpenDBHandler::arrival(InstanceTerm* term, int ap_index, bool is_rise) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, arrival)
+    return 0;
+}
+float
+OpenDBHandler::required(InstanceTerm* term, bool worst) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, required)
+    return 0;
+}
 
 bool
 OpenDBHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
@@ -635,7 +683,16 @@ OpenDBHandler::disconnect(InstanceTerm* term) const
 {
     InstanceTerm::disconnect(term);
 }
-
+void
+OpenDBHandler::swapPins(InstanceTerm* first, InstanceTerm* second)
+{
+    auto first_net  = net(first);
+    auto second_net = net(second);
+    disconnect(first);
+    disconnect(second);
+    connect(first_net, second);
+    connect(second_net, first);
+}
 Instance*
 OpenDBHandler::createInstance(const char* inst_name, LibraryCell* cell)
 {

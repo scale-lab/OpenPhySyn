@@ -40,18 +40,17 @@
 class PinSwapTransform : public psn::PsnTransform
 {
 private:
-    bool  isNumber(const std::string& s);
-    void  swapPins(psn::Psn* psn_inst, psn::InstanceTerm* first,
-                   psn::InstanceTerm* second);
-    float swap_count_;
+    bool isNumber(const std::string& s);
+    int  swap_count_;
 
 public:
     PinSwapTransform();
-    int pinSwap(psn::Psn* psn_inst);
+    int timingPinSwap(psn::Psn* psn_inst);
+    int powerPinSwap(psn::Psn* psn_inst);
 
     int run(psn::Psn* psn_inst, std::vector<std::string> args) override;
 };
 
 DEFINE_TRANSFORM(PinSwapTransform, "pin_swap", "1.0.0",
                  "Performs timing-driven commutative pin swapping optimization",
-                 "Usage: transform pin_swap [max_optimized_paths_count]")
+                 "Usage: transform pin_swap [optimize_power]")

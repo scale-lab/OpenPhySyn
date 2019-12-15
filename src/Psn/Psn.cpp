@@ -422,6 +422,8 @@ Psn::runTransform(std::string transform_name, std::vector<std::string> args)
             int rc = transforms_[transform_name]->run(this, args);
             sta_->ensureLevelized();
             handler()->resetDelays();
+            PsnLogger::instance().info("Finished {} transform ({})",
+                                       transform_name, rc);
             return rc;
         }
     }

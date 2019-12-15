@@ -33,6 +33,7 @@ if (OPENROAD_BUILD)
 set(SWIG_FLAGS "-DOPENROAD_BUILD -DSWIG_DIRECTOR_STATIC")
 endif()
 
+
 # message("Database handler: ${OPENPHYSYN_DATABASE_HANDLER}")
 
 set(PSN_HOME
@@ -46,8 +47,8 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RELEASE)
 endif()
 
-# Include stuff.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+include(CheckSymbolExists)
 include(ConfigSafeGuards)
 include(Colors)
 include(CTest)

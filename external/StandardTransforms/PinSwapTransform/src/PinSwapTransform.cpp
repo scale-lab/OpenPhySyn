@@ -49,40 +49,32 @@ using namespace psn;
 PinSwapTransform::PinSwapTransform() : swap_count_(0)
 {
 }
-void
-PinSwapTransform::swapPins(psn::Psn* psn_inst, psn::InstanceTerm* first,
-                           psn::InstanceTerm* second)
-{
-    // PsnLogger&       logger     = PsnLogger::instance();
-    DatabaseHandler& handler    = *(psn_inst->handler());
-    auto             first_net  = handler.net(first);
-    auto             second_net = handler.net(second);
-    handler.disconnect(first);
-    handler.disconnect(second);
-    handler.connect(first_net, second);
-    handler.connect(second_net, first);
-    handler.resetDelays();
-}
 
 int
-PinSwapTransform::pinSwap(psn::Psn* psn_inst)
+PinSwapTransform::powerPinSwap(psn::Psn* psn_inst)
+{
+    PsnLogger::instance().error(
+        "Pin-Swapping for power optimization is not supported yet.");
+    return swap_count_;
+}
+int
+PinSwapTransform::timingPinSwap(psn::Psn* psn_inst)
 {
     PsnLogger&       logger  = PsnLogger::instance();
     DatabaseHandler& handler = *(psn_inst->handler());
     auto             cp      = handler.criticalPath();
-    auto             bp      = handler.bestPath();
-    // std::reverse(cp.begin(), cp.end());
-    // std::reverse(bp.begin(), bp.end());
-    int br = 2;
+    // auto             bp      = handler.bestPath();
+    std::reverse(cp.begin(), cp.end());
 
     for (auto& point : cp)
     {
 
-        auto pin     = std::get<0>(point);
-        auto is_rise = std::get<1>(point);
-        // is_rise       = true;
+        auto pin      = std::get<0>(point);
+        auto is_rise  = std::get<1>(point);
         auto inst     = handler.instance(pin);
         auto lib_cell = handler.libraryCell(inst);
+        auto ap_index = std::get<4>(point);
+
         if (!handler.isInput(pin))
         {
             continue;
@@ -94,57 +86,28 @@ PinSwapTransform::pinSwap(psn::Psn* psn_inst)
             continue;
         }
         auto out_pin = output_pins[0];
-        logger.info("{} ({})", handler.name(lib_cell), handler.name(pin));
-        InstanceTerm* swap_target = nullptr;
-        // float         best_avg_delay =
-        //     (handler.pinAverageRise(handler.libraryPin(pin),
-        //                             handler.libraryPin(out_pin)) +
-        //      handler.pinAverageFall(handler.libraryPin(pin),
-        //                             handler.libraryPin(out_pin))) /
-        //     2;
-        float best_avg_delay =
-            is_rise ? handler.pinAverageRise(handler.libraryPin(pin),
-                                             handler.libraryPin(out_pin))
-                    : handler.pinAverageFall(handler.libraryPin(pin),
-                                             handler.libraryPin(out_pin));
-        logger.info("Current Avg. {}", best_avg_delay);
         for (auto& in_pin : input_pins)
         {
             if (in_pin != pin && handler.isCommutative(in_pin, pin))
             {
-                float pin_delay =
-                    is_rise
-                        ? handler.pinAverageRise(handler.libraryPin(in_pin),
-                                                 handler.libraryPin(out_pin))
-                        : handler.pinAverageFall(handler.libraryPin(in_pin),
-                                                 handler.libraryPin(out_pin));
-                // float pin_delay =
-                //     (handler.pinAverageRise(handler.libraryPin(in_pin),
-                //                             handler.libraryPin(out_pin)) +
-                //      handler.pinAverageFall(handler.libraryPin(in_pin),
-                //                             handler.libraryPin(out_pin))) /
-                //     2;
-                logger.info("New Avg. {}", pin_delay);
-                if (pin_delay < best_avg_delay)
+                float current_arrival =
+                    handler.arrival(out_pin, ap_index, is_rise);
+                handler.swapPins(pin, in_pin);
+                float new_arrival = handler.arrival(out_pin, ap_index, is_rise);
+                if (new_arrival < current_arrival)
                 {
-                    best_avg_delay = pin_delay;
-                    swap_target    = in_pin;
+                    logger.debug("Accepted Swap: {} <-> {}", handler.name(pin),
+                                 handler.name(in_pin));
+                    swap_count_++;
+                }
+                else
+                {
+                    handler.swapPins(pin, in_pin);
                 }
             }
         }
-        if (swap_target)
-        {
-            logger.info("Confirmed Swap..{} {}", handler.name(pin),
-                        handler.name(swap_target));
-            swapPins(psn_inst, pin, swap_target);
-            if (!br)
-            {
-                break;
-            }
-            br--;
-        }
     }
-    return 0;
+    return swap_count_;
 }
 
 bool
@@ -158,16 +121,37 @@ PinSwapTransform::isNumber(const std::string& s)
 int
 PinSwapTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
+    bool power_opt = false;
     if (args.size() > 1)
     {
         PsnLogger::instance().error(help());
         return -1;
     }
-    else if (args.size() && !isNumber(args[0]))
+    else if (args.size())
     {
-        PsnLogger::instance().error(help());
-        return -1;
+        std::transform(args[0].begin(), args[0].end(), args[0].begin(),
+                       ::tolower);
+        if (args[0] == "true" || args[0] == "1")
+        {
+            power_opt = true;
+        }
+        else if (args[0] == "false" || args[0] == "0")
+        {
+            power_opt = false;
+        }
+        else
+        {
+            PsnLogger::instance().error(help());
+            return -1;
+        }
     }
-
-    return pinSwap(psn_inst);
+    swap_count_ = 0;
+    if (power_opt)
+    {
+        return powerPinSwap(psn_inst);
+    }
+    else
+    {
+        return timingPinSwap(psn_inst);
+    }
 }

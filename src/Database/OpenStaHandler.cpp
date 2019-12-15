@@ -158,22 +158,79 @@ OpenStaHandler::fanoutPins(Net* net) const
     return filterPins(inst_pins, PinDirection::input());
 }
 std::vector<PathPoint>
-OpenStaHandler::criticalPath(int path_count) const
+OpenStaHandler::bestPath(int path_count) const
 {
     return getPath(false, path_count);
 }
 std::vector<PathPoint>
-OpenStaHandler::bestPath(int path_count) const
+OpenStaHandler::criticalPath(int path_count) const
 {
     return getPath(true, path_count);
+}
+std::vector<PathPoint>
+OpenStaHandler::worstSlackPath(InstanceTerm* term) const
+{
+    sta::PathRef path;
+    sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::min(), path);
+    return expandPath(&path);
+}
+std::vector<PathPoint>
+OpenStaHandler::worstArrivalPath(InstanceTerm* term) const
+{
+    sta::PathRef path;
+    sta_->vertexWorstArrivalPath(vertex(term), sta::MinMax::max(), path);
+    return expandPath(&path);
+}
+
+std::vector<PathPoint>
+OpenStaHandler::bestSlackPath(InstanceTerm* term) const
+{
+    sta::PathRef path;
+    sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::max(), path);
+    return expandPath(&path);
+}
+std::vector<PathPoint>
+OpenStaHandler::bestArrivalPath(InstanceTerm* term) const
+{
+    sta::PathRef path;
+    sta_->vertexWorstArrivalPath(vertex(term), sta::MinMax::min(), path);
+    return expandPath(&path);
+}
+float
+OpenStaHandler::slack(InstanceTerm* term, bool is_rise, bool worst) const
+{
+    return sta_->pinSlack(
+        term, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
+        worst ? sta::MinMax::min() : sta::MinMax::max());
+}
+float
+OpenStaHandler::slack(InstanceTerm* term, bool worst) const
+{
+    return sta_->pinSlack(term,
+                          worst ? sta::MinMax::min() : sta::MinMax::max());
+}
+float
+OpenStaHandler::arrival(InstanceTerm* term, int ap_index, bool is_rise) const
+{
+
+    return sta_->vertexArrival(
+        vertex(term), is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
+        sta_->corners()->findPathAnalysisPt(ap_index));
+}
+float
+OpenStaHandler::required(InstanceTerm* term, bool worst) const
+{
+    sta_->vertexRequired(vertex(term),
+                         worst ? sta::MinMax::min() : sta::MinMax::max());
+    return 0;
 }
 std::vector<PathPoint>
 OpenStaHandler::getPath(bool get_max, int path_count) const
 {
     sta_->ensureGraph();
     sta_->searchPreamble();
-    std::vector<PathPoint> points;
-    sta::PathEndSeq*       path_ends =
+
+    sta::PathEndSeq* path_ends =
         sta_->search()->findPathEnds( // from, thrus, to, unconstrained
             nullptr, nullptr, nullptr, false,
             // corner, min_max,
@@ -190,21 +247,34 @@ OpenStaHandler::getPath(bool get_max, int path_count) const
     if (!path_ends->size())
     {
         delete path_ends;
-        return points;
+        return std::vector<PathPoint>();
     }
-
-    auto              path_end = path_ends->at(0);
-    sta::PathExpanded expanded(path_end->path(), sta_);
-    for (int i = 1; i < expanded.size(); i++)
-    {
-        auto ref       = expanded.path(i);
-        auto pin       = ref->vertex(sta_)->pin();
-        auto is_rising = ref->transition(sta_) == sta::RiseFall::rise();
-        auto arrival   = ref->arrival(sta_);
-        auto required  = ref->required(sta_);
-        points.push_back(std::make_tuple(pin, is_rising, arrival, required));
-    }
+    auto result = expandPath(path_ends->at(0));
     delete path_ends;
+    return result;
+}
+std::vector<PathPoint>
+OpenStaHandler::expandPath(sta::PathEnd* path_end) const
+{
+    return expandPath(path_end->path());
+}
+
+std::vector<PathPoint>
+OpenStaHandler::expandPath(sta::Path* path) const
+{
+    std::vector<PathPoint> points;
+    sta::PathExpanded      expanded(path, sta_);
+    for (size_t i = 1; i < expanded.size(); i++)
+    {
+        auto ref           = expanded.path(i);
+        auto pin           = ref->vertex(sta_)->pin();
+        auto is_rising     = ref->transition(sta_) == sta::RiseFall::rise();
+        auto arrival       = ref->arrival(sta_);
+        auto required      = ref->required(sta_);
+        auto path_ap_index = ref->pathAnalysisPtIndex(sta_);
+        points.push_back(
+            std::make_tuple(pin, is_rising, arrival, required, path_ap_index));
+    }
     return points;
 }
 
@@ -787,6 +857,17 @@ OpenStaHandler::disconnect(InstanceTerm* term) const
     network()->disconnectPin(term);
 }
 
+void
+OpenStaHandler::swapPins(InstanceTerm* first, InstanceTerm* second)
+{
+    auto first_net  = net(first);
+    auto second_net = net(second);
+    disconnect(first);
+    disconnect(second);
+    connect(first_net, second);
+    connect(second_net, first);
+    resetDelays();
+}
 Instance*
 OpenStaHandler::createInstance(const char* inst_name, LibraryCell* cell)
 {

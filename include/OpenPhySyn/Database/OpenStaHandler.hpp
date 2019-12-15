@@ -99,6 +99,8 @@ private:
                              float cap, bool is_delay = true,
                              bool is_rise = true) const;
     std::vector<PathPoint> getPath(bool get_max, int path_count = 1) const;
+    std::vector<PathPoint> expandPath(sta::PathEnd* path_end) const;
+    std::vector<PathPoint> expandPath(sta::Path* path) const;
 };
 
 } // namespace psn
