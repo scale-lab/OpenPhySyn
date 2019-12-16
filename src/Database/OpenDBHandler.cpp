@@ -747,6 +747,22 @@ OpenDBHandler::nets() const
     }
     return nets;
 }
+std::vector<Instance*>
+OpenDBHandler::instances() const
+{
+    std::vector<Instance*> insts;
+    Block*                 block = top();
+    if (!block)
+    {
+        return std::vector<Instance*>();
+    }
+    auto inst_set = block_->getInsts();
+    for (auto itr = inst_set.begin(); itr != inst_set.end(); itr++)
+    {
+        insts.push_back(*itr);
+    }
+    return insts;
+}
 
 std::string
 OpenDBHandler::topName() const

@@ -68,7 +68,11 @@ has_transform(const char* transform_name)
 {
     return Psn::instance().hasTransform(transform_name);
 }
-
+float
+design_area()
+{
+    return Psn::instance().handler()->area();
+}
 int
 print_liberty_cells()
 {

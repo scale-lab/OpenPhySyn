@@ -479,14 +479,20 @@ OpenStaHandler::setLocation(Instance* inst, Point pt)
 float
 OpenStaHandler::area(Instance* inst)
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenStaHandler, area)
-    return 0;
+    odb::dbInst*   dinst  = network()->staToDb(inst);
+    odb::dbMaster* master = dinst->getMaster();
+    return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
 }
+
 float
 OpenStaHandler::area()
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenStaHandler, area)
-    return 0;
+    float total_area = 0.0;
+    for (auto inst : instances())
+    {
+        total_area += area(inst);
+    }
+    return total_area;
 }
 LibraryTerm*
 OpenStaHandler::libraryPin(InstanceTerm* term) const
@@ -929,6 +935,15 @@ OpenStaHandler::nets() const
     sta::PatternMatch pattern("*");
     network()->findNetsMatching(network()->topInstance(), &pattern, &all_nets);
     return static_cast<std::vector<Net*>>(all_nets);
+}
+std::vector<Instance*>
+OpenStaHandler::instances() const
+{
+    sta::InstanceSeq  all_insts;
+    sta::PatternMatch pattern("*");
+    network()->findInstancesMatching(network()->topInstance(), &pattern,
+                                     &all_insts);
+    return static_cast<std::vector<Instance*>>(all_insts);
 }
 
 std::string

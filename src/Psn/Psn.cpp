@@ -602,6 +602,7 @@ Psn::printCommands(bool raw_str)
         "design\n"
         "has_transform <transform name>        Checks if a specific transform "
         "is loaded\n"
+        "design_area                           Returns total design cell area"
         "link <design name>                    Link design top module\n"
         "link_design <design name>             Link design top module\n"
         "sta <OpenSTA commands>                Run OpenSTA commands\n"

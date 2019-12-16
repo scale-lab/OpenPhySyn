@@ -37,11 +37,12 @@
 
 namespace psn
 {
-void version();
-void print_version();
-void help();
-void print_usage();
-void print_transforms();
+void  version();
+void  print_version();
+void  help();
+void  print_usage();
+void  print_transforms();
+float design_area();
 #ifndef OPENROAD_BUILD
 int  import_def(const char* def_path);
 int  import_lef(const char* lef_path, int ignore_routing_layers = true);

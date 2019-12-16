@@ -59,6 +59,7 @@ optimize_design [<options>]           Perform timing optimization on the design
 optimize_fanout <options>             Buffer high-fanout nets
 transform <transform name> <args>     Run transform on the loaded design
 has_transform <transform name>        Checks if a specific transform is loaded
+design_area                           Returns total design cell area
 link <design name>                    Link design top module
 link_design <design name>             Link design top module
 sta <OpenSTA commands>                Run OpenSTA commands

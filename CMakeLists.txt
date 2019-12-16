@@ -163,7 +163,8 @@ endif()
 
 
 set(PSN_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap.cc)
-set_source_files_properties(${PSN_WRAP} PROPERTIES COMPILE_FLAGS "-Wno-cast-qual -Wno-deprecated-copy")
+set(SWIG_SOURCE_COMPILE_FLAGS "-Wno-cast-qual -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-parameter -Wno-deprecated-copy")
+set_source_files_properties(${PSN_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
 
 set(PSN_MAIN ${PSN_HOME}/app/PsnMain.cpp)
 set(PSN_SOURCES_NO_MAIN_NO_WRAP
