@@ -31,6 +31,7 @@
 
 #include <OpenPhySyn/Psn/DesignSettings.hpp>
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
+#include <OpenPhySyn/Utils/PsnGlobal.hpp>
 
 namespace psn
 {
@@ -48,7 +49,7 @@ DesignSettings::maxArea() const
 {
     if (max_area_ == 0)
     {
-        PsnLogger::instance().warn("Max area is 0 or not set.");
+        PSN_LOG_WARN("Max area is 0 or not set.");
     }
     return max_area_;
 }
@@ -57,8 +58,7 @@ DesignSettings::resistancePerMicron() const
 {
     if (res_per_micron_ == 0)
     {
-        PsnLogger::instance().warn(
-            "Resistance per micron is 0 or not set, use_set_wire_rc.");
+        PSN_LOG_WARN("Resistance per micron is 0 or not set, use_set_wire_rc.");
     }
     return res_per_micron_;
 }
@@ -67,7 +67,7 @@ DesignSettings::capacitancePerMicron() const
 {
     if (cap_per_micron_ == 0)
     {
-        PsnLogger::instance().warn(
+        PSN_LOG_WARN(
             "Capacitance per micron is 0 or not set, use set_wire_rc.");
     }
     return cap_per_micron_;

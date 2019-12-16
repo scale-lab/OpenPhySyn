@@ -57,7 +57,7 @@ main(int argc, char* argv[])
     }
     catch (psn::ProgramOptionsException& e)
     {
-        psn::PsnLogger::instance().error(e.what());
+        PSN_LOG_ERROR(e.what());
         return -1;
     }
 #endif

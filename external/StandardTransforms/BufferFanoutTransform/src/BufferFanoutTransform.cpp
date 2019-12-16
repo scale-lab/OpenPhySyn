@@ -43,26 +43,25 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                               std::string buffer_cell)
 {
 
-    PsnLogger&       logger  = PsnLogger::instance();
     DatabaseHandler& handler = *(psn_inst->handler());
     LibraryCell*     cell    = handler.libraryCell(buffer_cell.c_str());
     if (!cell)
     {
-        logger.error("Buffer {} not found!", buffer_cell);
+        PSN_LOG_ERROR("Buffer {} not found!", buffer_cell);
         return -1;
     }
     auto buffer_input_pins  = handler.libraryInputPins(cell);
     auto buffer_output_pins = handler.libraryOutputPins(cell);
     if (buffer_input_pins.size() != 1)
     {
-        logger.error("Invalid buffer cell, number of input pins is {}",
-                     buffer_input_pins.size());
+        PSN_LOG_ERROR("Invalid buffer cell, number of input pins is {}",
+                      buffer_input_pins.size());
         return -1;
     }
     if (buffer_output_pins.size() != 1)
     {
-        logger.error("Invalid buffer cell, number of output pins is {}",
-                     buffer_output_pins.size());
+        PSN_LOG_ERROR("Invalid buffer cell, number of output pins is {}",
+                      buffer_output_pins.size());
         return -1;
     }
     LibraryTerm*      cell_in_pin  = *(buffer_input_pins.begin());
@@ -77,10 +76,11 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
             high_fanout_nets.push_back(net);
         }
     }
-    logger.info("High fanout nets [{}]: ", high_fanout_nets.size());
+    PSN_LOG_INFO("High fanout nets [{}]: ", high_fanout_nets.size());
     for (auto& net : high_fanout_nets)
     {
-        logger.debug("Net: {} {}", handler.name(net), handler.fanoutCount(net));
+        PSN_LOG_DEBUG("Net: {} {}", handler.name(net),
+                      handler.fanoutCount(net));
     }
     auto clock_pins = handler.clockPins();
 
@@ -96,10 +96,10 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
             {
                 continue;
             }
-            logger.debug("Buffering: {}", handler.name(net));
+            PSN_LOG_DEBUG("Buffering: {}", handler.name(net));
             auto fanout_pins        = handler.fanoutPins(net);
             int  net_sink_pin_count = fanout_pins.size();
-            logger.debug("Sink count: {}", net_sink_pin_count);
+            PSN_LOG_DEBUG("Sink count: {}", net_sink_pin_count);
             int              iter = net_sink_pin_count;
             std::vector<int> buffer_hier;
             while (iter > max_fanout)
@@ -166,12 +166,12 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                 Net* new_net = handler.createNet(net_name.c_str());
                 if (!new_buffer)
                 {
-                    logger.critical("Failed to create buffer {}", buf_name);
+                    PSN_LOG_CRITICAL("Failed to create buffer {}", buf_name);
                     return -1;
                 }
                 if (!new_net)
                 {
-                    logger.critical("Failed to create net {}", net_name);
+                    PSN_LOG_CRITICAL("Failed to create net {}", net_name);
                     return -1;
                 }
                 handler.connect(new_net, new_buffer, cell_out_pin);
@@ -199,7 +199,7 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
             }
         }
     }
-    logger.info("Added {} buffers", create_buffer_count);
+    PSN_LOG_INFO("Added {} buffers", create_buffer_count);
 
     return create_buffer_count;
 }
@@ -287,7 +287,7 @@ BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
     }
     else
     {
-        PsnLogger::instance().error(help());
+        PSN_LOG_ERROR(help());
     }
 
     return -1;

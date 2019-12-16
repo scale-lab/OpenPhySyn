@@ -79,15 +79,15 @@ print_liberty_cells()
     Liberty* liberty = Psn::instance().liberty();
     if (!liberty)
     {
-        PsnLogger::instance().error("Did not find any liberty files, use "
-                                    "import_liberty <file name> first.");
+        PSN_LOG_ERROR("Did not find any liberty files, use "
+                      "import_liberty <file name> first.");
         return -1;
     }
     sta::LibertyCellIterator cell_iter(liberty);
     while (cell_iter.hasNext())
     {
         sta::LibertyCell* cell = cell_iter.next();
-        PsnLogger::instance().info("Cell: {}", cell->name());
+        PSN_LOG_INFO("Cell: {}", cell->name());
     }
     return 1;
 }

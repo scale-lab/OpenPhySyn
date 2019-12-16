@@ -21,9 +21,15 @@ Example:
 
 ```bash
 > ./Psn
+> import_lef <lef file>
+> import_def <def file>
 > # Run simple buffering algorithm for cell with max-fanout 2
 > transform buffer_fanout 2 BUF_X1
 > export_def out.def
 ```
 
-Make sure to set `PSN_HOME` to OpenPhySyn source code path, `PSN_LIB` to the directory containing the built OpenPhySyn library file, `OPENDB_HOME` to [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) include path, `OPENDB_LIB` the directory containing the built [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) library files.
+If building outside OpenPhySyn source tree, make sure to:
+- Set `PSN_HOME_PATH` to OpenPhySyn source code path
+- Set `PSN_LIB_PATH` to the directory containing the built OpenPhySyn library file
+- Set `OPENDB_HOME_PATH` to [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) include path
+- Set `OPENDB_LIB_PATH` the directory containing the built [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) library files.

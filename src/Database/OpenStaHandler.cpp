@@ -1479,7 +1479,7 @@ bool
 OpenStaHandler::dontUse(LibraryCell* cell) const
 {
     PSN_UNUSED(cell);
-    HANDLER_UNSUPPORTED_METHOD(OpenStaHandler, dontUse)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenStaHandler, dontUse)
     return false;
 }
 void
