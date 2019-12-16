@@ -48,19 +48,13 @@ GateCloningTransform::gateClone(Psn* psn_inst, float cap_factor,
                                 bool clone_largest_only)
 {
     clone_count_             = 0;
-    PsnLogger&       logger  = PsnLogger::instance();
     DatabaseHandler& handler = *(psn_inst->handler());
-    logger.debug("Clone {} {}", cap_factor, clone_largest_only);
+    PSN_LOG_DEBUG("Clone {} {}", cap_factor, clone_largest_only);
     std::vector<InstanceTerm*> level_drvrs = handler.levelDriverPins();
     for (auto& pin : level_drvrs)
     {
         Instance* inst = handler.instance(pin);
         cloneTree(psn_inst, inst, cap_factor, clone_largest_only);
-        // if (handler.area() > psn_inst->settings()->maxArea())
-        // {
-        //     logger.warn("Max utilization reached!");
-        //     break;
-        // }
     }
     return clone_count_;
 }
@@ -68,7 +62,6 @@ void
 GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
                                 bool clone_largest_only)
 {
-    PsnLogger&       logger  = PsnLogger::instance();
     DatabaseHandler& handler = *(psn_inst->handler());
     float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
 
@@ -95,24 +88,24 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
     float output_target_load = handler.targetLoad(cell);
 
     float c_limit = cap_factor * output_target_load;
-    logger.trace("{} {} output_target_load: {}", handler.name(inst),
-                 handler.name(cell), output_target_load);
-    logger.trace("{} {} cap_per_micron: {}", handler.name(inst),
-                 handler.name(cell), cap_per_micron);
-    logger.trace("{} {} c_limit: {}", handler.name(inst), handler.name(cell),
-                 c_limit);
-    logger.trace("{} {} total_net_load: {}", handler.name(inst),
-                 handler.name(cell), total_net_load);
+    PSN_LOG_TRACE("{} {} output_target_load: {}", handler.name(inst),
+                  handler.name(cell), output_target_load);
+    PSN_LOG_TRACE("{} {} cap_per_micron: {}", handler.name(inst),
+                  handler.name(cell), cap_per_micron);
+    PSN_LOG_TRACE("{} {} c_limit: {}", handler.name(inst), handler.name(cell),
+                  c_limit);
+    PSN_LOG_TRACE("{} {} total_net_load: {}", handler.name(inst),
+                  handler.name(cell), total_net_load);
     if ((c_limit - total_net_load) > std::numeric_limits<float>::epsilon())
     {
-        logger.trace("{} {} load is fine", handler.name(inst),
-                     handler.name(cell));
+        PSN_LOG_TRACE("{} {} load is fine", handler.name(inst),
+                      handler.name(cell));
         return;
     }
     if (clone_largest_only && cell != handler.largestLibraryCell(cell))
     {
-        logger.trace("{} {} is not the largest cell", handler.name(inst),
-                     handler.name(cell));
+        PSN_LOG_TRACE("{} {} is not the largest cell", handler.name(inst),
+                      handler.name(cell));
         return;
     }
 
@@ -122,7 +115,7 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
     {
         return;
     }
-    logger.debug("Cloning: {}", handler.name(inst), handler.name(cell));
+    PSN_LOG_DEBUG("Cloning: {}", handler.name(inst), handler.name(cell));
 
     topDownClone(psn_inst, tree, tree->driverPoint(), c_limit);
 }
@@ -278,7 +271,7 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
     if (args.size() > 2)
     {
-        PsnLogger::instance().error(help());
+        PSN_LOG_ERROR(help());
         return -1;
     }
     float cap_factor         = 1.4;
@@ -287,7 +280,7 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
     {
         if (!isNumber(args[0]))
         {
-            PsnLogger::instance().error(help());
+            PSN_LOG_ERROR(help());
             return -1;
         }
         cap_factor = std::stof(args[0].c_str());
@@ -305,7 +298,7 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
             }
             else
             {
-                PsnLogger::instance().error(help());
+                PSN_LOG_ERROR(help());
                 return -1;
             }
         }

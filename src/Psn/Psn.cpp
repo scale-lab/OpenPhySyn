@@ -170,12 +170,12 @@ Psn::readDef(const char* path)
     }
     catch (FileException& e)
     {
-        PsnLogger::instance().error(e.what());
+        PSN_LOG_ERROR(e.what());
         return -1;
     }
     catch (NoTechException& e)
     {
-        PsnLogger::instance().error(e.what());
+        PSN_LOG_ERROR(e.what());
         return -1;
     }
 }
@@ -196,7 +196,7 @@ Psn::readLib(const char* path)
     }
     catch (PsnException& e)
     {
-        PsnLogger::instance().error(e.what());
+        PSN_LOG_ERROR(e.what());
         return -1;
     }
 }
@@ -246,7 +246,7 @@ Psn::readLef(const char* path, bool import_library, bool import_tech)
     }
     catch (PsnException& e)
     {
-        PsnLogger::instance().error(e.what());
+        PSN_LOG_ERROR(e.what());
         return -1;
     }
 }
@@ -261,7 +261,7 @@ Psn::writeDef(const char* path)
     }
     catch (PsnException& e)
     {
-        PsnLogger::instance().error(e.what());
+        PSN_LOG_ERROR(e.what());
         return -1;
     }
 }
@@ -306,7 +306,7 @@ Psn::instance()
 {
     if (!is_initialized_)
     {
-        PsnLogger::instance().critical("OpenPhySyn is not initialized!");
+        PSN_LOG_CRITICAL("OpenPhySyn is not initialized!");
     }
     return *psn_instance_;
 }
@@ -316,7 +316,7 @@ Psn::instancePtr()
 #ifndef OPENROAD_BUILD
     if (!is_initialized_)
     {
-        PsnLogger::instance().critical("OpenPhySyn is not initialized!");
+        PSN_LOG_CRITICAL("OpenPhySyn is not initialized!");
     }
 #endif
     return psn_instance_;
@@ -356,13 +356,12 @@ Psn::loadTransforms()
             FileUtils::readDirectory(transform_parent_path.c_str());
         for (auto& path : transforms_paths)
         {
-            PsnLogger::instance().debug("Reading transform {}", path);
+            PSN_LOG_DEBUG("Reading transform {}", path);
             handlers.push_back(psn::TransformHandler(path));
         }
 
-        PsnLogger::instance().debug("Found {} transforms under {}.",
-                                    transforms_paths.size(),
-                                    transform_parent_path);
+        PSN_LOG_DEBUG("Found {} transforms under {}.", transforms_paths.size(),
+                      transform_parent_path);
     }
 
     for (auto tr : handlers)
@@ -378,13 +377,13 @@ Psn::loadTransforms()
         }
         else
         {
-            PsnLogger::instance().debug(
+            PSN_LOG_DEBUG(
                 "Transform {} was already loaded, discarding subsequent loads",
                 tr_name);
         }
     }
 #ifndef OPENROAD_BUILD
-    psn::PsnLogger::instance().info("Loaded {} transforms.", load_count);
+    PSN_LOG_INFO("Loaded {} transforms.", load_count);
 #endif
     return load_count;
 }
@@ -400,7 +399,7 @@ Psn::runTransform(std::string transform_name, std::vector<std::string> args)
 {
     if (!database() || database()->getChip() == nullptr)
     {
-        PSN_LOG_ERROR("Please load a design first.");
+        PSN_LOG_ERROR("Could not find any loaded design.");
         return -1;
     }
     try
@@ -411,31 +410,28 @@ Psn::runTransform(std::string transform_name, std::vector<std::string> args)
         }
         if (args.size() && args[0] == "version")
         {
-            PsnLogger::instance().info(
-                "{}", transforms_info_[transform_name].version());
+            PSN_LOG_INFO("{}", transforms_info_[transform_name].version());
             return 0;
         }
         else if (args.size() && args[0] == "help")
         {
-            PsnLogger::instance().info("{}",
-                                       transforms_info_[transform_name].help());
+            PSN_LOG_INFO("{}", transforms_info_[transform_name].help());
             return 0;
         }
         else
         {
 
-            PsnLogger::instance().info("Invoking {} transform", transform_name);
+            PSN_LOG_INFO("Invoking {} transform", transform_name);
             int rc = transforms_[transform_name]->run(this, args);
             sta_->ensureLevelized();
             handler()->resetDelays();
-            PsnLogger::instance().info("Finished {} transform ({})",
-                                       transform_name, rc);
+            PSN_LOG_INFO("Finished {} transform ({})", transform_name, rc);
             return rc;
         }
     }
     catch (PsnException& e)
     {
-        PsnLogger::instance().error(e.what());
+        PSN_LOG_ERROR(e.what());
         return -1;
     }
 }
@@ -451,7 +447,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
 {
     if (interp_)
     {
-        PsnLogger::instance().warn("Multiple interpreter initialization!");
+        PSN_LOG_WARN("Multiple interpreter initialization!");
     }
     interp_ = interp;
 
@@ -528,7 +524,7 @@ Psn::evaluateTclCommands(const char* commands) const
 {
     if (!interp_)
     {
-        PsnLogger::instance().error("Tcl Interpreter is not initialized");
+        PSN_LOG_ERROR("Tcl Interpreter is not initialized");
         return TCL_ERROR;
     }
     return Tcl_Eval(interp_, commands);
@@ -539,34 +535,33 @@ Psn::printVersion(bool raw_str)
     if (raw_str)
     {
 
-        PsnLogger::instance().raw("OpenPhySyn: {}.{}.{}", PROJECT_VERSION_MAJOR,
-                                  PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH);
+        PSN_LOG_RAW("OpenPhySyn: {}.{}.{}", PROJECT_VERSION_MAJOR,
+                    PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH);
     }
     else
     {
 
-        PsnLogger::instance().info("OpenPhySyn: {}.{}.{}",
-                                   PROJECT_VERSION_MAJOR, PROJECT_VERSION_MINOR,
-                                   PROJECT_VERSION_PATCH);
+        PSN_LOG_INFO("OpenPhySyn: {}.{}.{}", PROJECT_VERSION_MAJOR,
+                     PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH);
     }
 }
 void
 Psn::printUsage(bool raw_str, bool print_transforms, bool print_commands)
 {
-    PsnLogger::instance().raw("");
+    PSN_LOG_RAW("");
     if (raw_str)
     {
-        PsnLogger::instance().raw(programOptions().usage());
+        PSN_LOG_RAW(programOptions().usage());
     }
     else
     {
-        PsnLogger::instance().info(programOptions().usage());
+        PSN_LOG_INFO(programOptions().usage());
     }
     if (print_commands)
     {
         printCommands(true);
     }
-    PsnLogger::instance().raw("");
+    PSN_LOG_RAW("");
     if (print_transforms)
     {
         printTransforms(true);
@@ -577,14 +572,14 @@ Psn::printCommands(bool raw_str)
 {
     if (raw_str)
     {
-        PsnLogger::instance().raw("Available command: ");
+        PSN_LOG_RAW("Available command: ");
     }
     else
     {
 
-        PsnLogger::instance().info("Available commands: ");
+        PSN_LOG_INFO("Available commands: ");
     }
-    PsnLogger::instance().raw("");
+    PSN_LOG_RAW("");
     std::string commands_str;
     commands_str +=
         "print_version                         print version\n"
@@ -620,21 +615,21 @@ Psn::printCommands(bool raw_str)
         "info, warn, error, critical, off]\n"
         "set_log_pattern <pattern>             Set log printing pattern, refer "
         "to spdlog logger for pattern formats";
-    PsnLogger::instance().raw("{}", commands_str);
+    PSN_LOG_RAW("{}", commands_str);
 }
 void
 Psn::printTransforms(bool raw_str)
 {
     if (raw_str)
     {
-        PsnLogger::instance().raw("Loaded transforms: ");
+        PSN_LOG_RAW("Loaded transforms: ");
     }
     else
     {
 
-        PsnLogger::instance().info("Loaded transforms: ");
+        PSN_LOG_INFO("Loaded transforms: ");
     }
-    PsnLogger::instance().raw("");
+    PSN_LOG_RAW("");
     std::string transform_str;
     for (auto it = transforms_.begin(); it != transforms_.end(); ++it)
     {
@@ -645,13 +640,13 @@ Psn::printTransforms(bool raw_str)
         transform_str += transforms_info_[it->first].description();
         if (raw_str)
         {
-            PsnLogger::instance().raw(transform_str);
+            PSN_LOG_RAW(transform_str);
         }
         else
         {
-            PsnLogger::instance().info(transform_str);
+            PSN_LOG_INFO(transform_str);
         }
-        PsnLogger::instance().raw("");
+        PSN_LOG_RAW("");
     }
 
 } // namespace psn
@@ -722,7 +717,7 @@ Psn::setLogLevel(const char* level)
     }
     else
     {
-        PsnLogger::instance().error("Invalid log level {}", level);
+        PSN_LOG_ERROR("Invalid log level {}", level);
         return false;
     }
     return true;
@@ -754,12 +749,12 @@ Psn::sourceTclScript(const char* script_path)
 {
     if (!FileUtils::pathExists(script_path))
     {
-        PsnLogger::instance().error("Failed to open {}", script_path);
+        PSN_LOG_ERROR("Failed to open {}", script_path);
         return -1;
     }
     if (interp_ == nullptr)
     {
-        PsnLogger::instance().error("Tcl Interpreter is not initialized");
+        PSN_LOG_ERROR("Tcl Interpreter is not initialized");
         return -1;
     }
     std::string script_content;
@@ -769,8 +764,8 @@ Psn::sourceTclScript(const char* script_path)
     }
     catch (FileException& e)
     {
-        PsnLogger::instance().error("Failed to open {}", script_path);
-        PsnLogger::instance().error("{}", e.what());
+        PSN_LOG_ERROR("Failed to open {}", script_path);
+        PSN_LOG_ERROR("{}", e.what());
         return -1;
     }
     if (evaluateTclCommands(script_content.c_str()) == TCL_ERROR)
@@ -873,7 +868,7 @@ Psn::initializeFlute(const char* flue_init_dir)
     }
     if (!lut_found)
     {
-        PsnLogger::instance().error("Flute initialization failed");
+        PSN_LOG_ERROR("Flute initialization failed");
         return -1;
     }
 

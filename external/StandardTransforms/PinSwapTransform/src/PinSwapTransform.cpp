@@ -55,17 +55,14 @@ int
 PinSwapTransform::powerPinSwap(psn::Psn* psn_inst)
 {
     PSN_UNUSED(psn_inst);
-    PsnLogger::instance().error(
-        "Pin-Swapping for power optimization is not supported yet.");
+    PSN_LOG_ERROR("Pin-Swapping for power optimization is not supported yet.");
     return swap_count_;
 }
 int
 PinSwapTransform::timingPinSwap(psn::Psn* psn_inst)
 {
-    PsnLogger&       logger  = PsnLogger::instance();
     DatabaseHandler& handler = *(psn_inst->handler());
     auto             cp      = handler.criticalPath();
-    // auto             bp      = handler.bestPath();
     std::reverse(cp.begin(), cp.end());
 
     for (auto& point : cp)
@@ -97,8 +94,8 @@ PinSwapTransform::timingPinSwap(psn::Psn* psn_inst)
                 float new_arrival = handler.arrival(out_pin, ap_index, is_rise);
                 if (new_arrival < current_arrival)
                 {
-                    logger.debug("Accepted Swap: {} <-> {}", handler.name(pin),
-                                 handler.name(in_pin));
+                    PSN_LOG_DEBUG("Accepted Swap: {} <-> {}", handler.name(pin),
+                                  handler.name(in_pin));
                     swap_count_++;
                 }
                 else
@@ -125,7 +122,7 @@ PinSwapTransform::run(Psn* psn_inst, std::vector<std::string> args)
     bool power_opt = false;
     if (args.size() > 1)
     {
-        PsnLogger::instance().error(help());
+        PSN_LOG_ERROR(help());
         return -1;
     }
     else if (args.size())
@@ -142,7 +139,7 @@ PinSwapTransform::run(Psn* psn_inst, std::vector<std::string> args)
         }
         else
         {
-            PsnLogger::instance().error(help());
+            PSN_LOG_ERROR(help());
             return -1;
         }
     }
