@@ -68,11 +68,6 @@ has_transform(const char* transform_name)
 {
     return Psn::instance().hasTransform(transform_name);
 }
-float
-design_area()
-{
-    return Psn::instance().handler()->area();
-}
 int
 print_liberty_cells()
 {
@@ -92,6 +87,11 @@ print_liberty_cells()
     return 1;
 }
 #endif
+float
+design_area()
+{
+    return Psn::instance().handler()->area();
+}
 int
 set_wire_rc(float res_per_micon, float cap_per_micron)
 {
