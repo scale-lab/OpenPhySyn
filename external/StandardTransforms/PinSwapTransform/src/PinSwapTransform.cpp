@@ -31,6 +31,7 @@
 
 #include "PinSwapTransform.hpp"
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
+#include <OpenPhySyn/Sta/PathPoint.hpp>
 #include <OpenPhySyn/Utils/PsnGlobal.hpp>
 #include <OpenSTA/dcalc/ArcDelayCalc.hh>
 #include <OpenSTA/dcalc/GraphDelayCalc.hh>
@@ -70,10 +71,10 @@ PinSwapTransform::timingPinSwap(psn::Psn* psn_inst)
     for (auto& point : cp)
     {
 
-        auto pin      = std::get<0>(point);
-        auto is_rise  = std::get<1>(point);
+        auto pin      = point.pin();
+        auto is_rise  = point.isRise();
         auto inst     = handler.instance(pin);
-        auto ap_index = std::get<4>(point);
+        auto ap_index = point.analysisPointIndex();
 
         if (!handler.isInput(pin))
         {

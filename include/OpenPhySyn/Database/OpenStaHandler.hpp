@@ -41,6 +41,7 @@
 #include <vector>
 namespace psn
 {
+class PathPoint;
 class OpenStaHandler
 {
 public:

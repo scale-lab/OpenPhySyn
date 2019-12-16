@@ -37,6 +37,7 @@
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
+#include <OpenPhySyn/Sta/PathPoint.hpp>
 #include <OpenSTA/dcalc/ArcDelayCalc.hh>
 #include <OpenSTA/dcalc/DcalcAnalysisPt.hh>
 #include <OpenSTA/dcalc/GraphDelayCalc.hh>
@@ -272,8 +273,9 @@ OpenStaHandler::expandPath(sta::Path* path) const
         auto arrival       = ref->arrival(sta_);
         auto required      = ref->required(sta_);
         auto path_ap_index = ref->pathAnalysisPtIndex(sta_);
+        auto slack         = ref->slack(sta_);
         points.push_back(
-            std::make_tuple(pin, is_rising, arrival, required, path_ap_index));
+            PathPoint(pin, is_rising, arrival, required, slack, path_ap_index));
     }
     return points;
 }

@@ -40,8 +40,6 @@ set(SWIG_FLAGS "-DOPENROAD_BUILD -DSWIG_DIRECTOR_STATIC")
 endif()
 
 
-# message("Database handler: ${OPENPHYSYN_DATABASE_HANDLER}")
-
 set(PSN_HOME
   ${PROJECT_SOURCE_DIR}
 )
@@ -192,6 +190,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/PsnException/ProgramOptionsException.cpp
     ${PSN_HOME}/src/PsnException/TransformNotFoundException.cpp
     ${PSN_HOME}/src/Sta/DatabaseSta.cpp
+    ${PSN_HOME}/src/Sta/PathPoint.cpp
     ${PSN_HOME}/src/Sta/DatabaseSdcNetwork.cpp
     ${PSN_HOME}/src/Sta/DatabaseStaNetwork.cpp
 )
@@ -248,6 +247,7 @@ set(PSN_TESTFILES
 endif()
 
 if (${OPENROAD_BUILD})
+
 # temporary bad fix..
 set(OPENSTA_UTIL_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenStaUtilTclInitVar.cc)
 

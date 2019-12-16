@@ -92,14 +92,13 @@ typedef odb::defout         DefOut;
 typedef odb::lefin          LefParser;
 typedef sta::LibertyLibrary Liberty;
 
-typedef odb::dbSet<Library>                                LibrarySet;
-typedef sta::NetSet                                        NetSet;
-typedef sta::PinSet                                        BlockTermSet;
-typedef sta::PinSet                                        InstanceTermSet;
-typedef sta::PortDirection                                 PinDirection;
-typedef odb::adsPoint                                      Point;
-typedef OpenStaHandler                                     DatabaseHandler;
-typedef std::tuple<InstanceTerm*, bool, float, float, int> PathPoint;
+typedef odb::dbSet<Library> LibrarySet;
+typedef sta::NetSet         NetSet;
+typedef sta::PinSet         BlockTermSet;
+typedef sta::PinSet         InstanceTermSet;
+typedef sta::PortDirection  PinDirection;
+typedef odb::adsPoint       Point;
+typedef OpenStaHandler      DatabaseHandler;
 
 #endif
 
