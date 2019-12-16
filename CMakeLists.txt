@@ -14,7 +14,7 @@ option(OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED "Build Buffer Fan-Out transfor
 option(OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED "Build Gate Clone transform" ON)
 option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -pthread -ltcl -lz -lm -ldl -Wno-error -Wall -Wextra -Wno-unused-parameter")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -pthread -ltcl -lz -lm -ldl -Wno-error -Wno-unused-parameter")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 
@@ -70,6 +70,9 @@ find_lto(CXX)
 
 #Add TCL Package
 find_package(TCL REQUIRED)
+if (NOT DEFINED TCL_LIB)
+set(TCL_LIB ${TCL_LIBRARY})
+endif()
 
 #Add SWIG Package
 cmake_policy(SET CMP0078 NEW)
@@ -84,6 +87,7 @@ if(NOT DEFINED OPENDB_HOME)
 set(OPENDB_HOME
 ${PROJECT_SOURCE_DIR}/external/OpenDB
 )
+set(BUILD_PYTHON OFF)
 endif()
 
 # Build OpenSTA
@@ -321,6 +325,7 @@ ${ZLIB_LIBRARIES}
 ${TCL_LIBRARY}
 dl
 )
+
 
 CHECK_SYMBOL_EXISTS(std::filesystem::path::preferred_separator filesystem cxx17fs)
 

@@ -49,11 +49,17 @@ namespace filesystem
 bool
 create_directory(const char* raw_path)
 {
+    int rc;
 #ifdef _WIN32
-    return ::_mkdir(raw_path);
+    rc = ::_mkdir(raw_path);
 #else
-    return ::mkdir(raw_path, 0755);
+    rc        = ::mkdir(raw_path, 0755);
 #endif
+    if (rc == 0)
+    {
+        return true;
+    }
+    return false;
 }
 
 std::vector<directory_entry>
@@ -83,8 +89,9 @@ directory_iterator(const path target_path)
         FindClose(hFind);
     }
 #else
-    DIR*           dirp = opendir(target_path.generic_string().c_str());
-    if (dirp) {
+    DIR* dirp = opendir(target_path.generic_string().c_str());
+    if (dirp)
+    {
         struct dirent* dp;
         while ((dp = readdir(dirp)) != NULL)
         {
@@ -104,12 +111,13 @@ path::path(const char* raw_path) : path(std::string(raw_path))
 }
 path::path(const std::string& raw_path) : path_str_(raw_path)
 {
-    if (path_str_.size()) {
-        int         last_c        = path_str_[path_str_.size() - 1];
+    if (path_str_.size())
+    {
+        int last_c = path_str_[path_str_.size() - 1];
         while (path_str_.size() > 1 && path_str_[last_c] == separator())
         {
             path_str_ = path_str_.substr(0, path_str_.size() - 1);
-            last_c        = path_str_[path_str_.size() - 1];
+            last_c    = path_str_[path_str_.size() - 1];
         }
     }
 }
