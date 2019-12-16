@@ -894,7 +894,9 @@ OpenStaHandler::createClock(const char*             clock_name,
     sta::FloatSeq* waveform = new sta::FloatSeq;
     waveform->push_back(0);
     waveform->push_back(period / 2.0f);
-    sta_->makeClock(clock_name, pin_set, false, period, waveform, "");
+    const char* comment = "";
+    sta_->makeClock(clock_name, pin_set, false, period, waveform,
+                    const_cast<char*>(comment));
 }
 void
 OpenStaHandler::createClock(const char*              clock_name,
@@ -1012,10 +1014,10 @@ OpenStaHandler::~OpenStaHandler()
 {
 }
 void
-OpenStaHandler::clear() const
+OpenStaHandler::clear()
 {
-    db_->clear();
     sta_->clear();
+    db_->clear();
 }
 sta::DatabaseStaNetwork*
 OpenStaHandler::network() const

@@ -847,7 +847,7 @@ OpenDBHandler::top() const
 }
 
 void
-OpenDBHandler::clear() const
+OpenDBHandler::clear()
 {
     db_->clear();
 }

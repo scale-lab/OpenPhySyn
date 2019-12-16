@@ -113,7 +113,7 @@ virtual void          disconnect(InstanceTerm* term) const;
 virtual int           disconnectAll(Net* net) const;
 virtual void          swapPins(InstanceTerm* first, InstanceTerm* second);
 virtual void          del(Net* net) const;
-virtual void          clear() const;
+virtual void          clear();
 virtual unsigned int  fanoutCount(Net* net) const;
 virtual std::vector<PathPoint> criticalPath(int path_count = 1) const;
 virtual std::vector<PathPoint> bestPath(int path_count = 1) const;

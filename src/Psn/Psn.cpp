@@ -118,6 +118,7 @@ Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
         initializeDatabase();
         initializeSta();
     }
+
     db_         = sta_->db();
     settings_   = new DesignSettings();
     db_handler_ = new DatabaseHandler(sta_);

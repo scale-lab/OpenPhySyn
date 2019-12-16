@@ -214,11 +214,12 @@ set(PSN_SOURCES
 )
 
 set(PSN_TESTFILES        # All .cpp files in tests/
+    ${PROJECT_SOURCE_DIR}/tests/SteinerTree.cpp
+    ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
     ${PROJECT_SOURCE_DIR}/tests/ReadLefDef.cpp
     ${PROJECT_SOURCE_DIR}/tests/WriteDef.cpp
     ${PROJECT_SOURCE_DIR}/tests/ReadLiberty.cpp
-    ${PROJECT_SOURCE_DIR}/tests/SteinerTree.cpp
-    ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
+    ${PROJECT_SOURCE_DIR}/tests/Sta.cpp
     ${PROJECT_SOURCE_DIR}/tests/TestMain.cpp
 )
 if (${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
