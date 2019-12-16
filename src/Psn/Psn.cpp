@@ -600,6 +600,8 @@ Psn::printCommands(bool raw_str)
         "optimize_fanout <options>             Buffer high-fanout nets\n"
         "transform <transform name> <args>     Run transform on the loaded "
         "design\n"
+        "has_transform <transform name>        Checks if a specific transform "
+        "is loaded\n"
         "link <design name>                    Link design top module\n"
         "link_design <design name>             Link design top module\n"
         "sta <OpenSTA commands>                Run OpenSTA commands\n"

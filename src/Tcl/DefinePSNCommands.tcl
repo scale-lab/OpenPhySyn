@@ -13,9 +13,9 @@ namespace eval psn {
         psn::transform_internal $transform_name $args
     }
 
-    define_cmd_args "optimize_design" {
-        [-no_gate_clone]
-        [-no_pin_swap]
+    define_cmd_args "optimize_design" {\
+        [-no_gate_clone] \
+        [-no_pin_swap] \
         [-clone_max_cap_factor factor] \
         [-clone_non_largest_cells] \
     }
@@ -58,9 +58,9 @@ namespace eval psn {
     }
 
 
-    define_cmd_args "optimize_fanout" {
+    define_cmd_args "optimize_fanout" { \
         -buffer_cell buffer_cell_name \
-        -max_fanout max_fanout
+        -max_fanout max_fanout \
     }
 
     proc optimize_fanout { args } {
