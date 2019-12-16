@@ -398,6 +398,11 @@ Psn::hasTransform(std::string transform_name)
 int
 Psn::runTransform(std::string transform_name, std::vector<std::string> args)
 {
+    if (!database() || database()->getChip() == nullptr)
+    {
+        PSN_LOG_ERROR("Please load a design first.");
+        return -1;
+    }
     try
     {
         if (!transforms_.count(transform_name))

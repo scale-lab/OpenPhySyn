@@ -34,7 +34,15 @@
 
 #define PSN_UNUSED(arg) (void)arg;
 
-#define HANDLER_UNSUPPORTED_METHOD(HANDLER_NAME, METHOD_NAME)                  \
+#define PSN_HANDLER_UNSUPPORTED_METHOD(HANDLER_NAME, METHOD_NAME)              \
     psn::PsnLogger::instance().error("The method " #METHOD_NAME                \
                                      " is not supported by " #HANDLER_NAME);
+
+#define PSN_LOG_ERROR psn::PsnLogger::instance().error
+#define PSN_LOG_INFO psn::PsnLogger::instance().info
+#define PSN_LOG_CRITICAL psn::PsnLogger::instance().critical
+#define PSN_LOG_DEBUG psn::PsnLogger::instance().debug
+#define PSN_LOG_WARN psn::PsnLogger::instance().warn
+#define PSN_LOG_RAW psn::PsnLogger::instance().raw
+
 #endif

@@ -77,13 +77,13 @@ OpenDBHandler::net(InstanceTerm* term) const
 std::vector<InstanceTerm*>
 OpenDBHandler::connectedPins(Net* net) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, connectedPins)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, connectedPins)
     return std::vector<InstanceTerm*>();
 }
 std::set<BlockTerm*>
 OpenDBHandler::clockPins() const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, clockPins)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, clockPins)
     return std::set<BlockTerm*>();
 }
 
@@ -114,7 +114,7 @@ OpenDBHandler::fanoutPins(Net* net) const
 std::vector<InstanceTerm*>
 OpenDBHandler::levelDriverPins() const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, levelDriverPins)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, levelDriverPins)
     return std::vector<InstanceTerm*>();
 }
 
@@ -182,68 +182,68 @@ OpenDBHandler::fanoutCount(Net* net) const
 std::vector<PathPoint>
 OpenDBHandler::criticalPath(int path_count) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, criticalPath)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, criticalPath)
     return std::vector<PathPoint>();
 }
 std::vector<PathPoint>
 OpenDBHandler::bestPath(int path_count) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestPath)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestPath)
     return std::vector<PathPoint>();
 }
 std::vector<PathPoint>
 OpenDBHandler::worstSlackPath(InstanceTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, worstSlackPath)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, worstSlackPath)
     return std::vector<PathPoint>();
 }
 std::vector<PathPoint>
 OpenDBHandler::worstArrivalPath(InstanceTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, worstArrivalPath)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, worstArrivalPath)
     return std::vector<PathPoint>();
 }
 std::vector<PathPoint>
 OpenDBHandler::bestSlackPath(InstanceTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestSlackPath)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestSlackPath)
     return std::vector<PathPoint>();
 }
 std::vector<PathPoint>
 OpenDBHandler::bestArrivalPath(InstanceTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestArrivalPath)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestArrivalPath)
     return std::vector<PathPoint>();
 }
 float
 OpenDBHandler::slack(InstanceTerm* term, bool is_rise, bool worst) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, slack)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, slack)
     return 0;
 }
 float
 OpenDBHandler::slack(InstanceTerm* term, bool worst) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, slack)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, slack)
     return 0;
 }
 float
 OpenDBHandler::arrival(InstanceTerm* term, int ap_index, bool is_rise) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, arrival)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, arrival)
     return 0;
 }
 float
 OpenDBHandler::required(InstanceTerm* term, bool worst) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, required)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, required)
     return 0;
 }
 
 bool
 OpenDBHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isCommutative)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isCommutative)
     return false;
 }
 Point
@@ -272,13 +272,13 @@ OpenDBHandler::location(Instance* inst)
 float
 OpenDBHandler::area(Instance* inst)
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, area)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, area)
     return 0;
 }
 float
 OpenDBHandler::area()
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, area)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, area)
     return 0;
 }
 void
@@ -296,25 +296,25 @@ OpenDBHandler::libraryPin(InstanceTerm* term) const
 std::vector<LibraryTerm*>
 OpenDBHandler::libraryPins(Instance* inst) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, libraryPins);
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, libraryPins);
     return std::vector<LibraryTerm*>();
 }
 std::vector<LibraryTerm*>
 OpenDBHandler::libraryPins(LibraryCell* cell) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, libraryPins);
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, libraryPins);
     return std::vector<LibraryTerm*>();
 }
 std::vector<LibraryTerm*>
 OpenDBHandler::libraryInputPins(LibraryCell* cell) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, libraryInputPins);
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, libraryInputPins);
     return std::vector<LibraryTerm*>();
 }
 std::vector<LibraryTerm*>
 OpenDBHandler::libraryOutputPins(LibraryCell* cell) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, libraryOutputPins);
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, libraryOutputPins);
     return std::vector<LibraryTerm*>();
 }
 
@@ -359,7 +359,7 @@ OpenDBHandler::libraryCell(const char* name) const
 LibraryCell*
 OpenDBHandler::largestLibraryCell(LibraryCell* cell)
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, largestLibraryCell)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, largestLibraryCell)
     return nullptr;
 }
 double
@@ -400,197 +400,197 @@ OpenDBHandler::isPlaced(Instance* inst) const
 bool
 OpenDBHandler::isDriver(InstanceTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isDriver)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isDriver)
     return false;
 }
 
 float
 OpenDBHandler::pinCapacitance(InstanceTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinCapacitance)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinCapacitance)
     return 0.0;
 }
 
 float
 OpenDBHandler::pinCapacitance(LibraryTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinCapacitance)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinCapacitance)
     return 0.0;
 }
 float
 OpenDBHandler::pinAverageRise(LibraryTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageRise)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageRise)
     return 0.0;
 }
 float
 OpenDBHandler::pinAverageFall(LibraryTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageFall)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageFall)
     return 0.0;
 }
 float
 OpenDBHandler::pinAverageRiseTransition(LibraryTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageRiseTransition)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageRiseTransition)
     return 0.0;
 }
 float
 OpenDBHandler::pinAverageFallTransition(LibraryTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageFallTransition)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageFallTransition)
     return 0.0;
 }
 float
 OpenDBHandler::loadCapacitance(InstanceTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, loadCapacitance)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, loadCapacitance)
     return 0.0;
 }
 float
 OpenDBHandler::targetLoad(LibraryCell* cell)
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, targetLoad)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, targetLoad)
     return 0.0;
 }
 float
 OpenDBHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
                          LibraryTerm* from, int rise_fall)
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, gateDelay);
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, gateDelay);
     return 0.0;
 }
 
 float
 OpenDBHandler::maxLoad(LibraryCell* cell)
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, maxLoad)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, maxLoad)
     return 0.0;
 }
 float
 OpenDBHandler::maxLoad(LibraryTerm* term)
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, maxLoad)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, maxLoad)
     return 0.0;
 }
 bool
 OpenDBHandler::isInput(InstanceTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isInput)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isInput)
     return false;
 }
 bool
 OpenDBHandler::isOutput(InstanceTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isOutput)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isOutput)
     return false;
 }
 bool
 OpenDBHandler::isAnyInput(InstanceTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyInput)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyInput)
     return false;
 }
 bool
 OpenDBHandler::isAnyOutput(InstanceTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyOutput)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyOutput)
     return false;
 }
 bool
 OpenDBHandler::isBiDirect(InstanceTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isBiDirect)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isBiDirect)
     return false;
 }
 bool
 OpenDBHandler::isTriState(InstanceTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isTriState)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isTriState)
     return false;
 }
 OpenDBHandler::isInput(BlockTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isInput)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isInput)
     return false;
 }
 bool
 OpenDBHandler::isOutput(BlockTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isOutput)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isOutput)
     return false;
 }
 bool
 OpenDBHandler::isAnyInput(BlockTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyInput)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyInput)
     return false;
 }
 bool
 OpenDBHandler::isAnyOutput(BlockTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyOutput)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyOutput)
     return false;
 }
 bool
 OpenDBHandler::isBiDirect(BlockTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isBiDirect)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isBiDirect)
     return false;
 }
 bool
 OpenDBHandler::isTriState(BlockTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isTriState)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isTriState)
     return false;
 }
 bool
 OpenDBHandler::isInput(LibraryTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isInput)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isInput)
     return false;
 }
 bool
 OpenDBHandler::isOutput(LibraryTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isOutput)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isOutput)
     return false;
 }
 bool
 OpenDBHandler::isAnyInput(LibraryTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyInput)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyInput)
     return false;
 }
 bool
 OpenDBHandler::isAnyOutput(LibraryTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyOutput)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isAnyOutput)
     return false;
 }
 bool
 OpenDBHandler::isBiDirect(LibraryTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isBiDirect)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isBiDirect)
     return false;
 }
 bool
 OpenDBHandler::isTriState(LibraryTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isTriState)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isTriState)
     return false;
 }
 
 bool
 OpenDBHandler::hasMaxCapViolation(InstanceTerm* term, float load_cap) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, hasMaxCapViolation)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, hasMaxCapViolation)
     return false;
 }
 bool
 OpenDBHandler::hasMaxCapViolation(InstanceTerm* term) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, hasMaxCapViolation)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, hasMaxCapViolation)
     return false;
 }
 
@@ -607,7 +607,7 @@ OpenDBHandler::instance(const char* name) const
 BlockTerm*
 OpenDBHandler::port(const char* name) const
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, port)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, port)
     return nullptr;
 }
 Instance*
@@ -710,13 +710,13 @@ void
 OpenDBHandler::createClock(const char*             clock_name,
                            std::vector<BlockTerm*> ports, float period)
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, createClock);
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, createClock);
 }
 void
 OpenDBHandler::createClock(const char*              clock_name,
                            std::vector<std::string> ports, float period)
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, createClock);
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, createClock);
 }
 
 Net*
@@ -830,12 +830,12 @@ OpenDBHandler::dontUse(LibraryCell* cell) const
 void
 OpenDBHandler::resetDelays()
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, resetDelays);
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, resetDelays);
 }
 void
 OpenDBHandler::resetDelays(InstanceTerm* term)
 {
-    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, resetDelays);
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, resetDelays);
 }
 LibraryTechnology*
 OpenDBHandler::technology() const
