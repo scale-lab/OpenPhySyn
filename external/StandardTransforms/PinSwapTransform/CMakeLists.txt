@@ -64,16 +64,11 @@ PUBLIC
 opendb
 defin
 defout
-# lefin
 lefout
-# lef
 zlib
 zutil
 tm
-# OpenSTA
-# ${ZLIB_LIBRARIES}
 ${TCL_LIBRARY}
-# ${Boost_LIBRARIES}
 dl
 OpenPhySyn
 )

@@ -46,7 +46,7 @@ import_def(const char* def_path)
 int
 import_lef(const char* lef_path, int ignore_routing_layers)
 {
-    return Psn::instance().readLef(lef_path);
+    return Psn::instance().readLef(lef_path, ignore_routing_layers);
 }
 int
 import_lib(const char* lib_path)
@@ -62,6 +62,11 @@ int
 export_def(const char* lib_path)
 {
     return Psn::instance().writeDef(lib_path);
+}
+bool
+has_transform(const char* transform_name)
+{
+    return Psn::instance().hasTransform(transform_name);
 }
 
 int

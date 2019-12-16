@@ -4,6 +4,8 @@ set(TEST_MAIN unit_tests)   # Default name for test executable (change if you wi
 set(TEST_RUNNER_PARAMS "")  # Any arguemnts to feed the test runner (change as needed).
 
 set(PSN_TEST_WRAP ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap_test.cc)
+set_source_files_properties(${PSN_TEST_WRAP} PROPERTIES COMPILE_FLAGS "-Wno-cast-qual -Wno-deprecated-copy")
+
 
 add_executable(${TEST_MAIN} ${PSN_TESTFILES} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_TEST_WRAP})
 

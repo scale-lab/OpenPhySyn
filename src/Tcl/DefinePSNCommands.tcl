@@ -33,6 +33,12 @@ namespace eval psn {
         if {[info exists flags(-no_pin_swap)]} {
             set do_pin_swap false
         }
+        if {![has_transform gate_clone]} {
+            set do_gate_clone false
+        }
+        if {![has_transform pin_swap]} {
+            set do_pin_swap false
+        }
         if {$do_pin_swap} {
             transform pin_swap
         }

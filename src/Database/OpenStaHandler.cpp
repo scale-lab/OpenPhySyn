@@ -684,8 +684,8 @@ OpenStaHandler::pinTableAverage(LibraryTerm* from, LibraryTerm* to,
     {
         return sta::INF;
     }
-    float sum = 0;
-    int   count;
+    float sum   = 0;
+    int   count = 0;
     for (auto& arc_set : *timing_arc_sets)
     {
         sta::TimingArcSetArcIterator itr(arc_set);
@@ -1463,6 +1463,8 @@ OpenStaHandler::findBufferTargetSlews(sta::LibertyLibrarySeq* resize_libs)
 bool
 OpenStaHandler::dontUse(LibraryCell* cell) const
 {
+    PSN_UNUSED(cell);
+    HANDLER_UNSUPPORTED_METHOD(OpenStaHandler, dontUse)
     return false;
 }
 void

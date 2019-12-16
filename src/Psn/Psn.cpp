@@ -801,6 +801,7 @@ int
 Psn::initializeSta(Tcl_Interp* interp)
 {
 #ifndef OPENROAD_BUILD
+    PSN_UNUSED(interp);
     sta::initSta();
     sta_ = new sta::DatabaseSta(db_);
     sta::Sta::setSta(sta_);
