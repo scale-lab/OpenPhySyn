@@ -118,6 +118,7 @@ Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
         initializeDatabase();
         initializeSta();
     }
+
     db_         = sta_->db();
     settings_   = new DesignSettings();
     db_handler_ = new DatabaseHandler(sta_);
@@ -421,6 +422,9 @@ Psn::runTransform(std::string transform_name, std::vector<std::string> args)
             PsnLogger::instance().info("Invoking {} transform", transform_name);
             int rc = transforms_[transform_name]->run(this, args);
             sta_->ensureLevelized();
+            handler()->resetDelays();
+            PsnLogger::instance().info("Finished {} transform ({})",
+                                       transform_name, rc);
             return rc;
         }
     }
@@ -431,6 +435,11 @@ Psn::runTransform(std::string transform_name, std::vector<std::string> args)
     }
 }
 
+Tcl_Interp*
+Psn::interpreter() const
+{
+    return interp_;
+}
 int
 Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
                       bool print_psn_version, bool setup_sta)
@@ -459,7 +468,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
         const char* tcl_psn_setup =
 #include "Tcl/SetupPsnSta.tcl"
             ;
-        if (Tcl_Eval(interp_, tcl_psn_setup) != TCL_OK)
+        if (evaluateTclCommands(tcl_psn_setup) != TCL_OK)
         {
             return TCL_ERROR;
         }
@@ -469,7 +478,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
     const char* tcl_define_cmds =
 #include "Tcl/DefinePSNCommands.tcl"
         ;
-    if (Tcl_Eval(interp_, tcl_define_cmds) != TCL_OK)
+    if (evaluateTclCommands(tcl_define_cmds) != TCL_OK)
     {
         return TCL_ERROR;
     }
@@ -480,7 +489,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
         const char* tcl_psn_setup =
 #include "Tcl/SetupPsn.tcl"
             ;
-        if (Tcl_Eval(interp_, tcl_psn_setup) != TCL_OK)
+        if (evaluateTclCommands(tcl_psn_setup) != TCL_OK)
         {
             return TCL_ERROR;
         }
@@ -490,7 +499,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
         const char* tcl_psn_import =
 #include "Tcl/ImportNS.tcl"
             ;
-        if (Tcl_Eval(interp_, tcl_psn_import) != TCL_OK)
+        if (evaluateTclCommands(tcl_psn_import) != TCL_OK)
         {
             return TCL_ERROR;
         }
@@ -500,7 +509,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
         const char* tcl_print_version =
 #include "Tcl/PrintVersion.tcl"
             ;
-        if (Tcl_Eval(interp_, tcl_print_version) != TCL_OK)
+        if (evaluateTclCommands(tcl_print_version) != TCL_OK)
         {
             return TCL_ERROR;
         }
@@ -508,6 +517,16 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
 #endif // OPENROAD_BUILD
 
     return TCL_OK;
+}
+int
+Psn::evaluateTclCommands(const char* commands) const
+{
+    if (!interp_)
+    {
+        PsnLogger::instance().error("Tcl Interpreter is not initialized");
+        return TCL_ERROR;
+    }
+    return Tcl_Eval(interp_, commands);
 }
 void
 Psn::printVersion(bool raw_str)
@@ -716,15 +735,10 @@ Psn::setLogLevel(LogLevel level)
 int
 Psn::setupInterpreterReadline()
 {
-    if (interp_ == nullptr)
-    {
-        PsnLogger::instance().error("Tcl Interpreter is not initialized");
-        return -1;
-    }
     const char* rl_setup =
 #include "Tcl/Readline.tcl"
         ;
-    return Tcl_Eval(interp_, rl_setup);
+    return evaluateTclCommands(rl_setup);
 }
 
 int
@@ -751,7 +765,7 @@ Psn::sourceTclScript(const char* script_path)
         PsnLogger::instance().error("{}", e.what());
         return -1;
     }
-    if (Tcl_Eval(interp_, script_content.c_str()) == TCL_ERROR)
+    if (evaluateTclCommands(script_content.c_str()) == TCL_ERROR)
     {
         return -1;
     }

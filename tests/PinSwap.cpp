@@ -35,21 +35,24 @@
 
 using namespace psn;
 
-TEST_CASE("Should perform load-driven gate cloning")
+TEST_CASE("Should perform timing-driven pin swapping")
 {
     Psn& psn_inst = Psn::instance();
     try
     {
         psn_inst.clearDatabase();
+        psn_inst.readLib("../tests/data/libraries/Nangate45/"
+                         "NangateOpenCellLibrary_typical.lib");
         psn_inst.readLef(
             "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
-        psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
+        psn_inst.readDef("../tests/data/designs/gcd/gcd.def");
         CHECK(psn_inst.database()->getChip() != nullptr);
-        CHECK(psn_inst.hasTransform("gate_clone"));
-        // psn::Psn::instance().loadTransforms();
-        // auto result = psn_inst.runTransform(
-        //     "gate_clone", std::vector<std::string>({"1.4", "false"}));
-        CHECK(1);
+        CHECK(psn_inst.hasTransform("pin_swap"));
+        auto& handler = *(psn_inst.handler());
+        handler.createClock("core_clock", {"clk"}, 10);
+        auto result =
+            psn_inst.runTransform("pin_swap", std::vector<std::string>({}));
+        CHECK(result == 3);
     }
     catch (PsnException& e)
     {

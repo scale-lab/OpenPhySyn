@@ -83,7 +83,9 @@
     "variant": "cpp",
     "netfwd": "cpp",
     "*.cuh": "cpp",
-    "*.in": "cpp"
+    "*.in": "cpp",
+    "*.ipp": "c",
+    "valarray": "cpp"
   },
   "files.watcherExclude": {
     "**/.git/objects/**": true,

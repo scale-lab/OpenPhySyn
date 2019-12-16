@@ -28,6 +28,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#include <OpenPhySyn/Sta/PathPoint.hpp>
 #include "Psn/Psn.hpp"
 #include "PsnException/PsnException.hpp"
 #include "Utils/FileUtils.hpp"
@@ -35,21 +36,31 @@
 
 using namespace psn;
 
-TEST_CASE("Should perform load-driven gate cloning")
+TEST_CASE("Should perform timing-driven pin swapping")
 {
     Psn& psn_inst = Psn::instance();
     try
     {
         psn_inst.clearDatabase();
+        psn_inst.readLib("../tests/data/libraries/Nangate45/"
+                         "NangateOpenCellLibrary_typical.lib");
         psn_inst.readLef(
             "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
-        psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
+        psn_inst.readDef("../tests/data/designs/gcd/gcd.def");
         CHECK(psn_inst.database()->getChip() != nullptr);
-        CHECK(psn_inst.hasTransform("gate_clone"));
-        // psn::Psn::instance().loadTransforms();
-        // auto result = psn_inst.runTransform(
-        //     "gate_clone", std::vector<std::string>({"1.4", "false"}));
-        CHECK(1);
+        auto& handler = *(psn_inst.handler());
+        handler.createClock("core_clock", {"clk"}, 10);
+        auto                     critical_path = handler.criticalPath();
+        std::vector<std::string> actual_critical_path_pin_names(
+            {"_860_/CK", "_860_/Q", "_718_/A", "_718_/Z", "_438_/A", "_438_/ZN",
+             "_439_/A1", "_439_/ZN", "_462_/A1", "_462_/ZN", "_463_/A1",
+             "_463_/ZN", "_465_/A1", "_465_/ZN", "_762_/A", "_762_/Z",
+             "_858_/D"});
+        for (size_t i = 0; i < critical_path.size(); i++)
+        {
+            CHECK(handler.name(critical_path[i].pin()) ==
+                  actual_critical_path_pin_names[i]);
+        }
     }
     catch (PsnException& e)
     {

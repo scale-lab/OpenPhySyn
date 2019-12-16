@@ -28,31 +28,33 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "Psn/Psn.hpp"
-#include "PsnException/PsnException.hpp"
-#include "Utils/FileUtils.hpp"
-#include "doctest.h"
 
-using namespace psn;
+#ifndef __PSN_PATH_POINT__
+#define __PSN_PATH_POINT__
+#include <OpenPhySyn/Database/Types.hpp>
 
-TEST_CASE("Should perform load-driven gate cloning")
+namespace psn
 {
-    Psn& psn_inst = Psn::instance();
-    try
-    {
-        psn_inst.clearDatabase();
-        psn_inst.readLef(
-            "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
-        psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
-        CHECK(psn_inst.database()->getChip() != nullptr);
-        CHECK(psn_inst.hasTransform("gate_clone"));
-        // psn::Psn::instance().loadTransforms();
-        // auto result = psn_inst.runTransform(
-        //     "gate_clone", std::vector<std::string>({"1.4", "false"}));
-        CHECK(1);
-    }
-    catch (PsnException& e)
-    {
-        FAIL(e.what());
-    }
-}
+class PathPoint
+{
+public:
+    PathPoint(InstanceTerm* path_pin = nullptr, bool is_rise = false,
+              float path_arrival = 0, float path_required = 0,
+              float path_slack = 0, int ap_index = -1);
+    InstanceTerm* pin() const;
+    bool          isRise() const;
+    float         arrival() const;
+    float         required() const;
+    float         slack() const;
+    int           analysisPointIndex() const;
+
+private:
+    InstanceTerm* pin_;
+    bool          is_rise_;
+    float         arrival_;
+    float         required_;
+    float         slack_;
+    int           path_ap_index_;
+};
+} // namespace psn
+#endif

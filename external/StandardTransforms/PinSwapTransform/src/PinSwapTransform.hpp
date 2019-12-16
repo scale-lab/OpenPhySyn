@@ -28,31 +28,29 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "Psn/Psn.hpp"
-#include "PsnException/PsnException.hpp"
-#include "Utils/FileUtils.hpp"
-#include "doctest.h"
 
-using namespace psn;
+#include <OpenPhySyn/Database/DatabaseHandler.hpp>
+#include <OpenPhySyn/Database/Types.hpp>
+#include <OpenPhySyn/Psn/Psn.hpp>
+#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
+#include <OpenPhySyn/Transform/PsnTransform.hpp>
+#include <cstring>
+#include <memory>
 
-TEST_CASE("Should perform load-driven gate cloning")
+class PinSwapTransform : public psn::PsnTransform
 {
-    Psn& psn_inst = Psn::instance();
-    try
-    {
-        psn_inst.clearDatabase();
-        psn_inst.readLef(
-            "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
-        psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
-        CHECK(psn_inst.database()->getChip() != nullptr);
-        CHECK(psn_inst.hasTransform("gate_clone"));
-        // psn::Psn::instance().loadTransforms();
-        // auto result = psn_inst.runTransform(
-        //     "gate_clone", std::vector<std::string>({"1.4", "false"}));
-        CHECK(1);
-    }
-    catch (PsnException& e)
-    {
-        FAIL(e.what());
-    }
-}
+private:
+    bool isNumber(const std::string& s);
+    int  swap_count_;
+
+public:
+    PinSwapTransform();
+    int timingPinSwap(psn::Psn* psn_inst);
+    int powerPinSwap(psn::Psn* psn_inst);
+
+    int run(psn::Psn* psn_inst, std::vector<std::string> args) override;
+};
+
+DEFINE_TRANSFORM(PinSwapTransform, "pin_swap", "1.0.0",
+                 "Performs timing-driven commutative pin swapping optimization",
+                 "Usage: transform pin_swap [optimize_power]")

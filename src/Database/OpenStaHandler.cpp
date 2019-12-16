@@ -37,10 +37,13 @@
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
+#include <OpenPhySyn/Sta/PathPoint.hpp>
+#include <OpenSTA/dcalc/ArcDelayCalc.hh>
 #include <OpenSTA/dcalc/DcalcAnalysisPt.hh>
 #include <OpenSTA/dcalc/GraphDelayCalc.hh>
 #include <OpenSTA/graph/Graph.hh>
 #include <OpenSTA/liberty/FuncExpr.hh>
+#include <OpenSTA/liberty/TableModel.hh>
 #include <OpenSTA/liberty/TimingArc.hh>
 #include <OpenSTA/liberty/TimingModel.hh>
 #include <OpenSTA/liberty/TimingRole.hh>
@@ -72,6 +75,7 @@ OpenStaHandler::OpenStaHandler(sta::DatabaseSta* sta)
     dcalc_ap_      = corner_->findDcalcAnalysisPt(min_max_);
     pvt_           = dcalc_ap_->operatingConditions();
     parasitics_ap_ = corner_->findParasiticAnalysisPt(min_max_);
+    resetDelays();
 }
 
 std::vector<InstanceTerm*>
@@ -154,57 +158,88 @@ OpenStaHandler::fanoutPins(Net* net) const
     auto inst_pins = pins(net);
     return filterPins(inst_pins, PinDirection::input());
 }
-// TODO: Refactor to helper for criticalPath and bestPath
-std::vector<InstanceTerm*>
-OpenStaHandler::criticalPath() const
+std::vector<PathPoint>
+OpenStaHandler::bestPath(int path_count) const
 {
-    sta_->ensureGraph();
-    sta_->searchPreamble();
-    std::vector<InstanceTerm*> pins;
-    sta::PathEndSeq*           path_ends =
-        sta_->search()->findPathEnds( // from, thrus, to, unconstrained
-            nullptr, nullptr, nullptr, false,
-            // corner, min_max,
-            corner_, sta::MinMaxAll::min(),
-            // group_count, endpoint_count, unique_pins
-            1, 1, false, -sta::INF, sta::INF, // slack_min, slack_max,
-            true,                             // sort_by_slack
-            nullptr,                          // group_names
-            // setup, hold, recovery, removal,
-            true, true, true, true,
-            // clk_gating_setup, clk_gating_hold
-            true, true);
-
-    if (!path_ends->size())
-    {
-        delete path_ends;
-        return pins;
-    }
-
-    auto              path_end = path_ends->at(0);
-    sta::PathExpanded expanded(path_end->path(), sta_);
-    for (int i = 1; i < expanded.size(); i++)
-    {
-        pins.push_back(expanded.path(i)->vertex(sta_)->pin());
-    }
-    delete path_ends;
-    return pins;
+    return getPath(false, path_count);
 }
-std::vector<InstanceTerm*>
-OpenStaHandler::bestPath() const
+std::vector<PathPoint>
+OpenStaHandler::criticalPath(int path_count) const
+{
+    return getPath(true, path_count);
+}
+std::vector<PathPoint>
+OpenStaHandler::worstSlackPath(InstanceTerm* term) const
+{
+    sta::PathRef path;
+    sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::min(), path);
+    return expandPath(&path);
+}
+std::vector<PathPoint>
+OpenStaHandler::worstArrivalPath(InstanceTerm* term) const
+{
+    sta::PathRef path;
+    sta_->vertexWorstArrivalPath(vertex(term), sta::MinMax::max(), path);
+    return expandPath(&path);
+}
+
+std::vector<PathPoint>
+OpenStaHandler::bestSlackPath(InstanceTerm* term) const
+{
+    sta::PathRef path;
+    sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::max(), path);
+    return expandPath(&path);
+}
+std::vector<PathPoint>
+OpenStaHandler::bestArrivalPath(InstanceTerm* term) const
+{
+    sta::PathRef path;
+    sta_->vertexWorstArrivalPath(vertex(term), sta::MinMax::min(), path);
+    return expandPath(&path);
+}
+float
+OpenStaHandler::slack(InstanceTerm* term, bool is_rise, bool worst) const
+{
+    return sta_->pinSlack(
+        term, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
+        worst ? sta::MinMax::min() : sta::MinMax::max());
+}
+float
+OpenStaHandler::slack(InstanceTerm* term, bool worst) const
+{
+    return sta_->pinSlack(term,
+                          worst ? sta::MinMax::min() : sta::MinMax::max());
+}
+float
+OpenStaHandler::arrival(InstanceTerm* term, int ap_index, bool is_rise) const
+{
+
+    return sta_->vertexArrival(
+        vertex(term), is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
+        sta_->corners()->findPathAnalysisPt(ap_index));
+}
+float
+OpenStaHandler::required(InstanceTerm* term, bool worst) const
+{
+    sta_->vertexRequired(vertex(term),
+                         worst ? sta::MinMax::min() : sta::MinMax::max());
+    return 0;
+}
+std::vector<PathPoint>
+OpenStaHandler::getPath(bool get_max, int path_count) const
 {
     sta_->ensureGraph();
     sta_->searchPreamble();
-    std::vector<InstanceTerm*> pins;
-    sta::PathEndSeq*           path_ends =
+
+    sta::PathEndSeq* path_ends =
         sta_->search()->findPathEnds( // from, thrus, to, unconstrained
             nullptr, nullptr, nullptr, false,
             // corner, min_max,
-            corner_, sta::MinMaxAll::max(),
+            corner_, get_max ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
             // group_count, endpoint_count, unique_pins
-            1, 1, false, -sta::INF, sta::INF, // slack_min, slack_max,
-            true,                             // sort_by_slack
-            nullptr,                          // group_names
+            1, path_count, false, -sta::INF, sta::INF, // slack_min, slack_max,
+            true,                                      // sort_by_slack
+            nullptr,                                   // group_names
             // setup, hold, recovery, removal,
             true, true, true, true,
             // clk_gating_setup, clk_gating_hold
@@ -213,17 +248,36 @@ OpenStaHandler::bestPath() const
     if (!path_ends->size())
     {
         delete path_ends;
-        return pins;
+        return std::vector<PathPoint>();
     }
-
-    auto              path_end = path_ends->at(0);
-    sta::PathExpanded expanded(path_end->path(), sta_);
-    for (int i = 1; i < expanded.size(); i++)
-    {
-        pins.push_back(expanded.path(i)->vertex(sta_)->pin());
-    }
+    auto result = expandPath(path_ends->at(0));
     delete path_ends;
-    return pins;
+    return result;
+}
+std::vector<PathPoint>
+OpenStaHandler::expandPath(sta::PathEnd* path_end) const
+{
+    return expandPath(path_end->path());
+}
+
+std::vector<PathPoint>
+OpenStaHandler::expandPath(sta::Path* path) const
+{
+    std::vector<PathPoint> points;
+    sta::PathExpanded      expanded(path, sta_);
+    for (size_t i = 1; i < expanded.size(); i++)
+    {
+        auto ref           = expanded.path(i);
+        auto pin           = ref->vertex(sta_)->pin();
+        auto is_rising     = ref->transition(sta_) == sta::RiseFall::rise();
+        auto arrival       = ref->arrival(sta_);
+        auto required      = ref->required(sta_);
+        auto path_ap_index = ref->pathAnalysisPtIndex(sta_);
+        auto slack         = ref->slack(sta_);
+        points.push_back(
+            PathPoint(pin, is_rising, arrival, required, slack, path_ap_index));
+    }
+    return points;
 }
 
 bool
@@ -325,6 +379,11 @@ OpenStaHandler::levelDriverPins() const
     return terms;
 }
 
+InstanceTerm*
+OpenStaHandler::faninPin(InstanceTerm* term) const
+{
+    return faninPin(net(term));
+}
 InstanceTerm*
 OpenStaHandler::faninPin(Net* net) const
 {
@@ -437,9 +496,7 @@ OpenStaHandler::libraryPin(InstanceTerm* term) const
 bool
 OpenStaHandler::isClocked(InstanceTerm* term) const
 {
-    sta::Vertex *vertex, *bidirect_drvr_vertex;
-    sta_->graph()->pinVertices(term, vertex, bidirect_drvr_vertex);
-    return sta_->search()->isClock(vertex);
+    return sta_->search()->isClock(vertex(term));
 }
 bool
 OpenStaHandler::isPrimary(Net* net) const
@@ -558,11 +615,133 @@ OpenStaHandler::pinCapacitance(LibraryTerm* term) const
     return std::max(cap1, cap2);
 }
 
+float
+OpenStaHandler::pinAverageRise(LibraryTerm* from, LibraryTerm* to) const
+{
+    return pinTableAverage(from, to, true, true);
+}
+float
+OpenStaHandler::pinAverageFall(LibraryTerm* from, LibraryTerm* to) const
+{
+    return pinTableAverage(from, to, true, false);
+}
+float
+OpenStaHandler::pinAverageRiseTransition(LibraryTerm* from,
+                                         LibraryTerm* to) const
+{
+    return pinTableAverage(from, to, false, true);
+}
+float
+OpenStaHandler::pinAverageFallTransition(LibraryTerm* from,
+                                         LibraryTerm* to) const
+{
+    return pinTableAverage(from, to, false, false);
+}
+float
+OpenStaHandler::pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,
+                               float cap, bool is_delay, bool is_rise) const
+{
+    auto                  lib_cell        = from->libertyCell();
+    sta::TimingArcSetSeq* timing_arc_sets = lib_cell->timingArcSets(from, to);
+    if (!timing_arc_sets)
+    {
+        return sta::INF;
+    }
+    for (auto& arc_set : *timing_arc_sets)
+    {
+        sta::TimingArcSetArcIterator itr(arc_set);
+        while (itr.hasNext())
+        {
+            sta::TimingArc* arc = itr.next();
+            if ((is_rise &&
+                 arc->toTrans()->asRiseFall() != sta::RiseFall::rise()) ||
+                (!is_rise &&
+                 arc->toTrans()->asRiseFall() != sta::RiseFall::fall()))
+            {
+                continue;
+            }
+            sta::GateTableModel* model =
+                dynamic_cast<sta::GateTableModel*>(arc->model());
+            auto delay_slew_model =
+                is_delay ? model->delayModel() : model->slewModel();
+            if (model)
+            {
+                return delay_slew_model->findValue(
+                    lib_cell->libertyLibrary(), lib_cell, pvt_, slew, cap, 0);
+            }
+        }
+    }
+
+    return sta::INF;
+}
+float
+OpenStaHandler::pinTableAverage(LibraryTerm* from, LibraryTerm* to,
+                                bool is_delay, bool is_rise) const
+{
+    auto                  lib_cell        = from->libertyCell();
+    sta::TimingArcSetSeq* timing_arc_sets = lib_cell->timingArcSets(from, to);
+    if (!timing_arc_sets)
+    {
+        return sta::INF;
+    }
+    float sum = 0;
+    int   count;
+    for (auto& arc_set : *timing_arc_sets)
+    {
+        sta::TimingArcSetArcIterator itr(arc_set);
+        while (itr.hasNext())
+        {
+            sta::TimingArc* arc = itr.next();
+            if ((is_rise &&
+                 arc->toTrans()->asRiseFall() != sta::RiseFall::rise()) ||
+                (!is_rise &&
+                 arc->toTrans()->asRiseFall() != sta::RiseFall::fall()))
+            {
+                continue;
+            }
+            sta::GateTableModel* model =
+                dynamic_cast<sta::GateTableModel*>(arc->model());
+            auto delay_slew_model =
+                is_delay ? model->delayModel() : model->slewModel();
+            if (model)
+            {
+                auto axis1 = delay_slew_model->axis1();
+                auto axis2 = delay_slew_model->axis2();
+                for (size_t i = 0; i < axis1->size(); i++)
+                {
+                    for (size_t j = 0; j < axis2->size(); j++)
+                    {
+                        sum += delay_slew_model->findValue(
+                            lib_cell->libertyLibrary(), lib_cell, pvt_,
+                            axis1->axisValue(i), axis2->axisValue(j), 0);
+                        count++;
+                    }
+                }
+            }
+        }
+    }
+    if (sum == 0)
+    {
+        return sta::INF;
+    }
+    return sum / count;
+}
+float
+OpenStaHandler::loadCapacitance(InstanceTerm* term) const
+{
+    return network()->graphDelayCalc()->loadCap(term, dcalc_ap_);
+}
 Instance*
 OpenStaHandler::instance(const char* name) const
 {
     return network()->findInstance(name);
 }
+BlockTerm*
+OpenStaHandler::port(const char* name) const
+{
+    return network()->findPin(network()->topInstance(), name);
+}
+
 Instance*
 OpenStaHandler::instance(InstanceTerm* term) const
 {
@@ -685,10 +864,50 @@ OpenStaHandler::disconnect(InstanceTerm* term) const
     network()->disconnectPin(term);
 }
 
+void
+OpenStaHandler::swapPins(InstanceTerm* first, InstanceTerm* second)
+{
+    auto first_net  = net(first);
+    auto second_net = net(second);
+    disconnect(first);
+    disconnect(second);
+    connect(first_net, second);
+    connect(second_net, first);
+    resetDelays();
+}
 Instance*
 OpenStaHandler::createInstance(const char* inst_name, LibraryCell* cell)
 {
     return network()->makeInstance(cell, inst_name, network()->topInstance());
+}
+// namespace psn
+void
+OpenStaHandler::createClock(const char*             clock_name,
+                            std::vector<BlockTerm*> ports, float period)
+{
+    sta::PinSet* pin_set = new sta::PinSet;
+    for (auto& p : ports)
+    {
+        pin_set->insert(p);
+    }
+
+    sta::FloatSeq* waveform = new sta::FloatSeq;
+    waveform->push_back(0);
+    waveform->push_back(period / 2.0f);
+    const char* comment = "";
+    sta_->makeClock(clock_name, pin_set, false, period, waveform,
+                    const_cast<char*>(comment));
+}
+void
+OpenStaHandler::createClock(const char*              clock_name,
+                            std::vector<std::string> port_names, float period)
+{
+    std::vector<BlockTerm*> ports;
+    for (auto& p : port_names)
+    {
+        ports.push_back(port(p.c_str()));
+    }
+    createClock(clock_name, ports, period);
 }
 
 Net*
@@ -795,8 +1014,9 @@ OpenStaHandler::~OpenStaHandler()
 {
 }
 void
-OpenStaHandler::clear() const
+OpenStaHandler::clear()
 {
+    sta_->clear();
     db_->clear();
 }
 sta::DatabaseStaNetwork*
@@ -904,10 +1124,15 @@ OpenStaHandler::isTriState(LibraryTerm* term) const
 bool
 OpenStaHandler::hasMaxCapViolation(InstanceTerm* term) const
 {
+    float load_cap = loadCapacitance(term);
+    return hasMaxCapViolation(term, load_cap);
+}
+bool
+OpenStaHandler::hasMaxCapViolation(InstanceTerm* term, float load_cap) const
+{
     LibraryTerm* port = network()->libertyPort(term);
     if (port)
     {
-        float load_cap = network()->graphDelayCalc()->loadCap(term, dcalc_ap_);
         float cap_limit;
         bool  exists;
         port->capacitanceLimit(sta::MinMax::max(), cap_limit, exists);
@@ -1074,6 +1299,60 @@ OpenStaHandler::targetLoad(LibraryCell* cell)
     return 0.0;
 }
 
+float
+OpenStaHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
+                          LibraryTerm* from, float* drvr_slew, int rise_fall)
+{
+    sta::ArcDelay                        max      = -sta::INF;
+    auto                                 lib_cell = libraryCell(inst);
+    sta::LibertyCellTimingArcSetIterator itr(lib_cell);
+    while (itr.hasNext())
+    {
+        sta::TimingArcSet* arc_set = itr.next();
+        if (arc_set->to() == libraryPin(to))
+        {
+            sta::TimingArcSetArcIterator arc_it(arc_set);
+            while (arc_it.hasNext())
+            {
+                sta::TimingArc* arc = arc_it.next();
+                if (from && arc->from() != from)
+                {
+                    continue;
+                }
+                if (rise_fall != -1)
+                {
+                    if (rise_fall)
+                    { //  1 is rising edge
+                        if (arc->toTrans()->asRiseFall() !=
+                            sta::RiseFall::rise())
+                        {
+                            continue;
+                        }
+                    }
+                    else
+                    { // 0 is falling edge
+
+                        if (arc->toTrans()->asRiseFall() !=
+                            sta::RiseFall::fall())
+                        {
+                            continue;
+                        }
+                    }
+                }
+
+                float         load_cap = loadCapacitance(to);
+                sta::ArcDelay gate_delay;
+                sta::Slew     tmp_slew;
+                sta::Slew*    slew = drvr_slew ? drvr_slew : &tmp_slew;
+                sta_->arcDelayCalc()->gateDelay(lib_cell, arc, in_slew,
+                                                load_cap, nullptr, 0.0, pvt_,
+                                                dcalc_ap_, gate_delay, *slew);
+                max = std::max(max, gate_delay);
+            }
+        }
+    }
+    return max;
+}
 void
 OpenStaHandler::findTargetLoads(Liberty* library, sta::Slew slews[])
 {
