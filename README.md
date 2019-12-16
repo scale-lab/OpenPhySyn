@@ -108,7 +108,7 @@ Available options are:
 - `[-no_gate_clone]`: Disable gate-cloning.
 - `[-no_pin_swap]`: Disable pin-swap.
 - `[-clone_max_cap_factor <factor>]`: Set gate-cloning capacitance load ratio, defaults to *1.5*.
-- `[-clone_non_largest_cells]`: Allow cloning of cells that are not the larges of their footprint, not recommended.
+- `[-clone_non_largest_cells]`: Allow cloning of cells that are not the largest of their cell-footprint, not recommended.
 
 ## Dependencies
 
