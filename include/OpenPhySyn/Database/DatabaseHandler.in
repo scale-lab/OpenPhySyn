@@ -60,6 +60,7 @@ virtual bool                       isPlaced(Instance* inst) const;
 virtual bool                       isDriver(InstanceTerm* term) const;
 virtual Instance*                  instance(InstanceTerm* term) const;
 virtual Instance*                  instance(const char* name) const;
+virtual BlockTerm*                 port(const char* name) const;
 virtual float                      pinCapacitance(InstanceTerm* term) const;
 virtual float                      pinCapacitance(LibraryTerm* term) const;
 virtual float pinAverageRise(LibraryTerm* from, LibraryTerm* to) const;
@@ -100,8 +101,12 @@ virtual bool                      isTriState(LibraryTerm* term) const;
 virtual bool      hasMaxCapViolation(InstanceTerm* term, float load_cap) const;
 virtual bool      hasMaxCapViolation(InstanceTerm* term) const;
 virtual Instance* createInstance(const char* inst_name, LibraryCell* cell);
-virtual Net*      createNet(const char* net_name);
-virtual void      connect(Net* net, InstanceTerm* term) const;
+virtual void createClock(const char* clock_name, std::vector<BlockTerm*> ports,
+                         float period);
+virtual void createClock(const char* clock_name, std::vector<std::string> ports,
+                         float period);
+virtual Net* createNet(const char* net_name);
+virtual void connect(Net* net, InstanceTerm* term) const;
 virtual InstanceTerm* connect(Net* net, Instance* inst,
                               LibraryTerm* port) const;
 virtual void          disconnect(InstanceTerm* term) const;

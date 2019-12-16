@@ -602,6 +602,12 @@ OpenDBHandler::instance(const char* name) const
     }
     return block->findInst(name);
 }
+BlockTerm*
+OpenDBHandler::port(const char* name) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, port)
+    return nullptr;
+}
 Instance*
 OpenDBHandler::instance(InstanceTerm* term) const
 {
@@ -697,6 +703,18 @@ Instance*
 OpenDBHandler::createInstance(const char* inst_name, LibraryCell* cell)
 {
     return Instance::create(top(), cell, inst_name);
+}
+void
+OpenDBHandler::createClock(const char*             clock_name,
+                           std::vector<BlockTerm*> ports, float period)
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, createClock);
+}
+void
+OpenDBHandler::createClock(const char*              clock_name,
+                           std::vector<std::string> ports, float period)
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, createClock);
 }
 
 Net*

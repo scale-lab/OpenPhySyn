@@ -617,8 +617,7 @@ float
 OpenStaHandler::pinAverageRise(LibraryTerm* from, LibraryTerm* to) const
 {
     return pinTableAverage(from, to, true, true);
-
-} // namespace psn
+}
 float
 OpenStaHandler::pinAverageFall(LibraryTerm* from, LibraryTerm* to) const
 {
@@ -735,6 +734,12 @@ OpenStaHandler::instance(const char* name) const
 {
     return network()->findInstance(name);
 }
+BlockTerm*
+OpenStaHandler::port(const char* name) const
+{
+    return network()->findPin(network()->topInstance(), name);
+}
+
 Instance*
 OpenStaHandler::instance(InstanceTerm* term) const
 {
@@ -873,6 +878,33 @@ OpenStaHandler::createInstance(const char* inst_name, LibraryCell* cell)
 {
     return network()->makeInstance(cell, inst_name, network()->topInstance());
 }
+// namespace psn
+void
+OpenStaHandler::createClock(const char*             clock_name,
+                            std::vector<BlockTerm*> ports, float period)
+{
+    sta::PinSet* pin_set = new sta::PinSet;
+    for (auto& p : ports)
+    {
+        pin_set->insert(p);
+    }
+
+    sta::FloatSeq* waveform = new sta::FloatSeq;
+    waveform->push_back(0);
+    waveform->push_back(period / 2.0f);
+    sta_->makeClock(clock_name, pin_set, false, period, waveform, "");
+}
+void
+OpenStaHandler::createClock(const char*              clock_name,
+                            std::vector<std::string> port_names, float period)
+{
+    std::vector<BlockTerm*> ports;
+    for (auto& p : port_names)
+    {
+        ports.push_back(port(p.c_str()));
+    }
+    createClock(clock_name, ports, period);
+}
 
 Net*
 OpenStaHandler::createNet(const char* net_name)
@@ -981,6 +1013,7 @@ void
 OpenStaHandler::clear() const
 {
     db_->clear();
+    sta_->clear();
 }
 sta::DatabaseStaNetwork*
 OpenStaHandler::network() const

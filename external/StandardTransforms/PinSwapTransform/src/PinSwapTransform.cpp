@@ -53,6 +53,7 @@ PinSwapTransform::PinSwapTransform() : swap_count_(0)
 int
 PinSwapTransform::powerPinSwap(psn::Psn* psn_inst)
 {
+    PSN_UNUSED(psn_inst);
     PsnLogger::instance().error(
         "Pin-Swapping for power optimization is not supported yet.");
     return swap_count_;
@@ -72,7 +73,6 @@ PinSwapTransform::timingPinSwap(psn::Psn* psn_inst)
         auto pin      = std::get<0>(point);
         auto is_rise  = std::get<1>(point);
         auto inst     = handler.instance(pin);
-        auto lib_cell = handler.libraryCell(inst);
         auto ap_index = std::get<4>(point);
 
         if (!handler.isInput(pin))
