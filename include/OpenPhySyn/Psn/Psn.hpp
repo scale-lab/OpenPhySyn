@@ -69,8 +69,10 @@ public:
     virtual int runTransform(std::string              transform_name,
                              std::vector<std::string> args);
 
+    Tcl_Interp* interpreter() const;
     int  setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace = true,
                           bool print_psn_version = true, bool setup_sta = true);
+    int  evaluateTclCommands(const char* commands) const;
     int  setupInterpreterReadline();
     void setProgramOptions(int argc, char* argv[]);
     void processStartupProgramOptions();

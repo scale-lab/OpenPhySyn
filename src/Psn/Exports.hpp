@@ -37,18 +37,20 @@
 
 namespace psn
 {
-void version();
-void print_version();
-void help();
-void print_usage();
-void print_transforms();
+void  version();
+void  print_version();
+void  help();
+void  print_usage();
+void  print_transforms();
+float design_area();
 #ifndef OPENROAD_BUILD
-int import_def(const char* def_path);
-int import_lef(const char* lef_path, int ignore_routing_layers = true);
-int import_lib(const char* lib_path); // Alias for import_liberty
-int import_liberty(const char* lib_path);
-int export_def(const char* def_path);
-int print_liberty_cells();
+int  import_def(const char* def_path);
+int  import_lef(const char* lef_path, int ignore_routing_layers = true);
+int  import_lib(const char* lib_path); // Alias for import_liberty
+int  import_liberty(const char* lib_path);
+int  export_def(const char* def_path);
+bool has_transform(const char* transform_name);
+int  print_liberty_cells();
 #endif
 int set_wire_rc(float res_per_micon, float cap_per_micron);
 int set_max_area(float area);

@@ -50,9 +50,8 @@ DefReader::read(const char* path)
     }
     fclose(fp);
     LibrarySet            lib_set = db_->getLibs();
-    LibrarySet::iterator  itr;
     std::vector<Library*> libs;
-    for (itr = lib_set.begin(); itr != lib_set.end(); ++itr)
+    for (auto itr = lib_set.begin(); itr != lib_set.end(); ++itr)
     {
         libs.push_back(*itr);
     }

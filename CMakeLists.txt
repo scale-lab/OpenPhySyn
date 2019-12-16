@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-project(OpenPhySyn VERSION 1.1.0 LANGUAGES CXX)
+project(OpenPhySyn VERSION 1.2.0 LANGUAGES CXX)
 
 
 option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add flags and defines.
@@ -8,7 +8,13 @@ option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add fl
 option(OPENPHYSYN_LTO_ENABLED "Enable link time optimization" ON)
 option(OPENPHYSYN_UNIT_TESTS_ENABLED "Include tests in the library. Setting this to OFF will remove all doctest related code.
                         Tests in tests/*.cpp will still be enabled." ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -pthread -ltcl -lz -lm -ldl -Wno-error -Wall -Wextra -Wno-unused-parameter")
+option(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED "Build OpenPhySyn Standard Transforms" ON)
+option(OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED "Build demo hello transform" ON)
+option(OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED "Build Buffer Fan-Out transform" ON)
+option(OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED "Build Gate Clone transform" ON)
+option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -pthread -ltcl -lz -lm -ldl -Wno-error")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 
@@ -28,12 +34,11 @@ add_definitions(-DOPENROAD_BUILD)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
 endif()
 
-set(SWIG_FLAGS "")
+set(SWIG_FLAGS "-w467,72,503,509")
 if (OPENROAD_BUILD)
-set(SWIG_FLAGS "-DOPENROAD_BUILD -DSWIG_DIRECTOR_STATIC")
+set(SWIG_FLAGS "-DOPENROAD_BUILD -DSWIG_DIRECTOR_STATIC ${SWIG_FLAGS}")
 endif()
 
-# message("Database handler: ${OPENPHYSYN_DATABASE_HANDLER}")
 
 set(PSN_HOME
   ${PROJECT_SOURCE_DIR}
@@ -46,8 +51,8 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RELEASE)
 endif()
 
-# Include stuff.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+include(CheckSymbolExists)
 include(ConfigSafeGuards)
 include(Colors)
 include(CTest)
@@ -65,6 +70,9 @@ find_lto(CXX)
 
 #Add TCL Package
 find_package(TCL REQUIRED)
+if (NOT DEFINED TCL_LIB)
+set(TCL_LIB ${TCL_LIBRARY})
+endif()
 
 #Add SWIG Package
 cmake_policy(SET CMP0078 NEW)
@@ -79,6 +87,7 @@ if(NOT DEFINED OPENDB_HOME)
 set(OPENDB_HOME
 ${PROJECT_SOURCE_DIR}/external/OpenDB
 )
+set(BUILD_PYTHON OFF)
 endif()
 
 # Build OpenSTA
@@ -154,6 +163,8 @@ endif()
 
 
 set(PSN_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap.cc)
+set(SWIG_SOURCE_COMPILE_FLAGS "-Wno-cast-qual -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-parameter -Wno-deprecated-copy")
+set_source_files_properties(${PSN_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
 
 set(PSN_MAIN ${PSN_HOME}/app/PsnMain.cpp)
 set(PSN_SOURCES_NO_MAIN_NO_WRAP
@@ -185,6 +196,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/PsnException/ProgramOptionsException.cpp
     ${PSN_HOME}/src/PsnException/TransformNotFoundException.cpp
     ${PSN_HOME}/src/Sta/DatabaseSta.cpp
+    ${PSN_HOME}/src/Sta/PathPoint.cpp
     ${PSN_HOME}/src/Sta/DatabaseSdcNetwork.cpp
     ${PSN_HOME}/src/Sta/DatabaseStaNetwork.cpp
 )
@@ -208,17 +220,41 @@ set(PSN_SOURCES
 )
 
 set(PSN_TESTFILES        # All .cpp files in tests/
+    ${PROJECT_SOURCE_DIR}/tests/SteinerTree.cpp
+    ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
     ${PROJECT_SOURCE_DIR}/tests/ReadLefDef.cpp
     ${PROJECT_SOURCE_DIR}/tests/WriteDef.cpp
     ${PROJECT_SOURCE_DIR}/tests/ReadLiberty.cpp
-    ${PROJECT_SOURCE_DIR}/tests/BufferFanout.cpp
-    ${PROJECT_SOURCE_DIR}/tests/SteinerTree.cpp
-    ${PROJECT_SOURCE_DIR}/tests/GateClone.cpp
-    ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
+    ${PROJECT_SOURCE_DIR}/tests/Sta.cpp
     ${PROJECT_SOURCE_DIR}/tests/TestMain.cpp
 )
+if (${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
+set(PSN_TESTFILES
+  ${PSN_TESTFILES}
+  ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
+)
+endif()
+if (${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
+set(PSN_TESTFILES
+  ${PSN_TESTFILES}
+  ${PROJECT_SOURCE_DIR}/tests/BufferFanout.cpp
+)
+endif()
+if (${OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED})
+set(PSN_TESTFILES
+  ${PSN_TESTFILES}
+  ${PROJECT_SOURCE_DIR}/tests/GateClone.cpp
+)
+endif()
+if (${OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED})
+set(PSN_TESTFILES
+  ${PSN_TESTFILES}
+  ${PROJECT_SOURCE_DIR}/tests/PinSwap.cpp
+)
+endif()
 
 if (${OPENROAD_BUILD})
+
 # temporary bad fix..
 set(OPENSTA_UTIL_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenStaUtilTclInitVar.cc)
 
@@ -291,6 +327,7 @@ ${ZLIB_LIBRARIES}
 ${TCL_LIBRARY}
 dl
 )
+
 
 CHECK_SYMBOL_EXISTS(std::filesystem::path::preferred_separator filesystem cxx17fs)
 
@@ -405,8 +442,7 @@ set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
   ${PSN_WRAP}
 )
 
-option(PSN_STANDARD_TRANSFORMS "Build OpenPhySyn Standard Transforms" ON)
-if(PSN_STANDARD_TRANSFORMS)
+if(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/external/StandardTransforms")
     include(Transforms)
 endif()

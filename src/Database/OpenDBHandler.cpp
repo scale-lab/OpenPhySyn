@@ -33,6 +33,8 @@
 
 #include <OpenPhySyn/Database/OpenDBHandler.hpp>
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
+#include <OpenPhySyn/Sta/PathPoint.hpp>
+
 #include <set>
 
 namespace psn
@@ -117,6 +119,11 @@ OpenDBHandler::levelDriverPins() const
 }
 
 InstanceTerm*
+OpenDBHandler::faninPin(InstanceTerm* term) const
+{
+    return faninPin(net(term));
+}
+InstanceTerm*
 OpenDBHandler::faninPin(Net* net) const
 {
     InstanceTermSet terms = net->getITerms();
@@ -172,17 +179,65 @@ OpenDBHandler::fanoutCount(Net* net) const
 {
     return fanoutPins(net).size();
 }
-std::vector<InstanceTerm*>
-OpenDBHandler::criticalPath() const
+std::vector<PathPoint>
+OpenDBHandler::criticalPath(int path_count) const
 {
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, criticalPath)
-    return std::vector<InstanceTerm*>();
+    return std::vector<PathPoint>();
 }
-std::vector<InstanceTerm*>
-OpenDBHandler::bestPath() const
+std::vector<PathPoint>
+OpenDBHandler::bestPath(int path_count) const
 {
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestPath)
-    return std::vector<InstanceTerm*>();
+    return std::vector<PathPoint>();
+}
+std::vector<PathPoint>
+OpenDBHandler::worstSlackPath(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, worstSlackPath)
+    return std::vector<PathPoint>();
+}
+std::vector<PathPoint>
+OpenDBHandler::worstArrivalPath(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, worstArrivalPath)
+    return std::vector<PathPoint>();
+}
+std::vector<PathPoint>
+OpenDBHandler::bestSlackPath(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestSlackPath)
+    return std::vector<PathPoint>();
+}
+std::vector<PathPoint>
+OpenDBHandler::bestArrivalPath(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestArrivalPath)
+    return std::vector<PathPoint>();
+}
+float
+OpenDBHandler::slack(InstanceTerm* term, bool is_rise, bool worst) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, slack)
+    return 0;
+}
+float
+OpenDBHandler::slack(InstanceTerm* term, bool worst) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, slack)
+    return 0;
+}
+float
+OpenDBHandler::arrival(InstanceTerm* term, int ap_index, bool is_rise) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, arrival)
+    return 0;
+}
+float
+OpenDBHandler::required(InstanceTerm* term, bool worst) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, required)
+    return 0;
 }
 
 bool
@@ -363,11 +418,49 @@ OpenDBHandler::pinCapacitance(LibraryTerm* term) const
     return 0.0;
 }
 float
+OpenDBHandler::pinAverageRise(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageRise)
+    return 0.0;
+}
+float
+OpenDBHandler::pinAverageFall(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageFall)
+    return 0.0;
+}
+float
+OpenDBHandler::pinAverageRiseTransition(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageRiseTransition)
+    return 0.0;
+}
+float
+OpenDBHandler::pinAverageFallTransition(LibraryTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageFallTransition)
+    return 0.0;
+}
+float
+OpenDBHandler::loadCapacitance(InstanceTerm* term) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, loadCapacitance)
+    return 0.0;
+}
+float
 OpenDBHandler::targetLoad(LibraryCell* cell)
 {
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, targetLoad)
     return 0.0;
 }
+float
+OpenDBHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
+                         LibraryTerm* from, int rise_fall)
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, gateDelay);
+    return 0.0;
+}
+
 float
 OpenDBHandler::maxLoad(LibraryCell* cell)
 {
@@ -489,6 +582,12 @@ OpenDBHandler::isTriState(LibraryTerm* term) const
 }
 
 bool
+OpenDBHandler::hasMaxCapViolation(InstanceTerm* term, float load_cap) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, hasMaxCapViolation)
+    return false;
+}
+bool
 OpenDBHandler::hasMaxCapViolation(InstanceTerm* term) const
 {
     HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, hasMaxCapViolation)
@@ -504,6 +603,12 @@ OpenDBHandler::instance(const char* name) const
         return nullptr;
     }
     return block->findInst(name);
+}
+BlockTerm*
+OpenDBHandler::port(const char* name) const
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, port)
+    return nullptr;
 }
 Instance*
 OpenDBHandler::instance(InstanceTerm* term) const
@@ -586,11 +691,32 @@ OpenDBHandler::disconnect(InstanceTerm* term) const
 {
     InstanceTerm::disconnect(term);
 }
-
+void
+OpenDBHandler::swapPins(InstanceTerm* first, InstanceTerm* second)
+{
+    auto first_net  = net(first);
+    auto second_net = net(second);
+    disconnect(first);
+    disconnect(second);
+    connect(first_net, second);
+    connect(second_net, first);
+}
 Instance*
 OpenDBHandler::createInstance(const char* inst_name, LibraryCell* cell)
 {
     return Instance::create(top(), cell, inst_name);
+}
+void
+OpenDBHandler::createClock(const char*             clock_name,
+                           std::vector<BlockTerm*> ports, float period)
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, createClock);
+}
+void
+OpenDBHandler::createClock(const char*              clock_name,
+                           std::vector<std::string> ports, float period)
+{
+    HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, createClock);
 }
 
 Net*
@@ -620,6 +746,22 @@ OpenDBHandler::nets() const
         nets.push_back(*itr);
     }
     return nets;
+}
+std::vector<Instance*>
+OpenDBHandler::instances() const
+{
+    std::vector<Instance*> insts;
+    Block*                 block = top();
+    if (!block)
+    {
+        return std::vector<Instance*>();
+    }
+    auto inst_set = block_->getInsts();
+    for (auto itr = inst_set.begin(); itr != inst_set.end(); itr++)
+    {
+        insts.push_back(*itr);
+    }
+    return insts;
 }
 
 std::string
@@ -721,7 +863,7 @@ OpenDBHandler::top() const
 }
 
 void
-OpenDBHandler::clear() const
+OpenDBHandler::clear()
 {
     db_->clear();
 }

@@ -55,10 +55,12 @@ ProgramOptions::ProgramOptions(int argc, char** argv)
 
     try
     {
-        cxxopts::Options options(
+        std::vector<std::string> file_positional;
+        cxxopts::Options         options(
             "OpenPhySyn", "OpenPhySyn - OpenROAD physical synthesis toolkit.");
         options.add_options()("h,help", "Display this help message and exit")(
-            "file", "Load TCL script", cxxopts::value<std::string>())(
+            "file", "Load TCL script",
+            cxxopts::value<std::vector<std::string>>(file_positional))(
             "log-file", "Write output to log file",
             cxxopts::value<std::string>())(
             "log-level", "Default log level [info, warn, error, critical]",
@@ -68,7 +70,22 @@ ProgramOptions::ProgramOptions(int argc, char** argv)
         usage_ = options.help();
         if (argc)
         {
+
+            options.parse_positional({"file"});
             auto result = options.parse(argc, argv);
+
+            if (file_positional.size())
+            {
+                if (file_positional.size() > 1)
+                {
+                    throw ProgramOptionsException(
+                        "Only one script file read is supported per "
+                        "exectution.");
+                }
+                has_file_ = true;
+                file_     = file_positional[0];
+            }
+
             if (result.count("help"))
             {
                 help_ = true;
@@ -85,11 +102,7 @@ ProgramOptions::ProgramOptions(int argc, char** argv)
             {
                 quiet_ = true;
             }
-            if (result.count("file"))
-            {
-                has_file_ = true;
-                file_     = result["file"].as<std::string>();
-            }
+
             if (result.count("log-file"))
             {
                 has_log_file_ = true;
