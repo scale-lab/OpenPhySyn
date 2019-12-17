@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef OPENROAD_BUILD
+#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
 
 // Temproary fix for OpenSTA
 #define THROW_DCL throw()
@@ -724,10 +724,10 @@ DatabaseStaNetwork::visitConnectedPins(const Net* net, PinVisitor& visitor,
 ////////////////////////////////////////////////////////////////
 
 Pin*
-DatabaseStaNetwork::pin(const Term*) const
+DatabaseStaNetwork::pin(const Term* term) const
 {
-    // No pin at the next level of hierarchy.
-    return nullptr;
+    // Only terms are for top level instance pins, which are also BTerms.
+    return reinterpret_cast<Pin*>(const_cast<Term*>(term));
 }
 
 Net*

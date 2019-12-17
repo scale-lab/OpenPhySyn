@@ -39,7 +39,6 @@ int psnTclAppInit(Tcl_Interp* interp);
 int
 main(int argc, char* argv[])
 {
-#ifndef OPENROAD_BUILD
     psn::Psn::initialize();
     try
     {
@@ -60,7 +59,6 @@ main(int argc, char* argv[])
         PSN_LOG_ERROR(e.what());
         return -1;
     }
-#endif
     Tcl_Main(1, argv, psnTclAppInit);
     return 0;
 }
@@ -72,16 +70,13 @@ psnTclAppInit(Tcl_Interp* interp)
     {
         return TCL_ERROR;
     }
-#ifndef OPENROAD_BUILD
-    psn::Psn::instance().setupInterpreter(interp);
+    if (psn::Psn::instance().setupInterpreter(interp, true, true, true) !=
+        TCL_OK)
+    {
+        PSN_LOG_ERROR("Failed to initialize Tcl interpreter.");
+        return TCL_ERROR;
+    };
     psn::Psn::instance().processStartupProgramOptions();
-#else
-    psn::Psn::initialize(nullptr, true);
-    psn::Psn::instance().setupInterpreter(interp, true, false);
-#endif
-    // psn::Psn::instance().setupInterpreterReadline(); // This should be that
-    // last
-    //                                                  // initialization step
-    //                                                  // because of the RL loop
+
     return TCL_OK;
 }

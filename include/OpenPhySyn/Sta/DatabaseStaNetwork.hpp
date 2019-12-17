@@ -17,7 +17,7 @@
 #ifndef __PSN_STA_DB_NETWORK_H__
 #define __PSN_STA_DB_NETWORK_H__
 
-#ifndef OPENROAD_BUILD
+#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
 
 #include "ConcreteNetwork.hh"
 #include "opendb/db.h"
