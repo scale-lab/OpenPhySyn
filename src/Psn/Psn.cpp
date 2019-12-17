@@ -65,12 +65,6 @@ extern void        evalTclInit(Tcl_Interp* interp, const char* inits[]);
 extern const char* tcl_inits[];
 } // namespace sta
 
-#ifdef OPENROAD_BUILD
-namespace sta
-{
-extern const char* dbsta_tcl_inits[];
-}
-#endif
 namespace psn
 {
 using sta::evalTclInit;
@@ -126,7 +120,8 @@ Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
 
 void
 Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
-                bool init_flute)
+                bool init_flute, bool import_psn_namespace,
+                bool print_psn_version, bool setup_sta_tcl)
 {
     psn_instance_ = new Psn(sta);
     if (load_transforms)
@@ -135,7 +130,8 @@ Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
     }
     if (interp != nullptr)
     {
-        psn_instance_->setupInterpreter(interp);
+        psn_instance_->setupInterpreter(interp, import_psn_namespace,
+                                        print_psn_version, setup_sta_tcl);
     }
     if (init_flute)
     {
@@ -148,7 +144,7 @@ Psn::~Psn()
 {
     delete settings_;
     delete db_handler_;
-#ifndef OPENROAD_BUILD
+#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
     delete sta_;
     if (db_ != nullptr)
     {
@@ -382,7 +378,7 @@ Psn::loadTransforms()
                 tr_name);
         }
     }
-#ifndef OPENROAD_BUILD
+#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
     PSN_LOG_INFO("Loaded {} transforms.", load_count);
 #endif
     return load_count;
@@ -456,16 +452,16 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
         return TCL_ERROR;
     }
 
-#ifndef OPENROAD_BUILD
-    sta_->setTclInterp(interp_);
     if (setup_sta)
     {
+        sta_->setTclInterp(interp_);
+#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
         if (Sta_Init(interp) == TCL_ERROR)
         {
             return TCL_ERROR;
         }
         evalTclInit(interp, tcl_inits);
-
+#endif
         const char* tcl_psn_setup =
 #include "Tcl/SetupPsnSta.tcl"
             ;
@@ -474,18 +470,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
             return TCL_ERROR;
         }
     }
-#endif // OPENROAD_BUILD
-
-    const char* tcl_define_cmds =
-#include "Tcl/DefinePSNCommands.tcl"
-        ;
-    if (evaluateTclCommands(tcl_define_cmds) != TCL_OK)
-    {
-        return TCL_ERROR;
-    }
-
-#ifndef OPENROAD_BUILD
-    if (!setup_sta)
+    else
     {
         const char* tcl_psn_setup =
 #include "Tcl/SetupPsn.tcl"
@@ -495,6 +480,15 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
             return TCL_ERROR;
         }
     }
+
+    const char* tcl_define_cmds =
+#include "Tcl/DefinePSNCommands.tcl"
+        ;
+    if (evaluateTclCommands(tcl_define_cmds) != TCL_OK)
+    {
+        return TCL_ERROR;
+    }
+
     if (import_psn_namespace)
     {
         const char* tcl_psn_import =
@@ -515,7 +509,6 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
             return TCL_ERROR;
         }
     }
-#endif // OPENROAD_BUILD
 
     return TCL_OK;
 }
@@ -568,6 +561,51 @@ Psn::printUsage(bool raw_str, bool print_transforms, bool print_commands)
     }
 }
 void
+Psn::printLicense(bool raw_str)
+{
+    std::string license = R"===<><>===(// BSD 3-Clause License
+
+// Copyright (c) 2019, SCALE Lab, Brown University
+// All rights reserved.
+
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE."
+)===<><>===";
+
+    PSN_LOG_RAW("");
+    if (raw_str)
+    {
+        PSN_LOG_RAW(license);
+    }
+    else
+    {
+        PSN_LOG_INFO(license);
+    }
+}
+void
 Psn::printCommands(bool raw_str)
 {
     if (raw_str)
@@ -586,6 +624,7 @@ Psn::printCommands(bool raw_str)
         "version                               print version\n"
         "help                                  print help\n"
         "print_usage                           print help\n"
+        "print_license                         print license information\n"
         "print_transforms                      list loaded transforms\n"
         "import_lef <file path>                load LEF file\n"
         "import_def <file path>                load DEF file\n"
@@ -602,7 +641,7 @@ Psn::printCommands(bool raw_str)
         "design\n"
         "has_transform <transform name>        Checks if a specific transform "
         "is loaded\n"
-        "design_area                           Returns total design cell area"
+        "design_area                           Returns total design cell area\n"
         "link <design name>                    Link design top module\n"
         "link_design <design name>             Link design top module\n"
         "sta <OpenSTA commands>                Run OpenSTA commands\n"
@@ -803,7 +842,7 @@ Psn::initializeDatabase()
 int
 Psn::initializeSta(Tcl_Interp* interp)
 {
-#ifndef OPENROAD_BUILD
+#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
     PSN_UNUSED(interp);
     sta::initSta();
     sta_ = new sta::DatabaseSta(db_);

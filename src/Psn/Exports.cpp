@@ -37,7 +37,7 @@
 namespace psn
 {
 
-#ifndef OPENROAD_BUILD
+#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
 int
 import_def(const char* def_path)
 {
@@ -63,11 +63,6 @@ export_def(const char* lib_path)
 {
     return Psn::instance().writeDef(lib_path);
 }
-bool
-has_transform(const char* transform_name)
-{
-    return Psn::instance().hasTransform(transform_name);
-}
 int
 print_liberty_cells()
 {
@@ -87,6 +82,11 @@ print_liberty_cells()
     return 1;
 }
 #endif
+bool
+has_transform(const char* transform_name)
+{
+    return Psn::instance().hasTransform(transform_name);
+}
 float
 design_area()
 {
@@ -141,6 +141,11 @@ void
 print_transforms()
 {
     Psn::instance().printTransforms(true);
+}
+void
+print_license()
+{
+    Psn::instance().printLicense(true);
 }
 
 void

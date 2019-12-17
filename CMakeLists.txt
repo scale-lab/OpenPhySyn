@@ -31,7 +31,6 @@ endif()
 
 if (${OPENROAD_BUILD})
 add_definitions(-DOPENROAD_BUILD)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
 endif()
 
 set(SWIG_FLAGS "-w467,72,503,509")
@@ -201,10 +200,10 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Sta/DatabaseStaNetwork.cpp
 )
 
+set(PSN_OPENROAD_LIBRARY_FILE "")
 if (${OPENROAD_BUILD})
-set(PSN_SOURCES_NO_MAIN_NO_WRAP
-    ${PSN_SOURCES_NO_MAIN_NO_WRAP}
-    ${PSN_HOME}/src/OpenROAD/MakeOpenPhySyn.cpp
+set(PSN_OPENROAD_LIBRARY_FILE
+  ${PSN_HOME}/src/OpenROAD/MakeOpenPhySyn.cpp
 )
 endif()
 
@@ -255,26 +254,18 @@ endif()
 
 if (${OPENROAD_BUILD})
 
-# temporary bad fix..
-set(OPENSTA_UTIL_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenStaUtilTclInitVar.cc)
-
-add_custom_command(OUTPUT ${OPENSTA_UTIL_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${OPENSTA_UTIL_TCL_INIT} dbsta_tcl_inits ${OPENSTA_HOME}/tcl/Util.tcl
-  DEPENDS ${OPENSTA_HOME}/tcl/Util.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
-)
-
 set(PSN_SOURCES
     ${PSN_SOURCES}
-    ${OPENSTA_UTIL_TCL_INIT}
+    ${DBSTA_TCL_INIT}
 )
 
 set(PSN_TESTFILES
     ${PSN_TESTFILES}
-    ${OPENSTA_UTIL_TCL_INIT}
+    ${DBSTA_TCL_INIT}
 )
 add_custom_target(
   opensta-tcl-init
-  DEPENDS ${OPENSTA_UTIL_TCL_INIT}
+  DEPENDS ${DBSTA_TCL_INIT}
 )
 endif()
 
@@ -322,7 +313,6 @@ set(PRIVATE_INCLUDE_DIRS
 endif()
 
 set(PUBLIC_LIBRARIES
-opendb
 ${ZLIB_LIBRARIES}
 ${TCL_LIBRARY}
 dl
@@ -373,6 +363,7 @@ set(PRIVATE_INCLUDE_DIRS
 )
 
 set(PUBLIC_EXEC_LIBRARIES
+opendb
 dbSta
 OpenSTA
 flute
@@ -386,6 +377,7 @@ set(PRIVATE_INCLUDE_DIRS
 )
 
 set(PUBLIC_LIBRARIES
+opendb
 OpenSTA
 flute
 ${PUBLIC_LIBRARIES}
@@ -395,7 +387,7 @@ install(FILES ../etc/POST9.dat ../etc/POWV9.dat DESTINATION etc)
 
 endif()
 # Compile all sources into a library.
-add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_WRAP})
+add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_WRAP} ${PSN_OPENROAD_LIBRARY_FILE})
 add_executable(Psn ${PSN_SOURCES})  # Name of exec. and location of file.
 
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
@@ -420,7 +412,10 @@ set_target_properties(
         CXX_STANDARD_REQUIRED YES 
         CXX_EXTENSIONS NO
 )
+else()
+target_compile_definitions(${LIBRARY_NAME}  PUBLIC -DOPENROAD_OPENPHYSYN_LIBRARY_BUILD)
 endif()
+
 set_property(TARGET ${LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET Psn PROPERTY POSITION_INDEPENDENT_CODE ON)
 

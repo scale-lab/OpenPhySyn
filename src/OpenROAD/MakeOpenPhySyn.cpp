@@ -60,7 +60,8 @@ deletePsn(psn::Psn* psn)
 void
 initPsn(OpenRoad* openroad)
 {
-    psn::Psn::initialize(openroad->getSta(), true, openroad->tclInterp(), false);
+    psn::Psn::initialize(openroad->getSta(), true, openroad->tclInterp(), false,
+                         false, false, false);
 }
 
 } // namespace ord

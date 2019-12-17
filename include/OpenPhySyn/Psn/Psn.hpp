@@ -86,6 +86,7 @@ public:
     virtual void printVersion(bool raw_str = false);
     virtual void printUsage(bool raw_str = false, bool print_transforms = true,
                             bool print_commands = true);
+    virtual void printLicense(bool raw_str = false);
     virtual void printTransforms(bool raw_str = false);
     virtual void printCommands(bool raw_str = false);
 
@@ -102,13 +103,17 @@ public:
                            Tcl_Interp* interp     = nullptr,
                            bool        init_flute = true);
     static void initialize(sta::DatabaseSta* sta, bool load_transforms = true,
-                           Tcl_Interp* interp     = nullptr,
-                           bool        init_flute = true);
+                           Tcl_Interp* interp = nullptr, bool init_flute = true,
+                           bool import_psn_namespace = true,
+                           bool print_psn_version    = true,
+                           bool setup_sta_tcl        = true);
 #else
     static void initialize(sta::DatabaseSta* sta             = nullptr,
                            bool              load_transforms = true,
-                           Tcl_Interp*       interp          = nullptr,
-                           bool              init_flute      = true);
+                           Tcl_Interp* interp = nullptr, bool init_flute = true,
+                           bool import_psn_namespace = false,
+                           bool print_psn_version    = false,
+                           bool setup_sta_tcl        = false);
 #endif
     virtual ~Psn();
 

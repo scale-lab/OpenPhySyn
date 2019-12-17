@@ -39,8 +39,13 @@ namespace eval psn {
         if {![has_transform pin_swap]} {
             set do_pin_swap false
         }
+        set num_swapped 0
+        set num_cloned 0
         if {$do_pin_swap} {
-            transform pin_swap
+            set num_swapped [transform pin_swap]
+            if {$num_swapped < 0} {
+                return $num_swapped
+            }
         }
         if {$do_gate_clone} {
             set clone_max_cap_factor 1.5
@@ -53,8 +58,12 @@ namespace eval psn {
                 set clone_largest_cells_only false
             }
 
-            transform gate_clone $clone_max_cap_factor $clone_largest_cells_only
+            set num_cloned [transform gate_clone $clone_max_cap_factor $clone_largest_cells_only]
+            if {$num_cloned < 0} {
+                return $num_cloned
+            }
         }
+        return 1
     }
 
 
