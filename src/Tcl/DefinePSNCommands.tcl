@@ -68,7 +68,7 @@ namespace eval psn {
     
     define_cmd_args "optimize_power" {\
         [-no_pin_swap] \
-        [-pin_swap_paths path_count]
+        [-pin_swap_paths path_count] \
     }
     proc optimize_power { args } {
         sta::parse_key_args "optimize_power" args \
