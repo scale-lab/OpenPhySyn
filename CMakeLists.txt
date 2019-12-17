@@ -417,7 +417,7 @@ set_target_properties(
         CXX_EXTENSIONS NO
 )
 else()
-target_compile_definitions(${LIBRARY_NAME}  PUBLIC -DOPENROAD_OPENPHYSYN_LIBRARY_BUILD)
+target_compile_definitions(${LIBRARY_NAME} PRIVATE -DOPENROAD_OPENPHYSYN_LIBRARY_BUILD)
 endif()
 
 set_property(TARGET ${LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)

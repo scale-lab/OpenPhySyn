@@ -450,7 +450,6 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
     {
         return TCL_ERROR;
     }
-
     if (setup_sta)
     {
 #ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD

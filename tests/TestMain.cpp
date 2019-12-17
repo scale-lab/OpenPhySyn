@@ -39,13 +39,17 @@ int
 main(int argc, char** argv)
 {
     doctest::Context context;
-
     psn::Psn::initialize();
 
     Tcl_Interp* interp = Tcl_CreateInterp();
-    Tcl_Init(interp);
 
-    psn::Psn::instance().setupInterpreter(interp);
+    Tcl_Init(interp);
+    if (psn::Psn::instance().setupInterpreter(interp, true, true, true) !=
+        TCL_OK)
+    {
+        printf("Failed to initialize Tcl interpreter");
+        return -1;
+    }
     psn::Psn::instance().loadTransforms();
 
     context.applyCommandLine(argc, argv);
