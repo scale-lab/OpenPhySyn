@@ -10,7 +10,7 @@ set_source_files_properties(${PSN_TEST_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOU
 add_executable(${TEST_MAIN} ${PSN_TESTFILES} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_TEST_WRAP})
 
 add_custom_command(OUTPUT ${PSN_TEST_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} ${SWIG_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PSN_HOME}/src -o ${PSN_TEST_WRAP} ${PSN_SWIG_FILES}
+  COMMAND ${SWIG_EXECUTABLE} ${SWIG_FLAGS} ${SWIG_PSN_LIB_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PSN_HOME}/src -o ${PSN_TEST_WRAP} ${PSN_SWIG_FILES}
   WORKING_DIRECTORY ${PSN_HOME}
   DEPENDS ${PSN_SWIG_FILES}
 )
