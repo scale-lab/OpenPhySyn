@@ -28,30 +28,34 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#include "Psn/Psn.hpp"
+#include "PsnException/PsnException.hpp"
+#include "Utils/FileUtils.hpp"
+#include "doctest.h"
 
-#include <OpenPhySyn/Database/DatabaseHandler.hpp>
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Psn/Psn.hpp>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
-#include <OpenPhySyn/Transform/PsnTransform.hpp>
-#include <cstring>
-#include <memory>
+using namespace psn;
 
-class PinSwapTransform : public psn::PsnTransform
+TEST_CASE("Should perform power-driven pin swapping")
 {
-private:
-    bool isNumber(const std::string& s);
-    int  swap_count_;
-
-public:
-    PinSwapTransform();
-    int timingPinSwap(psn::Psn* psn_inst);
-    int powerPinSwap(psn::Psn* psn_inst, int path_count);
-
-    int run(psn::Psn* psn_inst, std::vector<std::string> args) override;
-};
-
-DEFINE_TRANSFORM(
-    PinSwapTransform, "pin_swap", "1.0.0",
-    "Performs timing-driven/power-driven commutative pin swapping optimization",
-    "Usage: transform pin_swap [optimize_power] [max_num_optimize_power_paths]")
+    Psn& psn_inst = Psn::instance();
+    try
+    {
+        psn_inst.clearDatabase();
+        psn_inst.readLib("../tests/data/libraries/Nangate45/"
+                         "NangateOpenCellLibrary_typical.lib");
+        psn_inst.readLef(
+            "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
+        psn_inst.readDef("../tests/data/designs/gcd/gcd.def");
+        CHECK(psn_inst.database()->getChip() != nullptr);
+        CHECK(psn_inst.hasTransform("pin_swap"));
+        auto& handler = *(psn_inst.handler());
+        handler.createClock("core_clock", {"clk"}, 10);
+        auto result = psn_inst.runTransform(
+            "pin_swap", std::vector<std::string>({"true", "50"}));
+        CHECK(result == 10);
+    }
+    catch (PsnException& e)
+    {
+        FAIL(e.what());
+    }
+}

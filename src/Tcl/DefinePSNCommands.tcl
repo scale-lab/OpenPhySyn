@@ -65,6 +65,40 @@ namespace eval psn {
         }
         return 1
     }
+    
+    define_cmd_args "optimize_power" {\
+        [-no_pin_swap] \
+        [-pin_swap_paths path_count]
+    }
+    proc optimize_power { args } {
+        sta::parse_key_args "optimize_power" args \
+            keys {-pin_swap_paths} \
+            flags {-no_pin_swap}
+
+        set do_pin_swap true
+
+        if {[info exists flags(-no_pin_swap)]} {
+            set do_pin_swap false
+        }
+        if {![has_transform pin_swap]} {
+            set do_pin_swap false
+        }
+
+        set num_swapped 0
+
+        if {$do_pin_swap} {
+            set pin_swap_paths 50
+            if {[info exists keys(-pin_swap_paths)]} {
+                set pin_swap_paths $keys(-pin_swap_paths)
+            }
+            set num_swapped [transform pin_swap true $pin_swap_paths]
+
+            if {$num_swapped < 0} {
+                return $num_swapped
+            }
+        }
+        return 1
+    }
 
 
     define_cmd_args "optimize_fanout" { \

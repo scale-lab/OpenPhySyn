@@ -99,9 +99,12 @@ private:
     float     pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,
                              float cap, bool is_delay = true,
                              bool is_rise = true) const;
-    std::vector<PathPoint> getPath(bool get_max, int path_count = 1) const;
-    std::vector<PathPoint> expandPath(sta::PathEnd* path_end) const;
-    std::vector<PathPoint> expandPath(sta::Path* path) const;
+    std::vector<std::vector<PathPoint>> getPaths(bool get_max,
+                                                 int  path_count = 1) const;
+    std::vector<PathPoint>              expandPath(sta::PathEnd* path_end,
+                                                   bool          enumed = false) const;
+    std::vector<PathPoint>              expandPath(sta::Path* path,
+                                                   bool       enumed = false) const;
 };
 
 } // namespace psn

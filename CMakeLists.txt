@@ -253,6 +253,7 @@ if (${OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED})
 set(PSN_TESTFILES
   ${PSN_TESTFILES}
   ${PROJECT_SOURCE_DIR}/tests/PinSwap.cpp
+  ${PROJECT_SOURCE_DIR}/tests/PinSwapPower.cpp
 )
 endif()
 
