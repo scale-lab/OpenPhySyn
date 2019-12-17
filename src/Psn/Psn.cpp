@@ -446,7 +446,6 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
         PSN_LOG_WARN("Multiple interpreter initialization!");
     }
     interp_ = interp;
-
     if (Psn_Init(interp) == TCL_ERROR)
     {
         return TCL_ERROR;
@@ -454,8 +453,8 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
 
     if (setup_sta)
     {
-        sta_->setTclInterp(interp_);
 #ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
+        sta_->setTclInterp(interp_);
         if (Sta_Init(interp) == TCL_ERROR)
         {
             return TCL_ERROR;
@@ -472,6 +471,7 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
     }
     else
     {
+
         const char* tcl_psn_setup =
 #include "Tcl/SetupPsn.tcl"
             ;

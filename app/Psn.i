@@ -96,7 +96,7 @@ DatabaseHandler *handler();
 // wrap_unique_ptr(SteinerTreePtr, psn::SteinerTree);
 // %include "include/OpenPhySyn/SteinerTree/SteinerTree.hpp"
 
-#ifdef OPENROAD_BUILD
+#ifdef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
 %ignore     import_def;
 %ignore     import_lef;
 %ignore     import_lib;

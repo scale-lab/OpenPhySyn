@@ -34,8 +34,10 @@ add_definitions(-DOPENROAD_BUILD)
 endif()
 
 set(SWIG_FLAGS "-w467,72,503,509")
+set(SWIG_PSN_LIB_FLAGS "")
 if (OPENROAD_BUILD)
 set(SWIG_FLAGS "-DOPENROAD_BUILD -DSWIG_DIRECTOR_STATIC ${SWIG_FLAGS}")
+set(SWIG_PSN_LIB_FLAGS "-DOPENROAD_OPENPHYSYN_LIBRARY_BUILD")
 endif()
 
 
@@ -162,8 +164,10 @@ endif()
 
 
 set(PSN_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap.cc)
+set(PSN_LIBRARY_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_lib_wrap.cc)
 set(SWIG_SOURCE_COMPILE_FLAGS "-Wno-cast-qual -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-parameter -Wno-deprecated-copy")
 set_source_files_properties(${PSN_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
+set_source_files_properties(${PSN_LIBRARY_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
 
 set(PSN_MAIN ${PSN_HOME}/app/PsnMain.cpp)
 set(PSN_SOURCES_NO_MAIN_NO_WRAP
@@ -387,7 +391,7 @@ install(FILES ../etc/POST9.dat ../etc/POWV9.dat DESTINATION etc)
 
 endif()
 # Compile all sources into a library.
-add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_WRAP} ${PSN_OPENROAD_LIBRARY_FILE})
+add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_LIBRARY_WRAP} ${PSN_OPENROAD_LIBRARY_FILE})
 add_executable(Psn ${PSN_SOURCES})  # Name of exec. and location of file.
 
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
@@ -422,6 +426,11 @@ set_property(TARGET Psn PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_custom_command(OUTPUT ${PSN_WRAP}
   COMMAND ${SWIG_EXECUTABLE} ${SWIG_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_WRAP} ${PSN_SWIG_FILES}
+  WORKING_DIRECTORY ${PSN_HOME}
+  DEPENDS ${PSN_SWIG_FILES}
+)
+add_custom_command(OUTPUT ${PSN_LIBRARY_WRAP}
+  COMMAND ${SWIG_EXECUTABLE} ${SWIG_PSN_LIB_FLAGS} ${SWIG_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_LIBRARY_WRAP} ${PSN_SWIG_FILES}
   WORKING_DIRECTORY ${PSN_HOME}
   DEPENDS ${PSN_SWIG_FILES}
 )
