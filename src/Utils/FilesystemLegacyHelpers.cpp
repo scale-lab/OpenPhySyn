@@ -47,13 +47,13 @@ namespace psn
 namespace filesystem
 {
 bool
-create_directory(const char* raw_path)
+create_directory(const std::string& raw_path)
 {
     int rc;
 #ifdef _WIN32
-    rc = ::_mkdir(raw_path);
+    rc = ::_mkdir(raw_path.c_str());
 #else
-    rc        = ::mkdir(raw_path, 0755);
+    rc        = ::mkdir(raw_path.c_str(), 0755);
 #endif
     if (rc == 0)
     {
@@ -63,14 +63,9 @@ create_directory(const char* raw_path)
 }
 
 std::vector<directory_entry>
-directory_iterator(const std::string target_path)
+directory_iterator(const std::string& target_path)
 {
-    return directory_iterator(target_path.c_str());
-}
-std::vector<directory_entry>
-directory_iterator(const char* target_path)
-{
-    return directory_iterator(path(std::string(target_path)));
+    return directory_iterator(path(target_path));
 }
 std::vector<directory_entry>
 directory_iterator(const path target_path)
@@ -106,18 +101,15 @@ directory_iterator(const path target_path)
     return entries;
 }
 
-path::path(const char* raw_path) : path(std::string(raw_path))
-{
-}
 path::path(const std::string& raw_path) : path_str_(raw_path)
 {
     if (path_str_.size())
     {
-        int last_c = path_str_[path_str_.size() - 1];
+        int last_c = path_str_.size() - 1;
         while (path_str_.size() > 1 && path_str_[last_c] == separator())
         {
             path_str_ = path_str_.substr(0, path_str_.size() - 1);
-            last_c    = path_str_[path_str_.size() - 1];
+            last_c    = path_str_.size() - 1;
         }
     }
 }

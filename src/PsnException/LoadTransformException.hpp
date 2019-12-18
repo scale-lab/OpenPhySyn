@@ -28,58 +28,21 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "TransformHandler.hpp"
-#include "PsnException/LoadTransformException.hpp"
+
+#ifndef __PSN_LOAD_TRANSFORM_EXCEPTION__
+#define __PSN_LOAD_TRANSFORM_EXCEPTION__
+#include "PsnException.hpp"
+
 namespace psn
 {
-TransformHandler::TransformHandler(std::string name)
+class LoadTransformException : public PsnException
 {
-    handle_ = dlopen(name.c_str(), RTLD_LAZY);
-    if (!handle_)
-    {
-        throw LoadTransformException();
-    }
-    load_        = (std::shared_ptr<PsnTransform>(*)())dlsym(handle_, "load");
-    get_name_    = (char* (*)())dlsym(handle_, "name");
-    get_version_ = (char* (*)())dlsym(handle_, "version");
-    get_help_    = (char* (*)())dlsym(handle_, "help");
-    get_description_ = (char* (*)())dlsym(handle_, "description");
+public:
+    explicit LoadTransformException();
+    explicit LoadTransformException(const char* message)        = delete;
+    explicit LoadTransformException(const std::string& message) = delete;
 
-    if (!load_ || !get_name_ || !get_version_ || !get_help_ ||
-        !get_description_)
-    {
-        throw LoadTransformException();
-    }
-}
-
-std::string
-TransformHandler::name()
-{
-    return std::string(get_name_());
-}
-
-std::string
-TransformHandler::version()
-{
-    return std::string(get_version_());
-}
-
-std::string
-TransformHandler::help()
-{
-    return std::string(get_help_());
-}
-
-std::shared_ptr<PsnTransform>
-TransformHandler::load()
-{
-    if (!instance)
-        instance = load_();
-    return instance;
-}
-std::string
-TransformHandler::description()
-{
-    return std::string(get_description_());
-}
+private:
+};
 } // namespace psn
+#endif
