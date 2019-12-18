@@ -141,7 +141,7 @@ FileUtils::homePath()
     return home_path;
 }
 std::string
-FileUtils::joinPath(const char* first_path, const char* second_path)
+FileUtils::joinPath(std::string first_path, std::string second_path)
 {
     fs::path base(first_path);
     fs::path appendee(second_path);

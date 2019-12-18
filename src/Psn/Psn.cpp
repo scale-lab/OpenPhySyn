@@ -47,6 +47,7 @@
 #include "LefReader/LefReader.hpp"
 #include "LibertyReader/LibertyReader.hpp"
 #include "PsnException/FileException.hpp"
+#include "PsnException/FluteInitException.hpp"
 #include "PsnException/NoTechException.hpp"
 #include "PsnException/ParseLibertyException.hpp"
 #include "PsnException/TransformNotFoundException.hpp"
@@ -886,12 +887,21 @@ Psn::initializeFlute(const char* flue_init_dir)
     }
     else
     {
-        for (auto& s : std::vector<std::string>(
-                 {FileUtils::joinPath(exec_path_.c_str(),
-                                      "../external/flute/etc"),
-                  FileUtils::joinPath(exec_path_.c_str(), "../etc"),
-                  exec_path_}))
+        for (auto& s : std::vector<std::string>({
+                 FileUtils::joinPath(exec_path_.c_str(),
+                                     "../external/flute/etc"),
+                 FileUtils::joinPath(exec_path_.c_str(), "../etc"),
+                 FileUtils::joinPath(exec_path_.c_str(),
+                                     "../../external/flute/etc"),
+                 FileUtils::joinPath(exec_path_.c_str(), "../../etc"),
+                 FileUtils::joinPath(exec_path_.c_str(), "../../../etc"),
+                 exec_path_,
+                 FileUtils::joinPath(exec_path_.c_str(), ".."),
+                 FileUtils::joinPath(exec_path_.c_str(), "../.."),
+                 FileUtils::joinPath(exec_path_.c_str(), "../../.."),
+             }))
         {
+
             flute_dir = s;
             powv_file_path =
                 FileUtils::joinPath(flute_dir.c_str(), "POWV9.dat");
@@ -909,7 +919,7 @@ Psn::initializeFlute(const char* flue_init_dir)
     if (!lut_found)
     {
         PSN_LOG_ERROR("Flute initialization failed");
-        return -1;
+        throw FluteInitException();
     }
 
     char* cwd = getcwd(NULL, 0);
