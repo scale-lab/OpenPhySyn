@@ -47,6 +47,14 @@ namespace fs = psn::filesystem;
 #include <sys/stat.h>
 #include "FileUtils.hpp"
 #include "PsnException/FileException.hpp"
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <limits.h>
+#include <unistd.h>
+#endif
+
 namespace psn
 {
 bool
@@ -133,7 +141,7 @@ FileUtils::homePath()
     return home_path;
 }
 std::string
-FileUtils::joinPath(const char* first_path, const char* second_path)
+FileUtils::joinPath(std::string first_path, std::string second_path)
 {
     fs::path base(first_path);
     fs::path appendee(second_path);
@@ -145,5 +153,32 @@ std::string
 FileUtils::baseName(const char* path)
 {
     return std::string(basename(const_cast<char*>(path)));
+}
+std::string
+FileUtils::executablePath()
+{
+#ifdef _WIN32
+    const char *drive, exec_path, fname, ext;
+    char        exec_file_path[MAX_PATH];
+
+    HMODULE hModule = GetModuleHandle(NULL);
+    if (hModule != NULL)
+    {
+        GetModuleFileName(hModule, exec_file_path, (sizeof(exec_file_path)));
+        _splitpath(exec_file_path, drive, fname, ext);
+        return exec_path;
+    }
+    else
+    {
+        return ".";
+    }
+#else
+    const char* exec_path;
+    char        exec_file_path[PATH_MAX];
+
+    readlink("/proc/self/exe", exec_file_path, PATH_MAX);
+    exec_path = dirname(exec_file_path);
+    return exec_path;
+#endif
 }
 } // namespace psn

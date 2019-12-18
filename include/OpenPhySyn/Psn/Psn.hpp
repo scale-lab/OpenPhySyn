@@ -129,6 +129,7 @@ private:
     sta::DatabaseSta* sta_;
     Database*         db_;
     DatabaseHandler*  db_handler_;
+    std::string       exec_path_;
 
     int initializeDatabase();
     int initializeSta(Tcl_Interp* interp = nullptr);

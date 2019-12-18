@@ -192,6 +192,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Utils/PsnGlobal.cpp
     ${PSN_HOME}/src/PsnException/Error.cpp
     ${PSN_HOME}/src/PsnException/FileException.cpp
+    ${PSN_HOME}/src/PsnException/FluteInitException.cpp
     ${PSN_HOME}/src/PsnException/NoTechException.cpp
     ${PSN_HOME}/src/PsnException/SteinerException.cpp
     ${PSN_HOME}/src/PsnException/ParseLibertyException.cpp
@@ -253,6 +254,7 @@ if (${OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED})
 set(PSN_TESTFILES
   ${PSN_TESTFILES}
   ${PROJECT_SOURCE_DIR}/tests/PinSwap.cpp
+  ${PROJECT_SOURCE_DIR}/tests/PinSwapPower.cpp
 )
 endif()
 
@@ -444,6 +446,7 @@ endif()
 
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
   ${PSN_WRAP}
+  ${PSN_LIBRARY_WRAP}
 )
 
 if(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED)

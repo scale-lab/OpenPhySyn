@@ -28,39 +28,34 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#include "Psn/Psn.hpp"
+#include "PsnException/PsnException.hpp"
+#include "Utils/FileUtils.hpp"
+#include "doctest.h"
 
-#ifndef __PSN_ERROR_
-#define __PSN_ERROR_
+using namespace psn;
 
-namespace psn
+TEST_CASE("Should perform power-driven pin swapping")
 {
-typedef long ErrorCode;
-
-namespace Error
-{
-
-enum File
-{
-    ERR_FILE_RW
-};
-
-enum Parse
-{
-    ERR_NO_TECH,
-    ERR_INVALID_LIBERTY
-};
-enum Transform
-{
-    ERR_NOT_FOUND
-};
-
-enum Common
-{
-    ERR_COMMON_UNRECOGNIZED,
-    ERR_PROGRAM_OPTIONS,
-    ERR_FLUTE_NO_LUT
-};
-
-} // namespace Error
-} // namespace psn
-#endif
+    Psn& psn_inst = Psn::instance();
+    try
+    {
+        psn_inst.clearDatabase();
+        psn_inst.readLib("../tests/data/libraries/Nangate45/"
+                         "NangateOpenCellLibrary_typical.lib");
+        psn_inst.readLef(
+            "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
+        psn_inst.readDef("../tests/data/designs/gcd/gcd.def");
+        CHECK(psn_inst.database()->getChip() != nullptr);
+        CHECK(psn_inst.hasTransform("pin_swap"));
+        auto& handler = *(psn_inst.handler());
+        handler.createClock("core_clock", {"clk"}, 10);
+        auto result = psn_inst.runTransform(
+            "pin_swap", std::vector<std::string>({"true", "50"}));
+        CHECK(result == 10);
+    }
+    catch (PsnException& e)
+    {
+        FAIL(e.what());
+    }
+}

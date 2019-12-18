@@ -52,10 +52,56 @@ PinSwapTransform::PinSwapTransform() : swap_count_(0)
 }
 
 int
-PinSwapTransform::powerPinSwap(psn::Psn* psn_inst)
+PinSwapTransform::powerPinSwap(psn::Psn* psn_inst, int path_count)
 {
-    PSN_UNUSED(psn_inst);
-    PSN_LOG_ERROR("Pin-Swapping for power optimization is not supported yet.");
+    DatabaseHandler& handler = *(psn_inst->handler());
+    PSN_LOG_WARN("This is an experimental transform that might negatively "
+                 "affect your timing, use at your own risk.");
+    auto paths      = handler.bestPath(path_count);
+    int  path_index = 1;
+    for (auto& path : paths)
+    {
+        PSN_LOG_DEBUG("Optimizing path {}/{}", path_index++, paths.size());
+        for (auto& point : path)
+        {
+            auto pin     = point.pin();
+            auto is_rise = point.isRise();
+            auto inst    = handler.instance(pin);
+            if (!handler.isInput(pin))
+            {
+                continue;
+            }
+            auto input_pins  = handler.inputPins(inst);
+            auto output_pins = handler.outputPins(inst);
+
+            if (input_pins.size() < 2 || output_pins.size() != 1)
+            {
+                continue;
+            }
+
+            auto out_pin = output_pins[0];
+            for (auto& in_pin : input_pins)
+            {
+                if (in_pin != pin && handler.isCommutative(in_pin, pin))
+                {
+                    float current_slew = handler.slew(out_pin, is_rise);
+                    handler.swapPins(pin, in_pin);
+                    float new_slew = handler.slew(out_pin, is_rise);
+                    if (new_slew > current_slew)
+                    {
+                        PSN_LOG_DEBUG("Accepted Swap: {} <-> {}",
+                                      handler.name(pin), handler.name(in_pin));
+                        swap_count_++;
+                    }
+                    else
+                    {
+                        handler.swapPins(pin, in_pin);
+                    }
+                }
+            }
+        }
+    }
+
     return swap_count_;
 }
 int
@@ -119,8 +165,9 @@ PinSwapTransform::isNumber(const std::string& s)
 int
 PinSwapTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
-    bool power_opt = false;
-    if (args.size() > 1)
+    bool power_opt           = false;
+    int  max_power_opt_paths = 50;
+    if (args.size() > 2)
     {
         PSN_LOG_ERROR(help());
         return -1;
@@ -142,11 +189,23 @@ PinSwapTransform::run(Psn* psn_inst, std::vector<std::string> args)
             PSN_LOG_ERROR(help());
             return -1;
         }
+        if (args.size() > 1)
+        {
+            if (isNumber(args[1]))
+            {
+                max_power_opt_paths = std::stoi(args[1]);
+            }
+            else
+            {
+                PSN_LOG_ERROR(help());
+                return -1;
+            }
+        }
     }
     swap_count_ = 0;
     if (power_opt)
     {
-        return powerPinSwap(psn_inst);
+        return powerPinSwap(psn_inst, max_power_opt_paths);
     }
     else
     {

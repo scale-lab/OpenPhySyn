@@ -46,9 +46,10 @@ public:
     static std::vector<std::string> readDirectory(const char* path);
     static std::string              readFile(const char* path);
     static std::string              homePath();
-    static std::string              joinPath(const char* first_path,
-                                             const char* second_path);
+    static std::string              joinPath(std::string first_path,
+                                             std::string second_path);
     static std::string              baseName(const char* path);
+    static std::string              executablePath();
 };
 } // namespace psn
 #endif

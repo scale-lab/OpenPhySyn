@@ -179,11 +179,11 @@ OpenDBHandler::fanoutCount(Net* net) const
 {
     return fanoutPins(net).size();
 }
-std::vector<PathPoint>
+std::vector<std::vector<PathPoint>>
 OpenDBHandler::criticalPath(int path_count) const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, criticalPath)
-    return std::vector<PathPoint>();
+    return std::vector<std::vector<PathPoint>>();
 }
 std::vector<PathPoint>
 OpenDBHandler::bestPath(int path_count) const
@@ -234,6 +234,12 @@ OpenDBHandler::arrival(InstanceTerm* term, int ap_index, bool is_rise) const
     return 0;
 }
 float
+OpenDBHandler::slew(InstanceTerm* term, bool is_rise) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, slew)
+    return 0;
+}
+float
 OpenDBHandler::required(InstanceTerm* term, bool worst) const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, required)
@@ -270,13 +276,25 @@ OpenDBHandler::location(Instance* inst)
     return Point(x, y);
 }
 float
-OpenDBHandler::area(Instance* inst)
+OpenDBHandler::area(Instance* inst) const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, area)
     return 0;
 }
 float
-OpenDBHandler::area()
+OpenDBHandler::area() const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, area)
+    return 0;
+}
+float
+OpenDBHandler::power(std::vector<Instance*>& insts)
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, power)
+    return 0;
+}
+float
+OpenDBHandler::power()
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, area)
     return 0;

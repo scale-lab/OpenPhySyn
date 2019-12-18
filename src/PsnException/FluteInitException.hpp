@@ -29,38 +29,20 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_ERROR_
-#define __PSN_ERROR_
+#ifndef __PSN_FLUTE_INIT_EXCEPTION__
+#define __PSN_FLUTE_INIT_EXCEPTION__
+#include "PsnException.hpp"
 
 namespace psn
 {
-typedef long ErrorCode;
-
-namespace Error
+class FluteInitException : public PsnException
 {
+public:
+    explicit FluteInitException();
+    explicit FluteInitException(const char* message)        = delete;
+    explicit FluteInitException(const std::string& message) = delete;
 
-enum File
-{
-    ERR_FILE_RW
+private:
 };
-
-enum Parse
-{
-    ERR_NO_TECH,
-    ERR_INVALID_LIBERTY
-};
-enum Transform
-{
-    ERR_NOT_FOUND
-};
-
-enum Common
-{
-    ERR_COMMON_UNRECOGNIZED,
-    ERR_PROGRAM_OPTIONS,
-    ERR_FLUTE_NO_LUT
-};
-
-} // namespace Error
 } // namespace psn
 #endif

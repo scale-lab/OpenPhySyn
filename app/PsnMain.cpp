@@ -33,7 +33,6 @@
 #include <tcl.h>
 #include "Psn/Psn.hpp"
 #include "PsnException/ProgramOptionsException.hpp"
-
 int psnTclAppInit(Tcl_Interp* interp);
 
 int

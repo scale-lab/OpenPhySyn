@@ -47,6 +47,7 @@
 #include "LefReader/LefReader.hpp"
 #include "LibertyReader/LibertyReader.hpp"
 #include "PsnException/FileException.hpp"
+#include "PsnException/FluteInitException.hpp"
 #include "PsnException/NoTechException.hpp"
 #include "PsnException/ParseLibertyException.hpp"
 #include "PsnException/TransformNotFoundException.hpp"
@@ -80,7 +81,8 @@ Psn::Psn(Database* db) : db_(db), interp_(nullptr)
     {
         initializeDatabase();
     }
-    settings_ = new DesignSettings();
+    exec_path_ = FileUtils::executablePath();
+    settings_  = new DesignSettings();
     initializeSta();
     db_handler_ = new DatabaseHandler(sta_);
 }
@@ -112,7 +114,7 @@ Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
         initializeDatabase();
         initializeSta();
     }
-
+    exec_path_  = FileUtils::executablePath();
     db_         = sta_->db();
     settings_   = new DesignSettings();
     db_handler_ = new DatabaseHandler(sta_);
@@ -326,13 +328,13 @@ Psn::loadTransforms()
     std::string                        transforms_paths(
         FileUtils::joinPath(FileUtils::homePath().c_str(),
                             ".OpenPhySyn/transforms") +
-        ":./transforms");
+        ":" + FileUtils::joinPath(exec_path_.c_str(), "./transforms"));
     const char* env_path   = std::getenv("PSN_TRANSFORM_PATH");
     int         load_count = 0;
 
     if (env_path)
     {
-        transforms_paths = transforms_paths + ":" + std::string(env_path);
+        transforms_paths = std::string(env_path);
     }
 
     std::vector<std::string> transforms_dirs =
@@ -527,14 +529,12 @@ Psn::printVersion(bool raw_str)
     if (raw_str)
     {
 
-        PSN_LOG_RAW("OpenPhySyn: {}.{}.{}", PROJECT_VERSION_MAJOR,
-                    PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH);
+        PSN_LOG_RAW("OpenPhySyn: {}", PSN_VERSION_STRING);
     }
     else
     {
 
-        PSN_LOG_INFO("OpenPhySyn: {}.{}.{}", PROJECT_VERSION_MAJOR,
-                     PROJECT_VERSION_MINOR, PROJECT_VERSION_PATCH);
+        PSN_LOG_INFO("OpenPhySyn: {}", PSN_VERSION_STRING);
     }
 }
 void
@@ -562,38 +562,37 @@ Psn::printUsage(bool raw_str, bool print_transforms, bool print_commands)
 void
 Psn::printLicense(bool raw_str)
 {
-    std::string license = R"===<><>===(// BSD 3-Clause License
+    std::string license = R"===<><>===(BSD 3-Clause License
+Copyright (c) 2019, SCALE Lab, Brown University
+All rights reserved.
 
-// Copyright (c) 2019, SCALE Lab, Brown University
-// All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
 
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
+* Neither the name of the copyright holder nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
 
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE."
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE."
 )===<><>===";
-
+    license = std::string("OpenPhySyn ") + PSN_VERSION_STRING + "\n" + license;
     PSN_LOG_RAW("");
     if (raw_str)
     {
@@ -636,6 +635,8 @@ Psn::printCommands(bool raw_str)
         "optimize_design [<options>]           Perform timing optimization on "
         "the design\n"
         "optimize_fanout <options>             Buffer high-fanout nets\n"
+        "optimize_power [<options>]            Perform power optimization on "
+        "the design\n"
         "transform <transform name> <args>     Run transform on the loaded "
         "design\n"
         "has_transform <transform name>        Checks if a specific transform "
@@ -854,7 +855,6 @@ Psn::initializeSta(Tcl_Interp* interp)
         // dbSta can take a database without interp..
         interp = Tcl_CreateInterp();
         Tcl_Init(interp);
-        // evalTclInit(interp, sta::dbsta_tcl_inits);
     }
     sta_ = new sta::DatabaseSta;
     sta_->init(interp, db_);
@@ -887,9 +887,21 @@ Psn::initializeFlute(const char* flue_init_dir)
     }
     else
     {
-        for (auto& s :
-             std::vector<std::string>({"../external/flute/etc", "../etc", "."}))
+        for (auto& s : std::vector<std::string>({
+                 FileUtils::joinPath(exec_path_.c_str(),
+                                     "../external/flute/etc"),
+                 FileUtils::joinPath(exec_path_.c_str(), "../etc"),
+                 FileUtils::joinPath(exec_path_.c_str(),
+                                     "../../external/flute/etc"),
+                 FileUtils::joinPath(exec_path_.c_str(), "../../etc"),
+                 FileUtils::joinPath(exec_path_.c_str(), "../../../etc"),
+                 exec_path_,
+                 FileUtils::joinPath(exec_path_.c_str(), ".."),
+                 FileUtils::joinPath(exec_path_.c_str(), "../.."),
+                 FileUtils::joinPath(exec_path_.c_str(), "../../.."),
+             }))
         {
+
             flute_dir = s;
             powv_file_path =
                 FileUtils::joinPath(flute_dir.c_str(), "POWV9.dat");
@@ -907,7 +919,7 @@ Psn::initializeFlute(const char* flue_init_dir)
     if (!lut_found)
     {
         PSN_LOG_ERROR("Flute initialization failed");
-        return -1;
+        throw FluteInitException();
     }
 
     char* cwd = getcwd(NULL, 0);

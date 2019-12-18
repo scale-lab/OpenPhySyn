@@ -42,6 +42,9 @@ add_test(
     WORKING_DIRECTORY ${PSN_HOME}/build
     COMMAND ${PSN_HOME}/build/${TEST_MAIN} ${TEST_RUNNER_PARAMS}
 )
+set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
+  ${PSN_TEST_WRAP}
+)
 
 # Adds a 'coverage' target.
 include(CodeCoverage)
