@@ -333,7 +333,7 @@ Psn::loadTransforms()
 
     if (env_path)
     {
-        transforms_paths = transforms_paths + ":" + std::string(env_path);
+        transforms_paths = std::string(env_path);
     }
 
     std::vector<std::string> transforms_dirs =
