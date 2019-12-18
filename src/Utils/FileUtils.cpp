@@ -58,16 +58,16 @@ namespace fs = psn::filesystem;
 namespace psn
 {
 bool
-FileUtils::pathExists(const char* path)
+FileUtils::pathExists(const std::string& path)
 {
     struct stat buf;
-    return (stat(path, &buf) == 0);
+    return (stat(path.c_str(), &buf) == 0);
 }
 bool
-FileUtils::isDirectory(const char* path)
+FileUtils::isDirectory(const std::string& path)
 {
     struct stat buf;
-    if (stat(path, &buf) == 0)
+    if (stat(path.c_str(), &buf) == 0)
     {
         if (buf.st_mode & S_IFDIR)
         {
@@ -77,12 +77,12 @@ FileUtils::isDirectory(const char* path)
     return false;
 }
 bool
-FileUtils::createDirectory(const char* path)
+FileUtils::createDirectory(const std::string& path)
 {
     return fs::create_directory(path);
 }
 bool
-FileUtils::createDirectoryIfNotExists(const char* path)
+FileUtils::createDirectoryIfNotExists(const std::string& path)
 {
     if (pathExists(path))
     {
@@ -101,7 +101,7 @@ FileUtils::createDirectoryIfNotExists(const char* path)
     }
 }
 std::vector<std::string>
-FileUtils::readDirectory(const char* path)
+FileUtils::readDirectory(const std::string& path)
 {
     std::vector<std::string> paths;
     for (const auto& entry : fs::directory_iterator(path))
@@ -111,7 +111,7 @@ FileUtils::readDirectory(const char* path)
     return paths;
 }
 std::string
-FileUtils::readFile(const char* path)
+FileUtils::readFile(const std::string& path)
 {
     std::ifstream infile{path};
     if (!infile.is_open())
@@ -141,7 +141,8 @@ FileUtils::homePath()
     return home_path;
 }
 std::string
-FileUtils::joinPath(std::string first_path, std::string second_path)
+FileUtils::joinPath(const std::string& first_path,
+                    const std::string& second_path)
 {
     fs::path base(first_path);
     fs::path appendee(second_path);
@@ -150,9 +151,9 @@ FileUtils::joinPath(std::string first_path, std::string second_path)
 }
 
 std::string
-FileUtils::baseName(const char* path)
+FileUtils::baseName(const std::string& path)
 {
-    return std::string(basename(const_cast<char*>(path)));
+    return std::string(basename(const_cast<char*>(path.c_str())));
 }
 std::string
 FileUtils::executablePath()
@@ -174,7 +175,7 @@ FileUtils::executablePath()
     }
 #else
     const char* exec_path;
-    char        exec_file_path[PATH_MAX];
+    char        exec_file_path[PATH_MAX] = {0};
 
     readlink("/proc/self/exe", exec_file_path, PATH_MAX);
     exec_path = dirname(exec_file_path);

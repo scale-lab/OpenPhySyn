@@ -40,7 +40,7 @@ namespace psn
 namespace filesystem
 {
 
-bool create_directory(const char* raw_path);
+bool create_directory(const std::string& raw_path);
 
 class path
 {
@@ -48,11 +48,11 @@ class path
 
 public:
     path(const std::string& raw_path);
-    path(const char* raw_path);
     path        operator/(path const& other_path) const;
     std::string generic_string() const;
+
     operator std::string() const;
-    
+
     static inline char
     separator()
     {
@@ -64,18 +64,26 @@ public:
     }
 };
 
-class directory_entry{
+class directory_entry
+{
     typedef class path path_type;
-    path_type path_;
+    path_type          path_;
+
 public:
-    directory_entry(const std::string& p): path_(p){}
-    directory_entry(const char * p): path_(p){}
-    directory_entry(path_type p): path_(p){}
-    path_type path() const {return path_type(path_);}
+    directory_entry(const std::string& p) : path_(p)
+    {
+    }
+    directory_entry(path_type p) : path_(p)
+    {
+    }
+    path_type
+    path() const
+    {
+        return path_type(path_);
+    }
 };
 
-std::vector<directory_entry> directory_iterator(const std::string target_path);
-std::vector<directory_entry> directory_iterator(const char* target_path);
+std::vector<directory_entry> directory_iterator(const std::string& target_path);
 std::vector<directory_entry> directory_iterator(const path target_path);
 
 } // namespace filesystem

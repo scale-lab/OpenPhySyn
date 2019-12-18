@@ -198,6 +198,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/PsnException/ParseLibertyException.cpp
     ${PSN_HOME}/src/PsnException/PsnException.cpp
     ${PSN_HOME}/src/PsnException/ProgramOptionsException.cpp
+    ${PSN_HOME}/src/PsnException/LoadTransformException.cpp
     ${PSN_HOME}/src/PsnException/TransformNotFoundException.cpp
     ${PSN_HOME}/src/Sta/DatabaseSta.cpp
     ${PSN_HOME}/src/Sta/PathPoint.cpp

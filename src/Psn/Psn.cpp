@@ -326,9 +326,8 @@ Psn::loadTransforms()
 
     std::vector<psn::TransformHandler> handlers;
     std::string                        transforms_paths(
-        FileUtils::joinPath(FileUtils::homePath().c_str(),
-                            ".OpenPhySyn/transforms") +
-        ":" + FileUtils::joinPath(exec_path_.c_str(), "./transforms"));
+        FileUtils::joinPath(FileUtils::homePath(), ".OpenPhySyn/transforms") +
+        ":" + FileUtils::joinPath(exec_path_, "./transforms"));
     const char* env_path   = std::getenv("PSN_TRANSFORM_PATH");
     int         load_count = 0;
 
@@ -346,15 +345,15 @@ Psn::loadTransforms()
         {
             continue;
         }
-        if (!FileUtils::isDirectory(transform_parent_path.c_str()))
+        if (!FileUtils::isDirectory(transform_parent_path))
         {
             continue;
         }
         std::vector<std::string> transforms_paths =
-            FileUtils::readDirectory(transform_parent_path.c_str());
+            FileUtils::readDirectory(transform_parent_path);
         for (auto& path : transforms_paths)
         {
-            PSN_LOG_DEBUG("Reading transform {}", path);
+            PSN_LOG_DEBUG("Loading transform {}", path);
             handlers.push_back(psn::TransformHandler(path));
         }
 
@@ -375,7 +374,7 @@ Psn::loadTransforms()
         }
         else
         {
-            PSN_LOG_DEBUG(
+            PSN_LOG_WARN(
                 "Transform {} was already loaded, discarding subsequent loads",
                 tr_name);
         }
@@ -828,8 +827,8 @@ Psn::linkDesign(const char* design_name)
     sta_->readDbAfter();
     return rc;
 }
-// Private methods:
 
+// Private methods:
 int
 Psn::initializeDatabase()
 {
@@ -876,11 +875,11 @@ Psn::initializeFlute(const char* flue_init_dir)
     if (flue_init_dir)
     {
         flute_dir      = std::string(flute_dir);
-        powv_file_path = FileUtils::joinPath(flute_dir.c_str(), "POWV9.dat");
-        post_file_path = FileUtils::joinPath(flute_dir.c_str(), "POST9.dat");
-        if (FileUtils::isDirectory(flute_dir.c_str()) &&
-            FileUtils::pathExists(powv_file_path.c_str()) &&
-            FileUtils::pathExists(post_file_path.c_str()))
+        powv_file_path = FileUtils::joinPath(flute_dir, "POWV9.dat");
+        post_file_path = FileUtils::joinPath(flute_dir, "POST9.dat");
+        if (FileUtils::isDirectory(flute_dir) &&
+            FileUtils::pathExists(powv_file_path) &&
+            FileUtils::pathExists(post_file_path))
         {
             lut_found = true;
         }
@@ -888,28 +887,24 @@ Psn::initializeFlute(const char* flue_init_dir)
     else
     {
         for (auto& s : std::vector<std::string>({
-                 FileUtils::joinPath(exec_path_.c_str(),
-                                     "../external/flute/etc"),
-                 FileUtils::joinPath(exec_path_.c_str(), "../etc"),
-                 FileUtils::joinPath(exec_path_.c_str(),
-                                     "../../external/flute/etc"),
-                 FileUtils::joinPath(exec_path_.c_str(), "../../etc"),
-                 FileUtils::joinPath(exec_path_.c_str(), "../../../etc"),
+                 FileUtils::joinPath(exec_path_, "../external/flute/etc"),
+                 FileUtils::joinPath(exec_path_, "../etc"),
+                 FileUtils::joinPath(exec_path_, "../../external/flute/etc"),
+                 FileUtils::joinPath(exec_path_, "../../etc"),
+                 FileUtils::joinPath(exec_path_, "../../../etc"),
                  exec_path_,
-                 FileUtils::joinPath(exec_path_.c_str(), ".."),
-                 FileUtils::joinPath(exec_path_.c_str(), "../.."),
-                 FileUtils::joinPath(exec_path_.c_str(), "../../.."),
+                 FileUtils::joinPath(exec_path_, ".."),
+                 FileUtils::joinPath(exec_path_, "../.."),
+                 FileUtils::joinPath(exec_path_, "../../.."),
              }))
         {
 
-            flute_dir = s;
-            powv_file_path =
-                FileUtils::joinPath(flute_dir.c_str(), "POWV9.dat");
-            post_file_path =
-                FileUtils::joinPath(flute_dir.c_str(), "POST9.dat");
-            if (FileUtils::isDirectory(flute_dir.c_str()) &&
-                FileUtils::pathExists(powv_file_path.c_str()) &&
-                FileUtils::pathExists(post_file_path.c_str()))
+            flute_dir      = s;
+            powv_file_path = FileUtils::joinPath(flute_dir, "POWV9.dat");
+            post_file_path = FileUtils::joinPath(flute_dir, "POST9.dat");
+            if (FileUtils::isDirectory(flute_dir) &&
+                FileUtils::pathExists(powv_file_path) &&
+                FileUtils::pathExists(post_file_path))
             {
                 lut_found = true;
                 break;

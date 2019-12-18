@@ -51,7 +51,8 @@ enum Parse
 };
 enum Transform
 {
-    ERR_NOT_FOUND
+    ERR_NOT_FOUND,
+    ERR_LOAD
 };
 
 enum Common

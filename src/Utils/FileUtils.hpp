@@ -39,16 +39,16 @@ namespace psn
 class FileUtils
 {
 public:
-    static bool pathExists(const char* path);
-    static bool isDirectory(const char* path);
-    static bool createDirectory(const char* path);
-    static bool createDirectoryIfNotExists(const char* path);
-    static std::vector<std::string> readDirectory(const char* path);
-    static std::string              readFile(const char* path);
+    static bool pathExists(const std::string& path);
+    static bool isDirectory(const std::string& path);
+    static bool createDirectory(const std::string& path);
+    static bool createDirectoryIfNotExists(const std::string& path);
+    static std::vector<std::string> readDirectory(const std::string& path);
+    static std::string              readFile(const std::string& path);
     static std::string              homePath();
-    static std::string              joinPath(std::string first_path,
-                                             std::string second_path);
-    static std::string              baseName(const char* path);
+    static std::string              joinPath(const std::string& first_path,
+                                             const std::string& second_path);
+    static std::string              baseName(const std::string& path);
     static std::string              executablePath();
 };
 } // namespace psn
