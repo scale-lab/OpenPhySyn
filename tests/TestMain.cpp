@@ -50,7 +50,6 @@ main(int argc, char** argv)
         printf("Failed to initialize Tcl interpreter");
         return -1;
     }
-    psn::Psn::instance().loadTransforms();
 
     context.applyCommandLine(argc, argv);
 
