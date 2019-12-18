@@ -49,6 +49,7 @@ public:
     static std::string              joinPath(const char* first_path,
                                              const char* second_path);
     static std::string              baseName(const char* path);
+    static std::string              executablePath();
 };
 } // namespace psn
 #endif
