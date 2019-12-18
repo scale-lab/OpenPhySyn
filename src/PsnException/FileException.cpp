@@ -31,6 +31,7 @@
 
 #include "FileException.hpp"
 #include <cstring>
+#include <errno.h>
 #include "Error.hpp"
 
 namespace psn
