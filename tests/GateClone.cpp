@@ -46,9 +46,8 @@ TEST_CASE("Should perform load-driven gate cloning")
         psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
         CHECK(psn_inst.database()->getChip() != nullptr);
         CHECK(psn_inst.hasTransform("gate_clone"));
-        // psn::Psn::instance().loadTransforms();
-        // auto result = psn_inst.runTransform(
-        //     "gate_clone", std::vector<std::string>({"1.4", "false"}));
+        auto result = psn_inst.runTransform(
+            "gate_clone", std::vector<std::string>({"1.4", "false"}));
         CHECK(1);
     }
     catch (PsnException& e)
