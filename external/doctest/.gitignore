@@ -34,3 +34,6 @@ scripts/bench/results.txt
 build/
 build-mingw/
 *.pyc
+*vscode*
+.idea/
+cmake-build-*/

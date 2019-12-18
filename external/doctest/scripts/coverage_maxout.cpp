@@ -19,10 +19,6 @@ DOCTEST_MAKE_STD_HEADERS_CLEAN_FROM_WARNINGS_ON_WALL_END
 
 #ifndef DOCTEST_CONFIG_DISABLE
 
-namespace doctest {
-void DOCTEST_FIX_FOR_MACOS_LIBCPP_IOSFWD_STRING_LINK_ERRORS();
-}
-
 // =================================================================================================
 // !!! THESE ARE NOT PROPER EXAMPLES OF LIBRARY USAGE !!! THESE ARE MEANT FOR CODE COVERAGE ONLY !!!
 // =================================================================================================
@@ -30,10 +26,8 @@ void DOCTEST_FIX_FOR_MACOS_LIBCPP_IOSFWD_STRING_LINK_ERRORS();
 TEST_CASE("exercising tricky code paths of doctest") {
     using namespace doctest;
 
-    DOCTEST_FIX_FOR_MACOS_LIBCPP_IOSFWD_STRING_LINK_ERRORS();
-
     // trigger code path for comparing the file in "operator<" of SubcaseSignature
-    CHECK(SubcaseSignature("", "a.cpp", 0) < SubcaseSignature("", "b.cpp", 0));
+    CHECK(SubcaseSignature{"", "a.cpp", 0} < SubcaseSignature{"", "b.cpp", 0});
     // same for String
     CHECK(String("a.cpp") < String("b.cpp"));
 
