@@ -80,7 +80,8 @@ Psn::Psn(Database* db) : db_(db), interp_(nullptr)
     {
         initializeDatabase();
     }
-    settings_ = new DesignSettings();
+    exec_path_ = FileUtils::executablePath();
+    settings_  = new DesignSettings();
     initializeSta();
     db_handler_ = new DatabaseHandler(sta_);
 }
@@ -112,7 +113,7 @@ Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
         initializeDatabase();
         initializeSta();
     }
-
+    exec_path_  = FileUtils::executablePath();
     db_         = sta_->db();
     settings_   = new DesignSettings();
     db_handler_ = new DatabaseHandler(sta_);
@@ -326,7 +327,7 @@ Psn::loadTransforms()
     std::string                        transforms_paths(
         FileUtils::joinPath(FileUtils::homePath().c_str(),
                             ".OpenPhySyn/transforms") +
-        ":./transforms");
+        ":" + FileUtils::joinPath(exec_path_.c_str(), "./transforms"));
     const char* env_path   = std::getenv("PSN_TRANSFORM_PATH");
     int         load_count = 0;
 
@@ -853,7 +854,6 @@ Psn::initializeSta(Tcl_Interp* interp)
         // dbSta can take a database without interp..
         interp = Tcl_CreateInterp();
         Tcl_Init(interp);
-        // evalTclInit(interp, sta::dbsta_tcl_inits);
     }
     sta_ = new sta::DatabaseSta;
     sta_->init(interp, db_);
@@ -886,8 +886,11 @@ Psn::initializeFlute(const char* flue_init_dir)
     }
     else
     {
-        for (auto& s :
-             std::vector<std::string>({"../external/flute/etc", "../etc", "."}))
+        for (auto& s : std::vector<std::string>(
+                 {FileUtils::joinPath(exec_path_.c_str(),
+                                      "../external/flute/etc"),
+                  FileUtils::joinPath(exec_path_.c_str(), "../etc"),
+                  exec_path_}))
         {
             flute_dir = s;
             powv_file_path =
