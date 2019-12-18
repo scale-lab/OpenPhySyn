@@ -43,15 +43,15 @@ To build a new transform, refer to the transform [template](https://github.com/T
 ```bash
 > ./Psn
 > help
-print_version                         print version
-version                               print version
-help                                  print help
-print_usage                           print help
-print_transforms                      list loaded transforms
-import_lef <file path>                load LEF file
-import_def <file path>                load DEF file
-import_lib <file path>                load a liberty file
-import_liberty <file path>            load a liberty file
+print_version                         Print version
+version                               Print version
+help                                  Print help
+print_usage                           Print help
+print_transforms                      List loaded transforms
+import_lef <file path>                Load LEF file
+import_def <file path>                Load DEF file
+import_lib <file path>                Load a liberty file
+import_liberty <file path>            Load a liberty file
 export_def <output file>              Write DEF file
 set_wire_rc <res> <cap>               Set resistance & capacitance per micron
 set_max_area <area>                   Set maximum design area
