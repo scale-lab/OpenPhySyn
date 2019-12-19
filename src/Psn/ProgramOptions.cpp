@@ -68,11 +68,11 @@ ProgramOptions::ProgramOptions(int argc, char** argv)
                                            "Display the version number")(
             "verbose", "Verbose output")("quiet", "Disable output");
         usage_ = options.help();
-        if (argc)
+        if (argc_)
         {
 
             options.parse_positional({"file"});
-            auto result = options.parse(argc, argv);
+            auto result = options.parse(argc_, argv_);
 
             if (file_positional.size())
             {

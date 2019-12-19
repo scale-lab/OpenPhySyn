@@ -114,8 +114,8 @@ target_link_libraries(
 #set(CMAKE_CXX_EXTENSIONS OFF)
 
 # build options
-option(TF_BUILD_EXAMPLES "Enables build of examples" ON)
-option(TF_BUILD_TESTS "Enables build of tests" ON)
+option(TF_BUILD_EXAMPLES "Enables build of examples" OFF)
+option(TF_BUILD_TESTS "Enables build of tests" OFF)
 option(TF_BUILD_BENCHMARKS "Enables build of benchmarks" OFF)
 
 # installation path

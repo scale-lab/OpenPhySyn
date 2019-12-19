@@ -42,8 +42,7 @@
 namespace psn
 {
 
-LibertyReader::LibertyReader(Database* db, sta::DatabaseSta* sta)
-    : db_(db), sta_(sta)
+LibertyReader::LibertyReader(sta::DatabaseSta* sta) : sta_(sta)
 {
 }
 

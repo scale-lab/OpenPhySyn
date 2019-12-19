@@ -181,7 +181,7 @@ Psn::readDef(const char* path)
 int
 Psn::readLib(const char* path)
 {
-    LibertyReader reader(db_, sta_);
+    LibertyReader reader(sta_);
     try
     {
         liberty_ = reader.read(path);

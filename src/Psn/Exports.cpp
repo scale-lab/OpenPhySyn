@@ -194,13 +194,13 @@ get_database_handler()
 }
 
 SteinerTree*
-create_steiner_tree(const char* net_name)
+make_steiner_tree(const char* net_name)
 {
     auto net = Psn::instance().handler()->net(net_name);
-    return create_steiner_tree(net);
+    return make_steiner_tree(net);
 }
 SteinerTree*
-create_steiner_tree(Net* net)
+make_steiner_tree(Net* net)
 {
     auto         pt   = SteinerTree::create(net, &(Psn::instance()), 3);
     SteinerTree* tree = pt.get();
