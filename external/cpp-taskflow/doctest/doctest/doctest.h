@@ -362,19 +362,15 @@ DOCTEST_GCC_SUPPRESS_WARNING_POP
 #endif // DOCTEST_BREAK_INTO_DEBUGGER
 
 // this is kept here for backwards compatibility since the config option was changed
-#ifdef DOCTEST_CONFIG_USE_IOSFWD
+#ifdef DOCTEST_CLANG
 #define DOCTEST_CONFIG_USE_STD_HEADERS
+#include <ciso646>
 #endif // DOCTEST_CONFIG_USE_IOSFWD
 
 #ifdef DOCTEST_CONFIG_USE_STD_HEADERS
 #include <iosfwd>
 #include <cstddef>
 #include <ostream>
-#else // DOCTEST_CONFIG_USE_STD_HEADERS
-
-#if DOCTEST_CLANG
-// to detect if libc++ is being used with clang (the _LIBCPP_VERSION identifier)
-#include <ciso646>
 #endif // clang
 
 #ifdef _LIBCPP_VERSION

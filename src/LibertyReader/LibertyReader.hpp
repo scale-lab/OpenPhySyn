@@ -40,11 +40,10 @@ namespace psn
 class LibertyReader
 {
 public:
-    LibertyReader(Database* db, sta::DatabaseSta* sta);
+    LibertyReader(sta::DatabaseSta* sta);
     Liberty* read(const char* path, bool infer_latches = false);
 
 private:
-    Database*         db_;
     sta::DatabaseSta* sta_;
 };
 } // namespace psn
