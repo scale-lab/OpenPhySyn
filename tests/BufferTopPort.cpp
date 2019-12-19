@@ -35,7 +35,7 @@
 
 using namespace psn;
 
-TEST_CASE("Should add fan-out buffers")
+TEST_CASE("Should buffers to the top-level port")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -45,12 +45,12 @@ TEST_CASE("Should add fan-out buffers")
                          "NangateOpenCellLibrary_typical.lib");
         psn_inst.readLef(
             "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
-        psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
+        psn_inst.readDef("../tests/data/designs/fanout/fanout_nan_top.def");
         CHECK(psn_inst.database()->getChip() != nullptr);
         CHECK(psn_inst.hasTransform("buffer_fanout"));
         auto result = psn_inst.runTransform(
             "buffer_fanout", std::vector<std::string>({"2", "BUF_X1"}));
-        CHECK(result == 18);
+        CHECK(result == 13);
     }
     catch (PsnException& e)
     {

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-project(OpenPhySyn VERSION 1.2.0 LANGUAGES CXX)
+project(OpenPhySyn VERSION 1.2.1 LANGUAGES CXX)
 
 
 option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add flags and defines.
@@ -21,9 +21,6 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic")
 endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-message(STATUS "OpenPhySyn version: ${PROJECT_VERSION}")
-
 
 
 # Tool build configuration
@@ -170,6 +167,15 @@ endif()
 endif()
 
 
+message(STATUS "OpenPhySyn version: ${PROJECT_VERSION}")
+
+list(APPEND CMAKE_MODULE_PATH "${OPENSTA_HOME}/cmake")
+include(GetGitRevisionDescription) # Utility available from OpenSTA
+get_git_head_revision(GIT_REFSPEC OPENPHYSYN_GIT_SHA1)
+message(STATUS "OpenPhySyn Git SHA: ${OPENPHYSYN_GIT_SHA1}")
+
+
+
 
 set(PSN_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap.cc)
 set(PSN_LIBRARY_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_lib_wrap.cc)
@@ -251,6 +257,7 @@ if (${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
 set(PSN_TESTFILES
   ${PSN_TESTFILES}
   ${PROJECT_SOURCE_DIR}/tests/BufferFanout.cpp
+  ${PROJECT_SOURCE_DIR}/tests/BufferTopPort.cpp
 )
 endif()
 if (${OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED})

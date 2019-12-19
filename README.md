@@ -140,6 +140,7 @@ Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/OpenPhySyn/
 - [x] Fix issues with OpenSTA commands integration
 - [x] Support command-line options for Tcl functions instead of just positional arguments
 - [x] Support passing parsed options to the transform body
+- [ ] Fix inconsistencies in the DB handlers between `const char *` and `std::string` 
 - [ ] Expose lower-level APIs through Tcl/Python interface
 - [ ] Add profiling tool (i.e., Valgrind).
 - [ ] Add API documentation

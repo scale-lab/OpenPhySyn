@@ -146,3 +146,4 @@ virtual std::string            name(Library* object) const;
 virtual std::string            name(LibraryCell* object) const;
 virtual std::string            name(LibraryTerm* object) const;
 virtual std::string            topName() const;
+virtual HandlerType            handlerType() const;
