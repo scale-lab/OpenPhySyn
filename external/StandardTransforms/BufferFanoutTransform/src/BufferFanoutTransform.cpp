@@ -64,6 +64,12 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                       buffer_output_pins.size());
         return -1;
     }
+    if (max_fanout < 2)
+    {
+        PSN_LOG_ERROR("Invalid max_fanout value {}, minimum is 2",
+                      buffer_output_pins.size());
+        return -1;
+    }
     LibraryTerm*      cell_in_pin  = *(buffer_input_pins.begin());
     LibraryTerm*      cell_out_pin = *(buffer_output_pins.begin());
     auto              nets         = handler.nets();
