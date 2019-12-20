@@ -888,5 +888,10 @@ OpenDBHandler::clear()
 OpenDBHandler::~OpenDBHandler()
 {
 }
+HandlerType
+OpenDBHandler::handlerType() const
+{
+    return HandlerType::OPENDB;
+}
 } // namespace psn
 #endif

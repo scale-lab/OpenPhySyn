@@ -48,6 +48,11 @@ namespace psn
 {
 class OpenDBHandler;
 class OpenStaHandler;
+enum class HandlerType
+{
+    OPENSTA,
+    OPENDB
+};
 typedef int DefDbu;
 #ifdef USE_OPENDB_DB_HANDLER
 typedef odb::dbDatabase     Database;

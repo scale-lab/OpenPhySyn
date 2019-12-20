@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-project(OpenPhySyn VERSION 1.2.0 LANGUAGES CXX)
+project(OpenPhySyn VERSION 1.2.2 LANGUAGES CXX)
 
 
 option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add flags and defines.
@@ -21,9 +21,6 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic")
 endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-message(STATUS "OpenPhySyn version: ${PROJECT_VERSION}")
-
 
 
 # Tool build configuration
@@ -147,6 +144,11 @@ add_subdirectory(external/spdlog)
 # Add cxxopts
 add_subdirectory(external/cxxopts)
 
+#CXXOPTS regex causes issues on older compilers..
+if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9.2)
+add_definitions(-DOPENPHYSYN_CXX_OPTS_DISABLED)
+endif()
+
 #Add cpp-taskflow
 if (${OPENPHYSYN_TF_ENABLED})
 
@@ -168,6 +170,15 @@ set(OPENPHYSYN_TF_14 ON)
 endif()
 
 endif()
+
+
+message(STATUS "OpenPhySyn version: ${PROJECT_VERSION}")
+
+list(APPEND CMAKE_MODULE_PATH "${OPENSTA_HOME}/cmake")
+include(GetGitRevisionDescription) # Utility available from OpenSTA
+get_git_head_revision(GIT_REFSPEC OPENPHYSYN_GIT_SHA1)
+message(STATUS "OpenPhySyn Git SHA: ${OPENPHYSYN_GIT_SHA1}")
+
 
 
 
@@ -251,6 +262,7 @@ if (${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
 set(PSN_TESTFILES
   ${PSN_TESTFILES}
   ${PROJECT_SOURCE_DIR}/tests/BufferFanout.cpp
+  ${PROJECT_SOURCE_DIR}/tests/BufferTopPort.cpp
 )
 endif()
 if (${OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED})
@@ -336,7 +348,7 @@ dl
 
 CHECK_SYMBOL_EXISTS(std::filesystem::path::preferred_separator filesystem cxx17fs)
 
-if(cxx17fs)
+if(cxx17fs AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9.2)
 set(PUBLIC_LIBRARIES
   ${PUBLIC_LIBRARIES}
   stdc++fs
