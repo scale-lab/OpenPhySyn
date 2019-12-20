@@ -50,7 +50,7 @@ TEST_CASE("Should add fan-out buffers")
         CHECK(psn_inst.hasTransform("buffer_fanout"));
         auto result = psn_inst.runTransform(
             "buffer_fanout", std::vector<std::string>({"2", "BUF_X1"}));
-        CHECK(result == 6);
+        CHECK(result == 18);
     }
     catch (PsnException& e)
     {

@@ -31,7 +31,9 @@
 
 #include <OpenPhySyn/Psn/ProgramOptions.hpp>
 
+#ifndef OPENPHYSYN_CXX_OPTS_DISABLED
 #include "cxxopts.hpp"
+#endif
 
 #include <sstream>
 #include "PsnException/ProgramOptionsException.hpp"
@@ -52,7 +54,7 @@ ProgramOptions::ProgramOptions(int argc, char** argv)
       verbose_(false),
       quiet_(false)
 {
-
+#ifndef OPENPHYSYN_CXX_OPTS_DISABLED
     try
     {
         std::vector<std::string> file_positional;
@@ -123,6 +125,7 @@ ProgramOptions::ProgramOptions(int argc, char** argv)
     {
         throw ProgramOptionsException(e.what());
     }
+#endif
 }
 std::string
 ProgramOptions::usage() const

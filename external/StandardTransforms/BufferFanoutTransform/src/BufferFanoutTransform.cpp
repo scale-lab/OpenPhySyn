@@ -64,6 +64,12 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                       buffer_output_pins.size());
         return -1;
     }
+    if (max_fanout < 2)
+    {
+        PSN_LOG_ERROR("Invalid max_fanout value {}, minimum is 2",
+                      buffer_output_pins.size());
+        return -1;
+    }
     LibraryTerm*      cell_in_pin  = *(buffer_input_pins.begin());
     LibraryTerm*      cell_out_pin = *(buffer_output_pins.begin());
     auto              nets         = handler.nets();
@@ -89,7 +95,15 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
     std::vector<int> current_buffer;
     for (auto& net : high_fanout_nets)
     {
-        InstanceTerm* source_pin = handler.faninPin(net);
+        InstanceTerm* source_pin   = handler.faninPin(net);
+        bool          is_top_level = false;
+#ifdef USE_OPENSTA_DB_HANDLER
+        if (!source_pin)
+        {
+            source_pin   = handler.port(handler.name(net).c_str());
+            is_top_level = true;
+        }
+#endif
         if (source_pin)
         {
             if (clock_pins.count(source_pin))
@@ -108,7 +122,10 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                 buffer_hier.push_back(ceil(iter));
             }
             handler.disconnectAll(net);
-            handler.connect(net, source_pin);
+            if (!is_top_level)
+            { // Top level ports are not disconnected by disconnect all.
+                handler.connect(net, source_pin);
+            }
 
             int current_sink_count = 0;
             int levels             = buffer_hier.size();
@@ -139,6 +156,24 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                                 handler.createInstance(buf_name.c_str(), cell);
                             create_buffer_count++;
                             Net* new_net = handler.createNet(net_name.c_str());
+                            if (!new_buffer)
+                            {
+                                PSN_LOG_CRITICAL(
+                                    "Failed to create buffer instance {}, "
+                                    "cannot recover the design, you may need "
+                                    "to restart the flow.",
+                                    buf_name);
+                                continue;
+                            }
+                            if (!new_net)
+                            {
+                                PSN_LOG_CRITICAL(
+                                    "Failed to create net {}, "
+                                    "cannot recover the design, you may need "
+                                    "to restart the flow.",
+                                    net_name);
+                                continue;
+                            }
                             handler.connect(new_net, new_buffer, cell_out_pin);
                             if (i == levels - 1)
                             {
@@ -146,13 +181,22 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                             }
                             else
                             {
-                                handler.connect(
-                                    handler.net(
-                                        bufferNetName(std::vector<int>(
-                                                          parent_buf.begin(),
-                                                          parent_buf.end() - 1))
-                                            .c_str()),
-                                    new_buffer, cell_in_pin);
+                                auto parent_buf_net_name = bufferNetName(
+                                    std::vector<int>(parent_buf.begin(),
+                                                     parent_buf.end() - 1));
+                                auto parent_net =
+                                    handler.net(parent_buf_net_name.c_str());
+                                if (!parent_net)
+                                {
+                                    PSN_LOG_CRITICAL("Failed to find net {}, "
+                                                     "cannot recover the "
+                                                     "design, you may need "
+                                                     "to restart the flow.",
+                                                     parent_buf_net_name);
+                                    continue;
+                                }
+                                handler.connect(parent_net, new_buffer,
+                                                cell_in_pin);
                             }
                         }
                     }
@@ -166,13 +210,19 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                 Net* new_net = handler.createNet(net_name.c_str());
                 if (!new_buffer)
                 {
-                    PSN_LOG_CRITICAL("Failed to create buffer {}", buf_name);
-                    return -1;
+                    PSN_LOG_CRITICAL("Failed to create buffer {}, "
+                                     "cannot recover the design, you may need "
+                                     "to restart the flow.",
+                                     buf_name);
+                    continue;
                 }
                 if (!new_net)
                 {
-                    PSN_LOG_CRITICAL("Failed to create net {}", net_name);
-                    return -1;
+                    PSN_LOG_CRITICAL("Failed to create net {}, "
+                                     "cannot recover the design, you may need "
+                                     "to restart the flow.",
+                                     net_name);
+                    continue;
                 }
                 handler.connect(new_net, new_buffer, cell_out_pin);
                 int sink_connect_count = std::min(
@@ -188,12 +238,20 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                 }
                 else
                 {
-                    handler.connect(
-                        handler.net(bufferNetName(std::vector<int>(
-                                                      current_buffer.begin(),
-                                                      current_buffer.end() - 1))
-                                        .c_str()),
-                        new_buffer, cell_in_pin);
+                    auto current_buf_net_name = bufferNetName(std::vector<int>(
+                        current_buffer.begin(), current_buffer.end() - 1));
+                    auto current_net =
+                        handler.net(current_buf_net_name.c_str());
+                    if (!current_net)
+                    {
+                        PSN_LOG_CRITICAL(
+                            "Failed to find net {}, "
+                            "cannot recover the design, you may need "
+                            "to restart the flow.",
+                            current_buf_net_name);
+                        continue;
+                    }
+                    handler.connect(current_net, new_buffer, cell_in_pin);
                 }
                 current_buffer = nextBuffer(current_buffer, max_fanout);
             }

@@ -525,7 +525,6 @@ OpenStaHandler::power(std::vector<Instance*>& insts)
 float
 OpenStaHandler::power()
 {
-
     sta::PowerResult total, sequential, combinational, macro, pad;
     sta_->power(corner_, total, sequential, combinational, macro, pad);
     return total.total();
@@ -889,6 +888,7 @@ OpenStaHandler::disconnectAll(Net* net) const
         network()->disconnectPin(pin);
         count++;
     }
+
     return count;
 }
 
@@ -1571,6 +1571,11 @@ OpenStaHandler::findBufferTargetSlews(Liberty* library,
             }
         }
     }
+}
+HandlerType
+OpenStaHandler::handlerType() const
+{
+    return HandlerType::OPENSTA;
 }
 } // namespace psn
 #endif
