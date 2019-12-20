@@ -118,7 +118,7 @@ path
 path::operator/(path const& other_path) const
 {
     std::string join_path_str = path_str_;
-    int         last_c        = join_path_str[join_path_str.size() - 1];
+    int         last_c        = join_path_str.size() - 1;
     while (join_path_str.size() > 1 && join_path_str[last_c] == separator())
     {
         join_path_str = join_path_str.substr(0, join_path_str.size() - 1);

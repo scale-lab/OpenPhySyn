@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-project(OpenPhySyn VERSION 1.2.1 LANGUAGES CXX)
+project(OpenPhySyn VERSION 1.2.2 LANGUAGES CXX)
 
 
 option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add flags and defines.
@@ -143,6 +143,11 @@ endif()
 add_subdirectory(external/spdlog)
 # Add cxxopts
 add_subdirectory(external/cxxopts)
+
+#CXXOPTS regex causes issues on older compilers..
+if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9.2)
+add_definitions(-DOPENPHYSYN_CXX_OPTS_DISABLED)
+endif()
 
 #Add cpp-taskflow
 if (${OPENPHYSYN_TF_ENABLED})
@@ -343,7 +348,7 @@ dl
 
 CHECK_SYMBOL_EXISTS(std::filesystem::path::preferred_separator filesystem cxx17fs)
 
-if(cxx17fs)
+if(cxx17fs AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9.2)
 set(PUBLIC_LIBRARIES
   ${PUBLIC_LIBRARIES}
   stdc++fs
