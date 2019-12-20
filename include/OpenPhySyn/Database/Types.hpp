@@ -48,7 +48,7 @@ namespace psn
 {
 class OpenDBHandler;
 class OpenStaHandler;
-enum class HandlerType
+enum HandlerType
 {
     OPENSTA,
     OPENDB
