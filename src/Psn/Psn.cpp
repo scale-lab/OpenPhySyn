@@ -163,7 +163,6 @@ Psn::readDef(const char* path)
     {
         int rc = reader.read(path);
         sta_->readDefAfter();
-        // sta_->findDelays();
         return rc;
     }
     catch (FileException& e)
