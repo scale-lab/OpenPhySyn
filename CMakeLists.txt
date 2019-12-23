@@ -410,7 +410,7 @@ flute
 ${PUBLIC_LIBRARIES}
 )
 
-install(FILES ../etc/POST9.dat ../etc/POWV9.dat DESTINATION etc)
+install(FILES ./external/flute/etc/POST9.dat ./external/flute/etc/POWV9.dat DESTINATION etc)
 
 endif()
 # Compile all sources into a library.
