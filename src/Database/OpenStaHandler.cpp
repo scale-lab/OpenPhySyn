@@ -915,7 +915,8 @@ OpenStaHandler::swapPins(InstanceTerm* first, InstanceTerm* second)
     disconnect(second);
     connect(first_net, second);
     connect(second_net, first);
-    resetDelays();
+    resetDelays(first);
+    resetDelays(second);
 }
 Instance*
 OpenStaHandler::createInstance(const char* inst_name, LibraryCell* cell)
@@ -1523,14 +1524,16 @@ OpenStaHandler::resetDelays()
     sta_->search()->arrivalsInvalid();
     sta_->search()->requiredsInvalid();
     sta_->search()->endpointsInvalid();
+    if (top())
+    {
+        sta_->findDelays();
+    }
 }
 void
 OpenStaHandler::resetDelays(InstanceTerm* term)
 {
-    sta::Vertex* vert = vertex(term);
-    sta_->graphDelayCalc()->delayInvalid(vert);
-    sta_->search()->arrivalInvalid(term);
-    sta_->search()->requiredInvalid(term);
+    sta_->delaysInvalidFrom(term);
+    sta_->delaysInvalidFromFanin(term);
 }
 void
 OpenStaHandler::findBufferTargetSlews(Liberty* library,
