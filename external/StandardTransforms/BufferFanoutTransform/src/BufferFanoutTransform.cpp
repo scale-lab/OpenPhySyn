@@ -32,6 +32,7 @@
 #include "BufferFanoutTransform.hpp"
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <OpenPhySyn/Utils/PsnGlobal.hpp>
+#include "Utils/StringUtils.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -327,19 +328,11 @@ BufferFanoutTransform::bufferNetName(std::vector<int> indices)
     return std::string("bufnet_" + name);
 }
 
-bool
-BufferFanoutTransform::isNumber(const std::string& s)
-{
-    return !s.empty() && std::find_if(s.begin(), s.end(), [](char c) {
-                             return !std::isdigit(c);
-                         }) == s.end();
-}
-
 int
 BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
 
-    if (args.size() == 2 && isNumber(args[0]))
+    if (args.size() == 2 && StringUtils::isNumber(args[0]))
     {
         return buffer(psn_inst, stoi(args[0]), args[1]);
     }

@@ -40,7 +40,6 @@
 class GateCloningTransform : public psn::PsnTransform
 {
 private:
-    bool isNumber(const std::string& s);
     void cloneTree(psn::Psn* psn_inst, psn::Instance* inst, float cap_factor,
                    bool clone_largest_only);
     void topDownClone(psn::Psn*                          psn_inst,

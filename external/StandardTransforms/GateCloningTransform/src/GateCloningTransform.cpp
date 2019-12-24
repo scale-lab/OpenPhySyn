@@ -32,6 +32,7 @@
 #include "GateCloningTransform.hpp"
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <OpenPhySyn/Utils/PsnGlobal.hpp>
+#include "Utils/StringUtils.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -258,14 +259,7 @@ GateCloningTransform::makeUniqueCloneName(Psn* psn_inst)
     while (handler.instance(name.c_str()));
     return name;
 }
-bool
-GateCloningTransform::isNumber(const std::string& s)
-{
-    std::istringstream iss(s);
-    float              f;
-    iss >> std::noskipws >> f;
-    return iss.eof() && !iss.fail();
-}
+
 int
 GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
@@ -278,7 +272,7 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
     bool  clone_largest_only = false;
     if (args.size() >= 1)
     {
-        if (!isNumber(args[0]))
+        if (!StringUtils::isNumber(args[0]))
         {
             PSN_LOG_ERROR(help());
             return -1;
@@ -286,13 +280,11 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
         cap_factor = std::stof(args[0].c_str());
         if (args.size() >= 2)
         {
-            std::transform(args[1].begin(), args[1].end(), args[1].begin(),
-                           ::tolower);
-            if (args[1] == "true" || args[1] == "1")
+            if (StringUtils::isTruthy(args[1]))
             {
                 clone_largest_only = true;
             }
-            else if (args[1] == "false" || args[1] == "0")
+            else if (StringUtils::isFalsy(args[1]))
             {
                 clone_largest_only = false;
             }
