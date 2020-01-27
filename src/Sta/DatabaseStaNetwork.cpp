@@ -49,7 +49,6 @@ using odb::dbObject;
 using odb::dbObjectType;
 using odb::dbSet;
 using odb::dbSigType;
-using odb::dbString;
 
 // TODO: move to StringUtil
 char*
@@ -316,7 +315,8 @@ DbNetPinIterator::hasNext()
         ++_iitr;
         return true;
     }
-    return false;
+    else
+        return false;
 }
 
 Pin*
@@ -960,9 +960,13 @@ DatabaseStaNetwork::connect(Instance* inst, Port* port, Net* net)
     dbNet* dnet = staToDb(net);
     if (inst == top_instance_)
     {
-        const char*    port_name = name(port);
-        dbBTerm*       bterm     = dbBTerm::create(dnet, port_name);
-        PortDirection* dir       = direction(port);
+        const char* port_name = name(port);
+        dbBTerm*    bterm     = block_->findBTerm(port_name);
+        if (bterm)
+            bterm->connect(dnet);
+        else
+            bterm = dbBTerm::create(dnet, port_name);
+        PortDirection* dir = direction(port);
         dbSigType      sig_type;
         dbIoType       io_type;
         staToDb(dir, sig_type, io_type);
@@ -986,8 +990,12 @@ DatabaseStaNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
     const char* port_name = port->name();
     if (inst == top_instance_)
     {
-        dbBTerm*       bterm = dbBTerm::create(dnet, port_name);
-        PortDirection* dir   = port->direction();
+        dbBTerm* bterm = block_->findBTerm(port_name);
+        if (bterm)
+            bterm->connect(dnet);
+        else
+            bterm = dbBTerm::create(dnet, port_name);
+        PortDirection* dir = port->direction();
         dbSigType      sig_type;
         dbIoType       io_type;
         staToDb(dir, sig_type, io_type);
@@ -1014,7 +1022,7 @@ DatabaseStaNetwork::disconnectPin(Pin* pin)
     if (iterm)
         dbITerm::disconnect(iterm);
     else if (bterm)
-        dbBTerm::destroy(bterm);
+        bterm->disconnect();
 }
 
 void
@@ -1221,5 +1229,4 @@ DatabaseStaNetwork::dbToSta(dbSigType sig_type, dbIoType io_type) const
 }
 
 } // namespace sta
-
 #endif
