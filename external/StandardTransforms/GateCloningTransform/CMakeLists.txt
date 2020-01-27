@@ -10,12 +10,16 @@ IF(NOT EXISTS ${PSN_HOME})
 message( FATAL_ERROR "Cannot find OpenPhySyn headers, set PSN_HOME option." )
 endif()
 
-set(OPEDNDB_HOME ${PSN_HOME}/external/OpenDB CACHE FILEPATH "The path to OpenDB includes")
+if(NOT DEFINED OPENDB_HOME)
+  set(OPENDB_HOME ${PSN_HOME}/external/OpenDB CACHE FILEPATH "The path to OpenDB includes")
+endif()
 
-option(OPENSTA_HOME "The path to OpenSTA" ${PSN_HOME}/external/OpenSTA)
+if(NOT DEFINED OPENSTA_HOME)
+  set(OPENSTA_HOME ${PSN_HOME}/external/OpenSTA  CACHE FILEPATH "The path to OpenSTA" )
+endif()
 
-IF(NOT EXISTS ${OPEDNDB_HOME})
-message( FATAL_ERROR "${OPEDNDB_HOME} -- ${PSN_HOME} Cannot find OpenDB headers, set OPEDNDB_HOME option." )
+IF(NOT EXISTS ${OPENDB_HOME})
+message( FATAL_ERROR "${OPENDB_HOME} -- ${PSN_HOME} Cannot find OpenDB headers, set OPENDB_HOME option." )
 endif()
 IF(NOT EXISTS ${OPENSTA_HOME})
 message( FATAL_ERROR "Cannot find OpenSTA headers, set OPENSTA_HOME option." )
@@ -33,9 +37,9 @@ target_include_directories(${TRANSFORM_NAME} PUBLIC
   src/
   ${PSN_HOME}/include/
   ${PSN_HOME}/external/spdlog/include
-  ${OPEDNDB_HOME}/include
-  ${OPEDNDB_HOME}/src
-  ${OPEDNDB_HOME}/src/db
+  ${OPENDB_HOME}/include
+  ${OPENDB_HOME}/src
+  ${OPENDB_HOME}/src/db
   ${OPENSTA_HOME}/..
 )
 
