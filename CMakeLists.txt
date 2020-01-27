@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-project(OpenPhySyn VERSION 1.2.3 LANGUAGES CXX)
+project(OpenPhySyn VERSION 1.2.4 LANGUAGES CXX)
 
 
 option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add flags and defines.
@@ -393,6 +393,7 @@ set(PUBLIC_EXEC_LIBRARIES
 opendb
 dbSta
 OpenSTA
+# sta_swig
 flute
 )
 
@@ -406,6 +407,7 @@ set(PRIVATE_INCLUDE_DIRS
 set(PUBLIC_LIBRARIES
 opendb
 OpenSTA
+# sta_swig
 flute
 ${PUBLIC_LIBRARIES}
 )
