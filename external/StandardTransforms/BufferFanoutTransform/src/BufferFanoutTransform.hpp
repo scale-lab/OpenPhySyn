@@ -37,9 +37,6 @@
 
 class BufferFanoutTransform : public psn::PsnTransform
 {
-private:
-    bool isNumber(const std::string& s);
-
 public:
     int buffer(psn::Psn* psn_inst, int max_fanout, std::string buffer_cell);
 

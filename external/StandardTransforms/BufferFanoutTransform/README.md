@@ -1,6 +1,6 @@
 # OpenPhySyn Buffer Fan-Out Transform
 
-A simple buffering transform using [OpenPhySyn](https://github.com/The-OpenROAD-Project/OpenPhySyn) psniscal synthesis tool
+A simple buffering transform using [OpenPhySyn](https://github.com/The-OpenROAD-Project/OpenPhySyn) physical synthesis tool.
 
 ## Building
 
@@ -10,8 +10,8 @@ Example:
 
 ```bash
 > mkdir build && cd build
-> cmake .. -DPSN_HOME=<OpenPhySyn Source Code Path> -DPSN_LIB=<OpenPhySyn Built Library Directory> \
-> -DOPENDB_HOME=<OpenDB Source Code Directory> -DOPENDB_LIB=<OpenDB Built Library Directory> \
+> cmake .. -DPSN_HOME=<OpenPhySyn Source Code Path> \
+> -DOPENDB_HOME=<OpenDB Source Code Directory> \
 > -DOPENSTA_HOME=<OpenSTA Source Code Directory>
 > make
 > make install # Or sudo make install
@@ -27,9 +27,3 @@ Example:
 > transform buffer_fanout 2 BUF_X1
 > export_def out.def
 ```
-
-If building outside OpenPhySyn source tree, make sure to:
-- Set `PSN_HOME_PATH` to OpenPhySyn source code path
-- Set `PSN_LIB_PATH` to the directory containing the built OpenPhySyn library file
-- Set `OPENDB_HOME_PATH` to [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) include path
-- Set `OPENDB_LIB_PATH` the directory containing the built [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) library files.
