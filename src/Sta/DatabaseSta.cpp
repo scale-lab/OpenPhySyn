@@ -13,8 +13,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
 #include <Sta/DatabaseSdcNetwork.hpp>
@@ -116,4 +114,3 @@ DatabaseSta::netSlack(const dbNet* db_net, const MinMax* min_max)
 }
 
 } // namespace sta
-#endif

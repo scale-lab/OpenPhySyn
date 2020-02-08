@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-project(OpenPhySynGateCloningTransform VERSION 1.0.0 LANGUAGES CXX)
+project(OpenPhySynHelloTransform VERSION 1.0.0 LANGUAGES CXX)
 
-set(TRANSFORM_NAME gate_clone)
+set(TRANSFORM_NAME hello_transform)
 
 set(PSN_HOME "/usr/include/OpenPhySyn" CACHE FILEPATH "The path to OpenPhySyn includes")
 
@@ -31,7 +31,7 @@ if(NOT PSN_LIB_PATH STREQUAL 0)
 link_directories(${PSN_LIB_PATH})
 endif()
 
-add_library(${TRANSFORM_NAME} SHARED src/GateCloningTransform.cpp)
+add_library(${TRANSFORM_NAME} SHARED src/HelloTransform.cpp)
 
 target_include_directories(${TRANSFORM_NAME} PUBLIC
   src/

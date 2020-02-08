@@ -28,7 +28,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-SUBDIRLIST(TRANSFORMS_DIRS ${CMAKE_SOURCE_DIR}/external/StandardTransforms)
+SUBDIRLIST(TRANSFORMS_DIRS ${CMAKE_SOURCE_DIR}/src/StandardTransforms)
 set(TRANSFORMS_BUILD_DIR "${CMAKE_BINARY_DIR}/transforms")
 
 file(MAKE_DIRECTORY ${TRANSFORMS_BUILD_DIR})
@@ -38,7 +38,7 @@ set(PSN_HOME ${CMAKE_CURRENT_SOURCE_DIR} CACHE FILEPATH "The path to OpenPhySyn 
 set(PSN_TRANSFORM_INSTALL_PATH "$ENV{HOME}/.OpenPhySyn/transforms" CACHE FILEPATH "Default path for transforms installation")
 
 if (${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
-add_subdirectory(external/StandardTransforms/HelloTransform)
+add_subdirectory(src/StandardTransforms/HelloTransform)
 install(
   TARGETS hello_transform
   DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
@@ -46,7 +46,7 @@ install(
 endif()
 
 if (${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
-add_subdirectory(external/StandardTransforms/BufferFanoutTransform)
+add_subdirectory(src/StandardTransforms/BufferFanoutTransform)
 install(
   TARGETS buffer_fanout
   DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
@@ -54,7 +54,7 @@ install(
 endif()
 
 if (${OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED})
-add_subdirectory(external/StandardTransforms/GateCloningTransform)
+add_subdirectory(src/StandardTransforms/GateCloningTransform)
 install(
   TARGETS gate_clone
   DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
@@ -62,7 +62,7 @@ install(
 endif()
 
 if (${OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED})
-add_subdirectory(external/StandardTransforms/PinSwapTransform)
+add_subdirectory(src/StandardTransforms/PinSwapTransform)
 install(
   TARGETS pin_swap
   DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}

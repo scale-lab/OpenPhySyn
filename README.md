@@ -23,7 +23,7 @@ Example:
 
 Physical Synthesis transforms libraries are loaded from the directory referred to by the variable `PSN_TRANSFORM_PATH`, defaulting to `./transforms`.
 
-To build a new transform, refer to the transform [template](https://github.com/The-OpenROAD-Project/OpenPhySynHelloTransform).
+To build a new transform, refer to the transform [template](https://github.com/scale-lab/OpenPhySynHelloTransform).
 
 ## Getting Started
 
@@ -38,7 +38,7 @@ To build a new transform, refer to the transform [template](https://github.com/T
 ```
 
 ### List available commands:
-*The following commands are for the standalone version, for the OpenROAD version, please check the top-level [repository](https://github.com/The-OpenROAD-Project/OpenROAD).*
+
 
 ```bash
 > ./Psn
@@ -127,7 +127,7 @@ OpenPhySyn depends on the following libraries:
 
 ## Issues
 
-Please open a GitHub [issue](https://github.com/The-OpenROAD-Project/OpenPhySyn/issues/new) if you find any bugs.
+Please open a GitHub [issue](https://github.com/scale-lab/OpenPhySyn/issues/new) if you find any bugs.
 
 ## To-Do
 

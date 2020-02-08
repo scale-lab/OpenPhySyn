@@ -17,8 +17,6 @@
 #ifndef __PSN_STA_DB_NETWORK_H__
 #define __PSN_STA_DB_NETWORK_H__
 
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-
 #include "ConcreteNetwork.hh"
 #include "opendb/db.h"
 
@@ -186,11 +184,4 @@ protected:
 };
 
 } // namespace sta
-#else
-#include "db_sta/dbNetwork.hh"
-namespace sta
-{
-typedef dbNetwork DatabaseStaNetwork;
-} // namespace sta
-#endif
 #endif

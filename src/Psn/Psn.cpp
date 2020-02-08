@@ -51,7 +51,6 @@
 #include "PsnException/NoTechException.hpp"
 #include "PsnException/ParseLibertyException.hpp"
 #include "PsnException/TransformNotFoundException.hpp"
-#include "Transform/TransformHandler.hpp"
 #include "Utils/FileUtils.hpp"
 #include "Utils/StringUtils.hpp"
 
@@ -74,7 +73,6 @@ using sta::tcl_inits;
 Psn* Psn::psn_instance_;
 bool Psn::is_initialized_ = false;
 
-#ifndef OPENROAD_BUILD
 Psn::Psn(Database* db) : db_(db), interp_(nullptr)
 {
     if (db_ == nullptr)
@@ -105,7 +103,6 @@ Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp,
     }
     is_initialized_ = true;
 }
-#endif
 
 Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
 {
@@ -144,15 +141,18 @@ Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
 
 Psn::~Psn()
 {
+    PSN_LOG_INFO("---");
+    for (auto& hndl : handlers_)
+    {
+        PSN_LOG_ERROR("---- {}\n", dlclose(hndl.handle()));
+    }
     delete settings_;
     delete db_handler_;
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
     delete sta_;
     if (db_ != nullptr)
     {
         Database::destroy(db_);
     }
-#endif
 }
 
 int
@@ -310,21 +310,17 @@ Psn::instance()
 Psn*
 Psn::instancePtr()
 {
-#ifndef OPENROAD_BUILD
     if (!is_initialized_)
     {
         PSN_LOG_CRITICAL("OpenPhySyn is not initialized!");
     }
-#endif
     return psn_instance_;
 }
 
 int
 Psn::loadTransforms()
 {
-
-    std::vector<psn::TransformHandler> handlers;
-    std::string                        transforms_paths(
+    std::string transforms_paths(
         FileUtils::joinPath(FileUtils::homePath(), ".OpenPhySyn/transforms") +
         ":" + FileUtils::joinPath(exec_path_, "./transforms"));
     const char* env_path   = std::getenv("PSN_TRANSFORM_PATH");
@@ -353,14 +349,14 @@ Psn::loadTransforms()
         for (auto& path : transforms_paths)
         {
             PSN_LOG_DEBUG("Loading transform {}", path);
-            handlers.push_back(psn::TransformHandler(path));
+            handlers_.push_back(psn::TransformHandler(path));
         }
 
         PSN_LOG_DEBUG("Found {} transforms under {}.", transforms_paths.size(),
                       transform_parent_path);
     }
 
-    for (auto tr : handlers)
+    for (auto tr : handlers_)
     {
         std::string tr_name(tr.name());
         if (!transforms_.count(tr_name))
@@ -378,9 +374,7 @@ Psn::loadTransforms()
                 tr_name);
         }
     }
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
     PSN_LOG_INFO("Loaded {} transforms.", load_count);
-#endif
     return load_count;
 }
 
@@ -452,14 +446,12 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
     }
     if (setup_sta)
     {
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
         sta_->setTclInterp(interp_);
         if (Sta_Init(interp) == TCL_ERROR)
         {
             return TCL_ERROR;
         }
         evalTclInit(interp, tcl_inits);
-#endif
         const char* tcl_psn_setup =
 #include "Tcl/SetupPsnSta.tcl"
             ;
@@ -840,13 +832,10 @@ Psn::initializeDatabase()
 int
 Psn::initializeSta(Tcl_Interp* interp)
 {
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-    PSN_UNUSED(interp);
-    sta::initSta();
-    sta_ = new sta::DatabaseSta(db_);
-    sta::Sta::setSta(sta_);
-    sta_->makeComponents();
-#else
+    // sta::initSta();
+    // sta_ = new sta::DatabaseSta(db_);
+    // sta::Sta::setSta(sta_);
+    // sta_->makeComponents();
     if (interp == nullptr)
     {
         // This is a very bad solution! but temporarily until
@@ -856,7 +845,7 @@ Psn::initializeSta(Tcl_Interp* interp)
     }
     sta_ = new sta::DatabaseSta;
     sta_->init(interp, db_);
-#endif
+
     return 0;
 }
 
@@ -867,60 +856,9 @@ Psn::clearDatabase()
 }
 
 int
-Psn::initializeFlute(const char* flue_init_dir)
+Psn::initializeFlute(const char*)
 {
-    bool        lut_found = false;
-    std::string flute_dir, powv_file_path, post_file_path;
-    if (flue_init_dir)
-    {
-        flute_dir      = std::string(flute_dir);
-        powv_file_path = FileUtils::joinPath(flute_dir, "POWV9.dat");
-        post_file_path = FileUtils::joinPath(flute_dir, "POST9.dat");
-        if (FileUtils::isDirectory(flute_dir) &&
-            FileUtils::pathExists(powv_file_path) &&
-            FileUtils::pathExists(post_file_path))
-        {
-            lut_found = true;
-        }
-    }
-    else
-    {
-        for (auto& s : std::vector<std::string>({
-                 FileUtils::joinPath(exec_path_, "../external/flute/etc"),
-                 FileUtils::joinPath(exec_path_, "../etc"),
-                 FileUtils::joinPath(exec_path_, "../../external/flute/etc"),
-                 FileUtils::joinPath(exec_path_, "../../etc"),
-                 FileUtils::joinPath(exec_path_, "../../../etc"),
-                 exec_path_,
-                 FileUtils::joinPath(exec_path_, ".."),
-                 FileUtils::joinPath(exec_path_, "../.."),
-                 FileUtils::joinPath(exec_path_, "../../.."),
-             }))
-        {
-
-            flute_dir      = s;
-            powv_file_path = FileUtils::joinPath(flute_dir, "POWV9.dat");
-            post_file_path = FileUtils::joinPath(flute_dir, "POST9.dat");
-            if (FileUtils::isDirectory(flute_dir) &&
-                FileUtils::pathExists(powv_file_path) &&
-                FileUtils::pathExists(post_file_path))
-            {
-                lut_found = true;
-                break;
-            }
-        }
-    }
-    if (!lut_found)
-    {
-        PSN_LOG_ERROR("Flute initialization failed");
-        throw FluteInitException();
-    }
-
-    char* cwd = getcwd(NULL, 0);
-    chdir(flute_dir.c_str());
     Flute::readLUT();
-    chdir(cwd);
-    free(cwd);
     return 1;
 }
 } // namespace psn

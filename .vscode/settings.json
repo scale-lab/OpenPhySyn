@@ -85,7 +85,9 @@
     "*.cuh": "cpp",
     "*.in": "cpp",
     "*.ipp": "c",
-    "valarray": "cpp"
+    "valarray": "cpp",
+    "hash_map": "cpp",
+    "forward_list": "cpp"
   },
   "files.watcherExclude": {
     "**/.git/objects/**": true,

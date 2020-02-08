@@ -37,7 +37,6 @@
 namespace psn
 {
 
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
 int
 import_def(const char* def_path)
 {
@@ -81,7 +80,7 @@ print_liberty_cells()
     }
     return 1;
 }
-#endif
+
 bool
 has_transform(const char* transform_name)
 {

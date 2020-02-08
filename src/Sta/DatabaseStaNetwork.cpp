@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-
 // Temproary fix for OpenSTA
 #define THROW_DCL throw()
 
@@ -1229,4 +1227,3 @@ DatabaseStaNetwork::dbToSta(dbSigType sig_type, dbIoType io_type) const
 }
 
 } // namespace sta
-#endif

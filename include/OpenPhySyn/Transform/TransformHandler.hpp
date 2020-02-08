@@ -51,6 +51,8 @@ class TransformHandler
 public:
     TransformHandler(std::string name);
 
+    void* handle();
+
     std::string name();
 
     std::string version();

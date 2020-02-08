@@ -34,16 +34,10 @@ else()
 add_definitions(-DUSE_OPENSTA_DB_HANDLER)
 endif()
 
-if (${OPENROAD_BUILD})
-add_definitions(-DOPENROAD_BUILD)
-endif()
 
 set(SWIG_FLAGS "-w467,72,503,509")
 set(SWIG_PSN_LIB_FLAGS "")
-if (OPENROAD_BUILD)
-set(SWIG_FLAGS "-DOPENROAD_BUILD -DSWIG_DIRECTOR_STATIC ${SWIG_FLAGS}")
-set(SWIG_PSN_LIB_FLAGS "-DOPENROAD_OPENPHYSYN_LIBRARY_BUILD")
-endif()
+
 
 
 set(PSN_HOME
@@ -125,19 +119,13 @@ set(CXXOPTS_HOME
 endif()
 
 # Add Flute
-if (NOT ${OPENROAD_BUILD})
 add_subdirectory(external/flute)
-endif()
 
 # Add OpenDB
-if (NOT ${OPENROAD_BUILD})
 add_subdirectory(external/OpenDB)
-endif()
 
 # Add OpenSTA
-if (NOT ${OPENROAD_BUILD})
 add_subdirectory(external/OpenSTA)
-endif()
 
 # Add spdlog
 add_subdirectory(external/spdlog)
@@ -225,12 +213,6 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Sta/DatabaseStaNetwork.cpp
 )
 
-set(PSN_OPENROAD_LIBRARY_FILE "")
-if (${OPENROAD_BUILD})
-set(PSN_OPENROAD_LIBRARY_FILE
-  ${PSN_HOME}/src/OpenROAD/MakeOpenPhySyn.cpp
-)
-endif()
 
 
 
@@ -276,23 +258,6 @@ set(PSN_TESTFILES
   ${PSN_TESTFILES}
   ${PROJECT_SOURCE_DIR}/tests/PinSwap.cpp
   ${PROJECT_SOURCE_DIR}/tests/PinSwapPower.cpp
-)
-endif()
-
-if (${OPENROAD_BUILD})
-
-set(PSN_SOURCES
-    ${PSN_SOURCES}
-    ${DBSTA_TCL_INIT}
-)
-
-set(PSN_TESTFILES
-    ${PSN_TESTFILES}
-    ${DBSTA_TCL_INIT}
-)
-add_custom_target(
-  opensta-tcl-init
-  DEPENDS ${DBSTA_TCL_INIT}
 )
 endif()
 
@@ -367,39 +332,6 @@ set(PUBLIC_LIBRARIES
 endif()
 
 
-if (${OPENROAD_BUILD})
-
-set(PRIVATE_INCLUDE_DIRS
-  ${PRIVATE_INCLUDE_DIRS}
-  ${OPENROAD_HOME}/include
-  ${OPENROAD_HOME}/src
-  ${OPENROAD_HOME}/src/flute3
-  ${OPENDB_HOME}/include
-  ${OPENSTA_HOME}/app
-  ${OPENSTA_HOME}/dcalc
-  ${OPENSTA_HOME}/graph
-  ${OPENSTA_HOME}/liberty
-  ${OPENSTA_HOME}/network
-  ${OPENSTA_HOME}/parasitics
-  ${OPENSTA_HOME}/sdc
-  ${OPENSTA_HOME}/sdf
-  ${OPENSTA_HOME}/search
-  ${OPENSTA_HOME}/util
-  ${OPENSTA_HOME}/verilog
-  ${OPENSTA_HOME}/${CUDD_INCLUDE}
-  flute3
-)
-
-set(PUBLIC_EXEC_LIBRARIES
-opendb
-dbSta
-OpenSTA
-# sta_swig
-flute
-)
-
-else()
-
 set(PRIVATE_INCLUDE_DIRS
   ${PRIVATE_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/external
@@ -415,9 +347,8 @@ ${PUBLIC_LIBRARIES}
 
 install(FILES ./external/flute/etc/POST9.dat ./external/flute/etc/POWV9.dat DESTINATION etc)
 
-endif()
 # Compile all sources into a library.
-add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_LIBRARY_WRAP} ${PSN_OPENROAD_LIBRARY_FILE})
+add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_LIBRARY_WRAP})
 add_executable(Psn ${PSN_SOURCES})  # Name of exec. and location of file.
 
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
@@ -434,7 +365,6 @@ include_directories (
   ${PRIVATE_INCLUDE_DIRS}
 )
 
-if (NOT ${OPENROAD_BUILD})
 set_target_properties(
     ${LIBRARY_NAME} Psn
       PROPERTIES 
@@ -442,9 +372,6 @@ set_target_properties(
         CXX_STANDARD_REQUIRED YES 
         CXX_EXTENSIONS NO
 )
-else()
-target_compile_definitions(${LIBRARY_NAME} PRIVATE -DOPENROAD_OPENPHYSYN_LIBRARY_BUILD)
-endif()
 
 set_property(TARGET ${LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET Psn PROPERTY POSITION_INDEPENDENT_CODE ON)

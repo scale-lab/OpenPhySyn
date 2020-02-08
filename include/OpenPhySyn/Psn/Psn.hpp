@@ -38,6 +38,7 @@
 #include <OpenPhySyn/PsnLogger/LogLevel.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Transform/PsnTransform.hpp>
+#include <OpenPhySyn/Transform/TransformHandler.hpp>
 #include <OpenPhySyn/Transform/TransformInfo.hpp>
 #include <OpenSTA/network/ConcreteNetwork.hh>
 
@@ -98,7 +99,6 @@ public:
 
     virtual int initializeFlute(const char* flue_init_dir = nullptr);
 
-#ifndef OPENROAD_BUILD
     static void initialize(Database* db = nullptr, bool load_transforms = true,
                            Tcl_Interp* interp     = nullptr,
                            bool        init_flute = true);
@@ -107,29 +107,19 @@ public:
                            bool import_psn_namespace = true,
                            bool print_psn_version    = true,
                            bool setup_sta_tcl        = true);
-#else
-    static void initialize(sta::DatabaseSta* sta             = nullptr,
-                           bool              load_transforms = true,
-                           Tcl_Interp* interp = nullptr, bool init_flute = true,
-                           bool import_psn_namespace = false,
-                           bool print_psn_version    = false,
-                           bool setup_sta_tcl        = false);
-#endif
     virtual ~Psn();
 
 private:
-#ifndef OPENROAD_BUILD
     Psn(Database* db = nullptr);
     Psn(sta::DatabaseSta* sta);
-#else
-    Psn(sta::DatabaseSta* sta = nullptr);
-#endif
     DesignSettings*   settings_;
     Liberty*          liberty_;
     sta::DatabaseSta* sta_;
     Database*         db_;
     DatabaseHandler*  db_handler_;
     std::string       exec_path_;
+
+    std::vector<psn::TransformHandler> handlers_;
 
     int initializeDatabase();
     int initializeSta(Tcl_Interp* interp = nullptr);

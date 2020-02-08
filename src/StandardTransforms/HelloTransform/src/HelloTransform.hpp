@@ -29,26 +29,22 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifdef OPENROAD_BUILD
-#ifndef __PSN_MAKE_OPEN_PHY_SYN__
-#define __PSN_MAKE_OPEN_PHY_SYN__
+#include <OpenPhySyn/Database/DatabaseHandler.hpp>
+#include <OpenPhySyn/Database/Types.hpp>
+#include <OpenPhySyn/Psn/Psn.hpp>
+#include <OpenPhySyn/Transform/PsnTransform.hpp>
+#include <cstring>
 
-namespace psn
+class HelloTransform : public psn::PsnTransform
 {
-class Psn;
-}
+private:
+public:
+    int addWire(psn::Psn* psn_inst, std::string name);
+    int run(psn::Psn* psn_inst, std::vector<std::string> args) override;
+};
 
-namespace ord
-{
-
-class OpenRoad;
-
-psn::Psn* makePsn();
-
-void deletePsn(psn::Psn* psn);
-
-void initPsn(OpenRoad* openroad);
-
-} // namespace ord
-#endif
-#endif
+DEFINE_TRANSFORM(
+    HelloTransform, "hello_transform", "1.0.0",
+    "Hello transform, a toy transform that adds an unconnected net",
+    "Usage:\n transform hello_transform "
+    "<net_name>\n")
