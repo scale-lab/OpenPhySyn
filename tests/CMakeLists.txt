@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.8.2)
 set(TEST_MAIN unit_tests)   # Default name for test executable (change if you wish).
 set(TEST_RUNNER_PARAMS "")  # Any arguemnts to feed the test runner (change as needed).
 
-set(PSN_TEST_WRAP ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap_test.cc)
+set(PSN_TEST_WRAP ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap_test.cpp)
 set_source_files_properties(${PSN_TEST_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
 
 

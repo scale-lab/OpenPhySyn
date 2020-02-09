@@ -83,40 +83,30 @@ INCLUDE(${SWIG_USE_FILE})
 
 
 # Build OpenDB
-if(NOT DEFINED OPENDB_HOME)
 set(OPENDB_HOME
 ${PROJECT_SOURCE_DIR}/external/OpenDB
 )
 set(BUILD_PYTHON OFF)
-endif()
 
 # Build OpenSTA
-if(NOT DEFINED OPENSTA_HOME)
 set(OPENSTA_HOME
 ${PROJECT_SOURCE_DIR}/external/OpenSTA
 )
-endif()
 
 # Build Flute
-if(NOT DEFINED FLUTE_HOME)
 set(FLUTE_HOME
 ${PROJECT_SOURCE_DIR}/external/flute
 )
-endif()
 
 # Build spdlok
-if(NOT DEFINED SPD_LOG_HOME)
 set(SPD_LOG_HOME
   ${PROJECT_SOURCE_DIR}/external/spdlog
 )
-endif()
 
 # Build cxxopts
-if(NOT DEFINED CXXOPTS_HOME)
 set(CXXOPTS_HOME
   ${PROJECT_SOURCE_DIR}/external/cxxopts
 )
-endif()
 
 # Add Flute
 add_subdirectory(external/flute)
@@ -170,8 +160,8 @@ message(STATUS "OpenPhySyn Git SHA: ${OPENPHYSYN_GIT_SHA1}")
 
 
 
-set(PSN_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap.cc)
-set(PSN_LIBRARY_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_lib_wrap.cc)
+set(PSN_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap.cpp)
+set(PSN_LIBRARY_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_lib_wrap.cpp)
 set(SWIG_SOURCE_COMPILE_FLAGS "-Wno-cast-qual -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-parameter -Wno-deprecated-copy")
 set_source_files_properties(${PSN_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
 set_source_files_properties(${PSN_LIBRARY_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
@@ -345,7 +335,6 @@ flute
 ${PUBLIC_LIBRARIES}
 )
 
-install(FILES ./external/flute/etc/POST9.dat ./external/flute/etc/POWV9.dat DESTINATION etc)
 
 # Compile all sources into a library.
 add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_LIBRARY_WRAP})

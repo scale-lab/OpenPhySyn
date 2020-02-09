@@ -97,7 +97,7 @@ public:
 
     virtual void clearDatabase();
 
-    virtual int initializeFlute(const char* flue_init_dir = nullptr);
+    virtual int initializeFlute();
 
     static void initialize(Database* db = nullptr, bool load_transforms = true,
                            Tcl_Interp* interp     = nullptr,

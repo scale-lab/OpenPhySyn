@@ -141,11 +141,6 @@ Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
 
 Psn::~Psn()
 {
-    PSN_LOG_INFO("---");
-    for (auto& hndl : handlers_)
-    {
-        PSN_LOG_ERROR("---- {}\n", dlclose(hndl.handle()));
-    }
     delete settings_;
     delete db_handler_;
     delete sta_;
@@ -856,7 +851,7 @@ Psn::clearDatabase()
 }
 
 int
-Psn::initializeFlute(const char*)
+Psn::initializeFlute()
 {
     Flute::readLUT();
     return 1;
