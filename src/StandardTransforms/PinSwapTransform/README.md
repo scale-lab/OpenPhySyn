@@ -1,6 +1,6 @@
 # OpenPhySyn Pin Swap Transform
 
-Timing optimization through commutative pin swapping transform using [OpenPhySyn](https://github.com/The-OpenROAD-Project/OpenPhySyn) physical synthesis tool.
+Timing optimization through commutative pin swapping transform using OpenPhySyn physical synthesis tool.
 
 ## Building
 

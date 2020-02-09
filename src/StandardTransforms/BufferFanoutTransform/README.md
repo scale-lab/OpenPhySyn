@@ -1,6 +1,6 @@
 # OpenPhySyn Buffer Fan-Out Transform
 
-A simple buffering transform using [OpenPhySyn](https://github.com/The-OpenROAD-Project/OpenPhySyn) physical synthesis tool.
+A simple buffering transform using OpenPhySyn physical synthesis tool.
 
 ## Building
 

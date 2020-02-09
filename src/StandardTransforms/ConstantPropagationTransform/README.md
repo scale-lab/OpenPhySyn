@@ -1,6 +1,6 @@
-# OpenPhySyn Gate Cloining Transform
+# OpenPhySyn Constant Propagation Transform
 
-Load-driven gate cloning transform using OpenPhySyn physical synthesis tool.
+Design optimization through constant propagation.
 
 ## Building
 
@@ -23,6 +23,6 @@ Example:
 > ./Psn
 > import_lef <lef file>
 > import_def <def file>
-> transform gate_clone 1.4 1
-> export_def out.def
+> transform constant_propagation
+> write_def out.def
 ```
