@@ -99,18 +99,25 @@ By default, the following transforms are built with OpenPhySyn:
 - `buffer_fanout`: adds buffers to high fan-out nets.
 - `gate_clone`: performs load driven gate cloning.
 - `pin_swap`: performs timing-driven/power-driven commutative pin-swapping optimization.
+- `constant propagation`: Perform constant propagation optimization across the design hierarchy.
 
-## Optimization Command(s)
+## Optimization Commands
 
-The main provided command for timing optimization is `optimize_design`.
+The main provided command for optimization are `optimize_design` for physical design optimization and `optimize_logic`.
 
-Currently, it performs pin swapping and load-driven gate-cloning to enhance the design timing.
+Currently, `optimize_design` performs pin swapping and load-driven gate-cloning to enhance the design timing. `optimize_logic` performs constant propagation optimization across the design hierarchy.
 
-Available options are:
+`optimize_design` options:
 - `[-no_gate_clone]`: Disable gate-cloning.
 - `[-no_pin_swap]`: Disable pin-swap.
 - `[-clone_max_cap_factor <factor>]`: Set gate-cloning capacitance load ratio, defaults to *1.5*.
 - `[-clone_non_largest_cells]`: Allow cloning of cells that are not the largest of their cell-footprint, not recommended.
+
+`optimize_logic` options:
+- `[-no_constant_propagation]`: Disable constant propagation.
+- `[-tihi tihi_cell_name]`: Manually specify the Logic 1 cell for constant propagation.
+- `[-tilo tilo_cell_name]`: Manually specify the Logic 0 cell for constant propagation.
+
 
 ## Dependencies
 

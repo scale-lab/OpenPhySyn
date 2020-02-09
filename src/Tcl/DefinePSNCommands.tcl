@@ -66,6 +66,40 @@ namespace eval psn {
         return 1
     }
     
+    define_cmd_args "optimize_logic" {\
+        [-no_constant_propagation] \
+        [-tihi tihi_cell_name] \
+        [-tilo tilo_cell_name] \
+    }
+
+    proc optimize_logic { args } {
+        sta::parse_key_args "optimize_power" args \
+            keys {-tihi tilo} \
+            flags {-no_constant_propagation}
+        set do_constant_propagation true
+        set tihi_cell_name ""
+        set tilo_cell_name ""
+        if {[info exists flags(-no_constant_propagation)]} {
+            set no_constant_propagation false
+        }
+        if {![has_transform constant_propagation]} {
+            set do_constant_propagation false
+        }
+        if {$do_constant_propagation} {
+            if {[info exists keys(-tihi)]} {
+                set tihi_cell_name $keys(-tihi)
+            }
+            if {[info exists keys(-tilo)]} {
+                set tilo_cell_name $keys(-tilo)
+            }
+            set propg [transform constant_propagation $tihi_cell_name $tilo_cell_name]
+            if {$propg < 0} {
+                return $propg
+            }
+        }
+        return 0
+    }
+
     define_cmd_args "optimize_power" {\
         [-no_pin_swap] \
         [-pin_swap_paths path_count] \
