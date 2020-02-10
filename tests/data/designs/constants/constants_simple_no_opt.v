@@ -53,15 +53,15 @@ module Constants(clock, io_wide_bus, reduced, out);
   output [2:0] out;
   output reduced;
   NOR3_X1 _06_ (
-    .A1(io_wide_bus[4]),
-    .A2(io_wide_bus[3]),
-    .A3(io_wide_bus[0]),
+    .A1(io_wide_bus[2]),
+    .A2(io_wide_bus[1]),
+    .A3(io_wide_bus[4]),
     .ZN(_01_)
   );
   NOR3_X1 _07_ (
-    .A1(io_wide_bus[5]),
-    .A2(io_wide_bus[2]),
-    .A3(io_wide_bus[1]),
+    .A1(io_wide_bus[3]),
+    .A2(io_wide_bus[0]),
+    .A3(io_wide_bus[5]),
     .ZN(_02_)
   );
   NAND2_X1 _08_ (
@@ -90,6 +90,7 @@ module Constants(clock, io_wide_bus, reduced, out);
     .f(out[2])
   );
 endmodule
+
 
 module OrModule(a, b, c);
   input a;

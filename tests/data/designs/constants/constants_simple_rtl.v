@@ -12,8 +12,8 @@ endmodule
 
 module AndOr(input a, input b, input c, output d, output e, output f);
     AndModule x(a, b, d);
-    OrWrapper y(b, c, e);
-    OrModule  z(1'b1, c, f);
+    OrWrapper y(b, c, e, h);
+    OrModule  z(1'b1, h, f);
 endmodule
 
 module AndModule(input a, input b, output c);

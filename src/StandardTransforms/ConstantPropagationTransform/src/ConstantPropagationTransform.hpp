@@ -36,6 +36,7 @@
 #include <OpenPhySyn/Transform/PsnTransform.hpp>
 #include <cstring>
 #include <memory>
+#include <unordered_set>
 
 class ConstantPropagationTransform : public psn::PsnTransform
 {
@@ -43,8 +44,18 @@ private:
     bool isNumber(const std::string& s);
     int  prop_count_;
 
-    int propagateConstants(psn::Psn* psn_inst, std::string tihi_cell_name,
-                           std::string tilo_cell_name, int max_depth);
+    int  propagateConstants(psn::Psn* psn_inst, std::string tiehi_cell_name,
+                            std::string tielo_cell_name, int max_depth);
+    void propagateTieHiLoCell(psn::Psn* psn_inst, bool is_tiehi,
+                              psn::InstanceTerm* constant_term, int max_depth,
+                              psn::Instance*                      tiehi_cell,
+                              psn::Instance*                      tielo_cell,
+                              std::unordered_set<psn::Instance*>& visited,
+                              std::unordered_set<psn::Instance*>& deleted);
+    int  isTiedToConstant(psn::Psn* psn_inst, psn::InstanceTerm* constant_term,
+                          bool constant_val);
+    int  isTiedToInput(psn::Psn* psn_inst, psn::InstanceTerm* input_term,
+                       psn::InstanceTerm* constant_term, bool constant_val);
 
 public:
     ConstantPropagationTransform();
@@ -52,7 +63,8 @@ public:
     int run(psn::Psn* psn_inst, std::vector<std::string> args) override;
 };
 
-DEFINE_TRANSFORM(ConstantPropagationTransform, "constant_propagation", "1.0.0",
-                 "Performs design optimization through constant propagation",
-                 "Usage: transform constant_propagation [tie-hi cell] [tie-lo "
-                 "cell] [max-depth]")
+DEFINE_TRANSFORM(
+    ConstantPropagationTransform, "constant_propagation", "1.0.0",
+    "Performs design optimization through constant propagation",
+    "Usage: transform constant_propagation [max-depth] [tie-hi cell] [tie-lo "
+    "cell]")

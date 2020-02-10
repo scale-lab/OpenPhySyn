@@ -139,25 +139,111 @@ OpenStaHandler::clockPins() const
 }
 
 std::vector<InstanceTerm*>
-OpenStaHandler::inputPins(Instance* inst) const
+OpenStaHandler::inputPins(Instance* inst, bool include_top_level) const
 {
     auto inst_pins = pins(inst);
-    return filterPins(inst_pins, PinDirection::input());
+    return filterPins(inst_pins, PinDirection::input(), include_top_level);
 }
 
 std::vector<InstanceTerm*>
-OpenStaHandler::outputPins(Instance* inst) const
+OpenStaHandler::outputPins(Instance* inst, bool include_top_level) const
 {
     auto inst_pins = pins(inst);
-    return filterPins(inst_pins, PinDirection::output());
+    return filterPins(inst_pins, PinDirection::output(), include_top_level);
 }
 
 std::vector<InstanceTerm*>
-OpenStaHandler::fanoutPins(Net* net) const
+OpenStaHandler::fanoutPins(Net* pin_net, bool include_top_level) const
 {
-    auto inst_pins = pins(net);
-    return filterPins(inst_pins, PinDirection::input());
+    auto inst_pins = pins(pin_net);
+
+    auto filtered_inst_pins =
+        filterPins(inst_pins, PinDirection::input(), include_top_level);
+    if (include_top_level)
+    {
+        auto itr = network()->pinIterator(network()->topInstance());
+        while (itr->hasNext())
+        {
+
+            auto top_pin = itr->next();
+            if (network()->isConnected(pin_net, top_pin))
+            {
+                inst_pins.push_back(top_pin);
+            }
+        }
+        auto filtered_top_pins =
+            filterPins(inst_pins, PinDirection::output(), include_top_level);
+
+        filtered_inst_pins.insert(filtered_inst_pins.end(),
+                                  filtered_top_pins.begin(),
+                                  filtered_top_pins.end());
+    }
+    return filtered_inst_pins;
 }
+
+std::vector<LibraryCell*>
+OpenStaHandler::tiehiCells() const
+{
+    std::vector<LibraryCell*> cells;
+    auto                      all_libs = allLibs();
+    for (auto& lib : all_libs)
+    {
+        sta::LibertyCellIterator cell_iter(lib);
+        while (cell_iter.hasNext())
+        {
+            auto cell        = cell_iter.next();
+            auto output_pins = libraryOutputPins(cell);
+
+            if (!isSingleOutputCombinational(cell))
+            {
+                continue;
+            }
+            auto           output_pin  = output_pins[0];
+            sta::FuncExpr* output_func = output_pin->function();
+            if (!output_func)
+            {
+                continue;
+            }
+            if (output_func->op() == sta::FuncExpr::op_one)
+            {
+                cells.push_back(cell);
+            }
+        }
+    }
+    return cells;
+}
+std::vector<LibraryCell*>
+OpenStaHandler::tieloCells() const
+{
+    std::vector<LibraryCell*> cells;
+    auto                      all_libs = allLibs();
+    for (auto& lib : all_libs)
+    {
+        sta::LibertyCellIterator cell_iter(lib);
+        while (cell_iter.hasNext())
+        {
+            auto cell        = cell_iter.next();
+            auto output_pins = libraryOutputPins(cell);
+
+            if (!isSingleOutputCombinational(cell))
+            {
+                continue;
+            }
+            auto           output_pin  = output_pins[0];
+            sta::FuncExpr* output_func = output_pin->function();
+            if (!output_func)
+            {
+                continue;
+            }
+            if (output_func->op() == sta::FuncExpr::op_zero)
+            {
+                cells.push_back(cell);
+            }
+        }
+    }
+    return cells;
+}
+
 std::vector<std::vector<PathPoint>>
 OpenStaHandler::bestPath(int path_count) const
 {
@@ -315,8 +401,8 @@ OpenStaHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
     }
     auto                      first_lib   = libraryPin(first);
     auto                      second_lib  = libraryPin(second);
-    auto                      output_pins = outputPins(inst);
-    auto                      input_pins  = inputPins(inst);
+    auto                      output_pins = outputPins(inst, false);
+    auto                      input_pins  = inputPins(inst, false);
     std::vector<LibraryTerm*> remaining_pins;
     for (auto& pin : input_pins)
     {
@@ -422,7 +508,7 @@ std::vector<Instance*>
 OpenStaHandler::fanoutInstances(Net* net) const
 {
     std::vector<Instance*>     insts;
-    std::vector<InstanceTerm*> net_pins = fanoutPins(net);
+    std::vector<InstanceTerm*> net_pins = fanoutPins(net, false);
     for (auto& term : net_pins)
     {
         insts.push_back(network()->instance(term));
@@ -450,9 +536,9 @@ OpenStaHandler::driverInstances() const
 }
 
 unsigned int
-OpenStaHandler::fanoutCount(Net* net) const
+OpenStaHandler::fanoutCount(Net* net, bool include_top_level) const
 {
-    return fanoutPins(net).size();
+    return fanoutPins(net, include_top_level).size();
 }
 
 Point
@@ -858,9 +944,11 @@ OpenStaHandler::libraryOutputPins(LibraryCell* cell) const
 
 std::vector<InstanceTerm*>
 OpenStaHandler::filterPins(std::vector<InstanceTerm*>& terms,
-                           PinDirection*               direction) const
+                           PinDirection*               direction,
+                           bool                        include_top_level) const
 {
     std::vector<InstanceTerm*> inst_terms;
+
     for (auto& term : terms)
     {
         Instance* inst = network()->instance(term);
@@ -871,6 +959,9 @@ OpenStaHandler::filterPins(std::vector<InstanceTerm*>& terms,
                 inst_terms.push_back(term);
             }
         }
+        else if (include_top_level)
+        {
+        }
     }
     return inst_terms;
 }
@@ -878,6 +969,11 @@ void
 OpenStaHandler::del(Net* net) const
 {
     network()->deleteNet(net);
+}
+void
+OpenStaHandler::del(Instance* inst) const
+{
+    network()->deleteInstance(inst);
 }
 int
 OpenStaHandler::disconnectAll(Net* net) const
@@ -1143,6 +1239,46 @@ OpenStaHandler::isTriState(InstanceTerm* term) const
 {
     return network()->direction(term)->isTristate();
 }
+bool
+OpenStaHandler::isSingleOutputCombinational(Instance* inst) const
+{
+    if (inst == network()->topInstance())
+    {
+        return false;
+    }
+    return isSingleOutputCombinational(libraryCell(inst));
+}
+bool
+OpenStaHandler::isSingleOutputCombinational(LibraryCell* cell) const
+{
+    if (!cell)
+    {
+        return false;
+    }
+    auto output_pins = libraryOutputPins(cell);
+
+    return (output_pins.size() == 1 && isCombinational(cell));
+}
+bool
+OpenStaHandler::isCombinational(Instance* inst) const
+{
+    if (inst == network()->topInstance())
+    {
+        return false;
+    }
+    return isCombinational(libraryCell(inst));
+}
+bool
+OpenStaHandler::isCombinational(LibraryCell* cell) const
+{
+    if (!cell)
+    {
+        return false;
+    }
+    return (!cell->isClockGate() && !cell->isPad() && !cell->isMacro() &&
+            !cell->hasSequentials());
+}
+
 bool
 OpenStaHandler::isInput(LibraryTerm* term) const
 {

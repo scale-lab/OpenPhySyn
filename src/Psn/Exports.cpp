@@ -63,6 +63,11 @@ export_def(const char* lib_path)
     return Psn::instance().writeDef(lib_path);
 }
 int
+export_db(const char* db_path)
+{
+    return Psn::instance().writeDatabase(db_path);
+}
+int
 print_liberty_cells()
 {
     Liberty* liberty = Psn::instance().liberty();

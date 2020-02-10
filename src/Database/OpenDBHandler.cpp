@@ -88,28 +88,40 @@ OpenDBHandler::clockPins() const
 }
 
 std::vector<InstanceTerm*>
-OpenDBHandler::inputPins(Instance* inst) const
+OpenDBHandler::inputPins(Instance* inst, bool include_top_level) const
 {
     auto         inst_pins = pins(inst);
     PinDirection dir       = PinDirection::INPUT;
-    return filterPins(inst_pins, &dir);
+    return filterPins(inst_pins, &dir, include_top_level);
 }
 
 std::vector<InstanceTerm*>
-OpenDBHandler::outputPins(Instance* inst) const
+OpenDBHandler::outputPins(Instance* inst, bool include_top_level) const
 {
     auto         inst_pins = pins(inst);
     PinDirection dir       = PinDirection::OUTPUT;
 
-    return filterPins(inst_pins, &dir);
+    return filterPins(inst_pins, &dir, include_top_level);
 }
 
 std::vector<InstanceTerm*>
-OpenDBHandler::fanoutPins(Net* net) const
+OpenDBHandler::fanoutPins(Net* net, bool include_top_level) const
 {
     auto         inst_pins = pins(net);
     PinDirection dir       = PinDirection::INPUT;
-    return filterPins(inst_pins, &dir);
+    return filterPins(inst_pins, &dir, include_top_level);
+}
+std::vector<LibraryCell*>
+OpenDBHandler::tiehiCells() const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, tiehiCells)
+    return std::vector<LibraryCell*>();
+}
+std::vector<LibraryCell*>
+OpenDBHandler::tieloCells() const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, tieloCells)
+    return std::vector<LibraryCell*>();
 }
 std::vector<InstanceTerm*>
 OpenDBHandler::levelDriverPins() const
@@ -147,7 +159,7 @@ std::vector<Instance*>
 OpenDBHandler::fanoutInstances(Net* net) const
 {
     std::vector<Instance*>     insts;
-    std::vector<InstanceTerm*> pins = fanoutPins(net);
+    std::vector<InstanceTerm*> pins = fanoutPins(net, false);
     for (auto& term : pins)
     {
         insts.push_back(term->getInst());
@@ -175,9 +187,9 @@ OpenDBHandler::driverInstances() const
 }
 
 unsigned int
-OpenDBHandler::fanoutCount(Net* net) const
+OpenDBHandler::fanoutCount(Net* net, bool include_top_level) const
 {
-    return fanoutPins(net).size();
+    return fanoutPins(net, include_top_level).size();
 }
 std::vector<std::vector<PathPoint>>
 OpenDBHandler::criticalPath(int path_count) const
@@ -527,6 +539,30 @@ OpenDBHandler::isTriState(InstanceTerm* term) const
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isTriState)
     return false;
 }
+bool
+OpenDBHandler::isSingleOutputCombinational(Instance* inst) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isSingleOutputCombinational)
+    return false;
+}
+bool
+OpenDBHandler::isSingleOutputCombinational(LibraryCell* cell) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isSingleOutputCombinational)
+    return false;
+}
+bool
+OpenDBHandler::isCombinational(Instance* inst) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isCombinational)
+    return false;
+}
+bool
+OpenDBHandler::isCombinational(LibraryCell* cell) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isCombinational)
+    return false;
+}
 OpenDBHandler::isInput(BlockTerm* term) const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isInput)
@@ -662,7 +698,7 @@ OpenDBHandler::libraryPin(LibraryCell* cell, const char* pin_name) const
 
 std::vector<InstanceTerm*>
 OpenDBHandler::filterPins(std::vector<InstanceTerm*>& terms,
-                          PinDirection*               direction) const
+                          PinDirection* direction, bool include_top_level) const
 {
     std::vector<InstanceTerm*> inst_terms;
     for (auto& term : terms)
@@ -675,6 +711,10 @@ OpenDBHandler::filterPins(std::vector<InstanceTerm*>& terms,
                 inst_terms.push_back(term);
             }
         }
+        else if (include_top_level)
+        {
+            // TODO
+        }
     }
     return inst_terms;
 }
@@ -684,6 +724,12 @@ OpenDBHandler::del(Net* net) const
 {
     Net::destroy(net);
 }
+void
+OpenDBHandler::del(Instance* inst) const
+{
+    Instance::destroy(inst);
+}
+
 int
 OpenDBHandler::disconnectAll(Net* net) const
 {

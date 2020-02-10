@@ -49,6 +49,7 @@ int   import_lef(const char* lef_path, int ignore_routing_layers = true);
 int   import_lib(const char* lib_path); // Alias for import_liberty
 int   import_liberty(const char* lib_path);
 int   export_def(const char* def_path);
+int   export_db(const char* db_path);
 int   print_liberty_cells();
 bool  has_transform(const char* transform_name);
 int   set_wire_rc(float res_per_micon, float cap_per_micron);

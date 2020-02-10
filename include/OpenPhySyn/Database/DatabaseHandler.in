@@ -29,11 +29,15 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-virtual std::vector<InstanceTerm*> inputPins(Instance* inst) const;
-virtual std::vector<InstanceTerm*> outputPins(Instance* inst) const;
-virtual std::vector<InstanceTerm*> filterPins(std::vector<InstanceTerm*>& terms,
-                                              PinDirection* direction) const;
-virtual std::vector<InstanceTerm*> fanoutPins(Net* net) const;
+virtual std::vector<InstanceTerm*>
+inputPins(Instance* inst, bool include_top_level = false) const;
+virtual std::vector<InstanceTerm*>
+outputPins(Instance* inst, bool include_top_level = false) const;
+virtual std::vector<InstanceTerm*>
+filterPins(std::vector<InstanceTerm*>& terms, PinDirection* direction,
+           bool include_top_level = false) const;
+virtual std::vector<InstanceTerm*>
+                                   fanoutPins(Net* net, bool include_top_level = false) const;
 virtual std::vector<Instance*>     fanoutInstances(Net* net) const;
 virtual std::vector<InstanceTerm*> levelDriverPins() const;
 virtual std::vector<Instance*>     driverInstances() const;
@@ -86,6 +90,8 @@ virtual std::vector<LibraryTerm*> libraryPins(Instance* inst) const;
 virtual std::vector<LibraryTerm*> libraryPins(LibraryCell* cell) const;
 virtual std::vector<LibraryTerm*> libraryInputPins(LibraryCell* cell) const;
 virtual std::vector<LibraryTerm*> libraryOutputPins(LibraryCell* cell) const;
+virtual std::vector<LibraryCell*> tiehiCells() const;
+virtual std::vector<LibraryCell*> tieloCells() const;
 virtual bool                      isClocked(InstanceTerm* term) const;
 virtual bool                      isPrimary(Net* net) const;
 virtual bool                      isInput(InstanceTerm* term) const;
@@ -100,6 +106,10 @@ virtual bool                      isAnyInput(LibraryTerm* term) const;
 virtual bool                      isAnyOutput(LibraryTerm* term) const;
 virtual bool                      isBiDriect(LibraryTerm* term) const;
 virtual bool                      isTriState(LibraryTerm* term) const;
+virtual bool                      isCombinational(Instance* inst) const;
+virtual bool                      isCombinational(LibraryCell* cell) const;
+virtual bool      isSingleOutputCombinational(Instance* inst) const;
+virtual bool      isSingleOutputCombinational(LibraryCell* cell) const;
 virtual bool      hasMaxCapViolation(InstanceTerm* term, float load_cap) const;
 virtual bool      hasMaxCapViolation(InstanceTerm* term) const;
 virtual Instance* createInstance(const char* inst_name, LibraryCell* cell);
@@ -115,8 +125,10 @@ virtual void          disconnect(InstanceTerm* term) const;
 virtual int           disconnectAll(Net* net) const;
 virtual void          swapPins(InstanceTerm* first, InstanceTerm* second);
 virtual void          del(Net* net) const;
+virtual void          del(Instance* inst) const;
 virtual void          clear();
-virtual unsigned int  fanoutCount(Net* net) const;
+virtual unsigned int  fanoutCount(Net* net,
+                                  bool include_top_level = false) const;
 virtual std::vector<PathPoint> criticalPath(int path_count = 1) const;
 virtual std::vector<std::vector<PathPoint>> bestPath(int path_count = 1) const;
 virtual std::vector<PathPoint> worstSlackPath(InstanceTerm* term) const;

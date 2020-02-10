@@ -68,17 +68,18 @@ namespace eval psn {
     
     define_cmd_args "optimize_logic" {\
         [-no_constant_propagation] \
-        [-tihi tihi_cell_name] \
-        [-tilo tilo_cell_name] \
+        [-tiehi tiehi_cell_name] \
+        [-tielo tielo_cell_name] \
     }
 
     proc optimize_logic { args } {
         sta::parse_key_args "optimize_power" args \
-            keys {-tihi tilo} \
+            keys {-tiehi tielo} \
             flags {-no_constant_propagation}
         set do_constant_propagation true
-        set tihi_cell_name ""
-        set tilo_cell_name ""
+        set tiehi_cell_name ""
+        set tielo_cell_name ""
+        set max_prop_depth -1
         if {[info exists flags(-no_constant_propagation)]} {
             set no_constant_propagation false
         }
@@ -86,13 +87,13 @@ namespace eval psn {
             set do_constant_propagation false
         }
         if {$do_constant_propagation} {
-            if {[info exists keys(-tihi)]} {
-                set tihi_cell_name $keys(-tihi)
+            if {[info exists keys(-tiehi)]} {
+                set tiehi_cell_name $keys(-tiehi)
             }
-            if {[info exists keys(-tilo)]} {
-                set tilo_cell_name $keys(-tilo)
+            if {[info exists keys(-tielo)]} {
+                set tielo_cell_name $keys(-tielo)
             }
-            set propg [transform constant_propagation $tihi_cell_name $tilo_cell_name]
+            set propg [transform constant_propagation $max_prop_depth $tiehi_cell_name $tielo_cell_name]
             if {$propg < 0} {
                 return $propg
             }

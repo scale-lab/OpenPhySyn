@@ -258,6 +258,19 @@ Psn::writeDef(const char* path)
     }
 }
 
+int
+Psn::writeDatabase(const char* path)
+{
+    FILE* stream = fopen(path, "w");
+    if (stream)
+    {
+        db_->write(stream);
+        fclose(stream);
+        return 1;
+    }
+    return 0;
+}
+
 Database*
 Psn::database() const
 {
