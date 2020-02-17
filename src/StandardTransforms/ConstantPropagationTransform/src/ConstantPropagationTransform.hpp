@@ -44,18 +44,19 @@ private:
     bool isNumber(const std::string& s);
     int  prop_count_;
 
-    int  propagateConstants(psn::Psn* psn_inst, std::string tiehi_cell_name,
-                            std::string tielo_cell_name, int max_depth);
-    void propagateTieHiLoCell(psn::Psn* psn_inst, bool is_tiehi,
-                              psn::InstanceTerm* constant_term, int max_depth,
-                              psn::Instance*                      tiehi_cell,
-                              psn::Instance*                      tielo_cell,
-                              std::unordered_set<psn::Instance*>& visited,
-                              std::unordered_set<psn::Instance*>& deleted);
-    int  isTiedToConstant(psn::Psn* psn_inst, psn::InstanceTerm* constant_term,
-                          bool constant_val);
-    int  isTiedToInput(psn::Psn* psn_inst, psn::InstanceTerm* input_term,
-                       psn::InstanceTerm* constant_term, bool constant_val);
+    int propagateConstants(psn::Psn* psn_inst, std::string tiehi_cell_name,
+                           std::string tielo_cell_name, int max_depth);
+    void
+        propagateTieHiLoCell(psn::Psn* psn_inst, bool is_tiehi,
+                             psn::InstanceTerm* constant_term, int max_depth,
+                             psn::Instance* tiehi_cell, psn::Instance* tielo_cell,
+                             std::unordered_set<psn::Instance*>&     visited,
+                             std::unordered_set<psn::Instance*>&     deleted_inst,
+                             std::unordered_set<psn::InstanceTerm*>& deleted_pins);
+    int isTiedToConstant(psn::Psn* psn_inst, psn::InstanceTerm* constant_term,
+                         bool constant_val);
+    int isTiedToInput(psn::Psn* psn_inst, psn::InstanceTerm* input_term,
+                      psn::InstanceTerm* constant_term, bool constant_val);
 
 public:
     ConstantPropagationTransform();

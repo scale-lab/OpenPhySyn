@@ -1089,10 +1089,12 @@ DatabaseStaNetwork::staToDb(const Pin* pin,
     if (type == dbITermObj)
     {
         iterm = static_cast<dbITerm*>(obj);
+        // TODO: Validate DB instance exists.
         bterm = nullptr;
     }
     else if (type == dbBTermObj)
     {
+        // TODO: Validate DB instance exists.
         iterm = nullptr;
         bterm = static_cast<dbBTerm*>(obj);
     }
