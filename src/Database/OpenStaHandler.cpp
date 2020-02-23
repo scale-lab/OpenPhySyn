@@ -213,6 +213,57 @@ OpenStaHandler::tiehiCells() const
     return cells;
 }
 std::vector<LibraryCell*>
+OpenStaHandler::inverterCells() const
+{
+    std::vector<LibraryCell*> cells;
+    auto                      all_libs = allLibs();
+    for (auto& lib : all_libs)
+    {
+        sta::LibertyCellIterator cell_iter(lib);
+        while (cell_iter.hasNext())
+        {
+            auto cell        = cell_iter.next();
+            auto output_pins = libraryOutputPins(cell);
+            auto input_pins  = libraryInputPins(cell);
+
+            if (!isSingleOutputCombinational(cell) || input_pins.size() != 1)
+            {
+                continue;
+            }
+            auto           input_pin   = input_pins[1];
+            auto           output_pin  = output_pins[0];
+            sta::FuncExpr* output_func = output_pin->function();
+            if (!output_func)
+            {
+                continue;
+            }
+            if (output_func->op() == sta::FuncExpr::op_not)
+            {
+                cells.push_back(cell);
+            }
+        }
+    }
+    return cells;
+}
+LibraryCell*
+OpenStaHandler::smallestInverterCell() const
+{
+    auto inverter_cells = inverterCells();
+    if (inverter_cells.size())
+    {
+        auto smallest = *(inverter_cells.begin());
+        for (auto& lib : inverter_cells)
+        {
+            if (area(lib) < area(smallest))
+            {
+                smallest = lib;
+            }
+        }
+        return smallest;
+    }
+    return nullptr;
+}
+std::vector<LibraryCell*>
 OpenStaHandler::tieloCells() const
 {
     std::vector<LibraryCell*> cells;
@@ -582,6 +633,12 @@ OpenStaHandler::area(Instance* inst) const
 {
     odb::dbInst*   dinst  = network()->staToDb(inst);
     odb::dbMaster* master = dinst->getMaster();
+    return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
+}
+float
+OpenStaHandler::area(LibraryCell* cell) const
+{
+    odb::dbMaster* master = db_->findMaster(name(cell).c_str());
     return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
 }
 

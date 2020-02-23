@@ -123,6 +123,24 @@ OpenDBHandler::tieloCells() const
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, tieloCells)
     return std::vector<LibraryCell*>();
 }
+std::vector<LibraryCell*>
+OpenDBHandler::inverterCells() const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, inverterCells)
+    return std::vector<LibraryCell*>();
+}
+LibraryCell*
+OpenDBHandler::smallestInverterCell() const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, smallestInverterCell)
+    return std::vector<LibraryCell*>();
+}
+std::vector<LibraryCell*>
+OpenDBHandler::tieloCells() const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, tieloCells)
+    return std::vector<LibraryCell*>();
+}
 std::vector<InstanceTerm*>
 OpenDBHandler::levelDriverPins() const
 {
@@ -289,6 +307,12 @@ OpenDBHandler::location(Instance* inst)
 }
 float
 OpenDBHandler::area(Instance* inst) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, area)
+    return 0;
+}
+float
+OpenDBHandler::area(LibraryCell* cell) const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, area)
     return 0;

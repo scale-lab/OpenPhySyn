@@ -68,18 +68,38 @@ ConstantPropagationTransform::isTiedToInput(psn::Psn*          psn_inst,
 
     InstanceTerm* out_pin = handler.outputPins(inst)[0];
 
+    bool tied_to_input = true;
+
     for (int i = 0; i < 2; ++i)
     {
         std::unordered_map<LibraryTerm*, int> sim_vals;
         sim_vals[constant_library_term] = constant_val;
         sim_vals[input_library_term]    = i;
-        // TODO: check if tied to the inverse of input_term
         if (handler.evaluateFunctionExpression(out_pin, sim_vals) != i)
         {
-            return false;
+            tied_to_input = false;
+            break;
         }
     }
-    return true;
+
+    if (!tied_to_input)
+    {
+        for (int i = 0; i < 2; ++i)
+        {
+            std::unordered_map<LibraryTerm*, int> sim_vals;
+            sim_vals[constant_library_term] = constant_val;
+            sim_vals[input_library_term]    = i;
+            if (handler.evaluateFunctionExpression(out_pin, sim_vals) != ~i)
+            {
+                return 0;
+            }
+        }
+        return -1;
+    }
+    else
+    {
+        return 1;
+    }
 }
 
 // 1: Tied to logic 1
@@ -129,7 +149,7 @@ void
 ConstantPropagationTransform::propagateTieHiLoCell(
     psn::Psn* psn_inst, bool is_tiehi, InstanceTerm* constant_term,
     int max_depth, Instance* tiehi_cell, Instance* tielo_cell,
-    std::unordered_set<Instance*>&     visited,
+    LibraryCell* inverter_lib_cell, std::unordered_set<Instance*>& visited,
     std::unordered_set<Instance*>&     deleted_inst,
     std::unordered_set<InstanceTerm*>& deleted_pins)
 {
@@ -156,7 +176,7 @@ ConstantPropagationTransform::propagateTieHiLoCell(
             continue;
         }
         auto fanout_inst = handler.instance(pin);
-        if (!fanout_inst)
+        if (!fanout_inst || fanout_inst == inst)
         {
             continue;
         }
@@ -166,6 +186,7 @@ ConstantPropagationTransform::propagateTieHiLoCell(
             continue;
         }
         auto fanout_inst_output_pin = handler.outputPins(fanout_inst)[0];
+        auto fanout_net             = handler.net(fanout_inst_output_pin);
         auto is_const               = isTiedToConstant(psn_inst, pin, is_tiehi);
         if (is_const >= 0)
         {
@@ -177,16 +198,19 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                 // propagateTieHiLoCell(psn_inst, true, fanout_inst, max_depth?
                 // max_depth-1: 0, tiehi_cell, tielo_cell);
                 // Remove fanout_inst and Connect all fanouts to tiehi;
-                propagateTieHiLoCell(
-                    psn_inst, true, fanout_inst_output_pin,
-                    max_depth == -1 ? max_depth : max_depth - 1, tiehi_cell,
-                    tielo_cell, visited, deleted_inst, deleted_pins);
+                propagateTieHiLoCell(psn_inst, true, fanout_inst_output_pin,
+                                     max_depth == -1 ? max_depth
+                                                     : max_depth - 1,
+                                     tiehi_cell, tielo_cell, inverter_lib_cell,
+                                     visited, deleted_inst, deleted_pins);
                 if (deleted_inst.count(fanout_inst))
                 {
                     continue;
                 }
-                auto fanout_sink_pins = handler.fanoutPins(
-                    handler.net(fanout_inst_output_pin), false);
+                auto fanout_sink_pins = handler.fanoutPins(fanout_net, true);
+                PSN_LOG_DEBUG("Removing {}/{} (constant 1)",
+                              handler.name(fanout_inst),
+                              handler.name(handler.libraryCell(fanout_inst)));
                 for (auto& sink_pin : fanout_sink_pins)
                 {
                     handler.disconnect(sink_pin);
@@ -194,10 +218,8 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                     PSN_LOG_DEBUG("Connected {} to tiehi",
                                   handler.name(sink_pin));
                 }
-                assert(
-                    handler
-                        .fanoutPins(handler.net(fanout_inst_output_pin), false)
-                        .size() == 0);
+                fanout_sink_pins = handler.fanoutPins(fanout_net, true);
+                assert(handler.fanoutPins(fanout_net, true).size() == 0);
                 handler.del(fanout_inst);
                 deleted_inst.insert(fanout_inst);
                 deleted_pins.insert(fanout_inst_output_pin);
@@ -217,18 +239,19 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                 // and Connect all fanouts to tiehi; Remove fanout_inst and
                 // Connect all fanouts to tielo;
 
-                propagateTieHiLoCell(
-                    psn_inst, false, fanout_inst_output_pin,
-                    max_depth == -1 ? max_depth : max_depth - 1, tiehi_cell,
-                    tielo_cell, visited, deleted_inst, deleted_pins);
+                propagateTieHiLoCell(psn_inst, false, fanout_inst_output_pin,
+                                     max_depth == -1 ? max_depth
+                                                     : max_depth - 1,
+                                     tiehi_cell, tielo_cell, inverter_lib_cell,
+                                     visited, deleted_inst, deleted_pins);
                 if (deleted_inst.count(fanout_inst))
                 {
                     continue;
                 }
-                auto fanout_sink_pins = handler.fanoutPins(
-                    handler.net(fanout_inst_output_pin), false);
-                PSN_LOG_DEBUG("Removing {} (constant 0)",
-                              handler.name(fanout_inst));
+                auto fanout_sink_pins = handler.fanoutPins(fanout_net, true);
+                PSN_LOG_DEBUG("Removing {}/{} (constant 0)",
+                              handler.name(fanout_inst),
+                              handler.name(handler.libraryCell(fanout_inst)));
                 for (auto& sink_pin : fanout_sink_pins)
                 {
                     PSN_LOG_DEBUG("Connected {} to tielo",
@@ -236,10 +259,7 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                     handler.disconnect(sink_pin);
                     handler.connect(tielo_net, sink_pin);
                 }
-                assert(
-                    handler
-                        .fanoutPins(handler.net(fanout_inst_output_pin), false)
-                        .size() == 0);
+                assert(handler.fanoutPins(fanout_net, true).size() == 0);
                 handler.del(fanout_inst);
                 deleted_inst.insert(fanout_inst);
                 deleted_pins.insert(fanout_inst_output_pin);
@@ -261,35 +281,80 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                     break;
                 }
             }
-            if (other_pin && isTiedToInput(psn_inst, other_pin, pin, is_tiehi))
+            if (other_pin)
             {
-                auto fanout_sink_pins = handler.fanoutPins(
-                    handler.net(fanout_inst_output_pin), false);
-                PSN_LOG_DEBUG("{} is tied to input {}. Constant pin: {}",
-                              handler.name(fanout_inst),
-                              handler.name(other_pin), handler.name(pin));
-                auto other_pin_net    = handler.net(other_pin);
-                auto other_pin_driver = handler.faninPin(other_pin_net);
-                for (auto& sink_pin : fanout_sink_pins)
+                int is_tied_to_input =
+                    isTiedToInput(psn_inst, other_pin, pin, is_tiehi);
+                if (is_tied_to_input == 1)
                 {
-                    PSN_LOG_DEBUG("Connect {} to driver of {} [{} <- {}]",
-                                  handler.name(sink_pin),
-                                  handler.name(other_pin),
-                                  handler.name(other_pin_net),
-                                  handler.name(other_pin_driver));
-                    handler.disconnect(sink_pin);
-                    handler.connect(other_pin_net, sink_pin);
+                    auto fanout_sink_pins =
+                        handler.fanoutPins(fanout_net, true);
+                    PSN_LOG_DEBUG(
+                        "{} is tied to input {}/{}. Constant pin: {}",
+                        handler.name(fanout_inst),
+                        handler.name(handler.libraryCell(fanout_inst)),
+                        handler.name(other_pin), handler.name(pin));
+                    auto other_pin_net = handler.net(other_pin);
+                    for (auto& sink_pin : fanout_sink_pins)
+                    {
+                        PSN_LOG_DEBUG("Connect {} to driver of {} [{}]",
+                                      handler.name(sink_pin),
+                                      handler.name(other_pin),
+                                      handler.name(other_pin_net));
+                        handler.disconnect(sink_pin);
+                        handler.connect(other_pin_net, sink_pin);
+                    }
+                    assert(handler.fanoutPins(fanout_net, true).size() == 0);
+                    PSN_LOG_DEBUG("Removing {} (constant input)",
+                                  handler.name(fanout_inst));
+                    handler.del(fanout_inst);
+                    deleted_inst.insert(fanout_inst);
+                    deleted_pins.insert(fanout_inst_output_pin);
+                    for (auto& p : fanout_inst_input_pins)
+                    {
+                        deleted_pins.insert(p);
+                    }
                 }
-                assert(
-                    handler
-                        .fanoutPins(handler.net(fanout_inst_output_pin), false)
-                        .size() == 0);
-                handler.del(fanout_inst);
-                deleted_inst.insert(fanout_inst);
-                deleted_pins.insert(fanout_inst_output_pin);
-                for (auto& p : fanout_inst_input_pins)
+                else if (inverter_lib_cell && is_tied_to_input == -1)
                 {
-                    deleted_pins.insert(p);
+                    auto fanout_sink_pins =
+                        handler.fanoutPins(fanout_net, true);
+                    PSN_LOG_DEBUG("=========== {} is tied to inversion of "
+                                  "input {}. Constant pin: {}",
+                                  handler.name(fanout_inst),
+                                  handler.name(other_pin), handler.name(pin));
+                    auto other_pin_net = handler.net(other_pin);
+                    for (auto& sink_pin : fanout_sink_pins)
+                    {
+                        PSN_LOG_DEBUG("Connect {} to driver of {} [{}]",
+                                      handler.name(sink_pin),
+                                      handler.name(other_pin),
+                                      handler.name(other_pin_net));
+                        handler.disconnect(sink_pin);
+                        handler.connect(other_pin_net, sink_pin);
+                    }
+                    assert(handler.fanoutPins(fanout_net, true).size() == 0);
+                    auto inst_name = handler.name(fanout_inst);
+                    handler.del(fanout_inst);
+                    deleted_inst.insert(fanout_inst);
+                    deleted_pins.insert(fanout_inst_output_pin);
+                    for (auto& p : fanout_inst_input_pins)
+                    {
+                        deleted_pins.insert(p);
+                    }
+                    auto new_inverter = handler.createInstance(
+                        inst_name.c_str(), inverter_lib_cell);
+                    auto inverter_input_pin =
+                        handler.libraryInputPins(inverter_lib_cell)[0];
+                    auto inverter_output_pin =
+                        handler.libraryInputPins(inverter_lib_cell)[0];
+                    handler.connect(other_pin_net, new_inverter,
+                                    inverter_input_pin);
+                    for (auto& sink_pin : fanout_sink_pins)
+                    {
+                        handler.connect(handler.net(sink_pin), new_inverter,
+                                        inverter_output_pin);
+                    }
                 }
             }
         }
@@ -300,13 +365,18 @@ int
 ConstantPropagationTransform::propagateConstants(psn::Psn*   psn_inst,
                                                  std::string tiehi_cell_name,
                                                  std::string tielo_cell_name,
+                                                 std::string inverter_cell_name,
                                                  int         max_depth)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
 
     std::unordered_set<LibraryCell*> tiehi_cells;
     std::unordered_set<LibraryCell*> tielo_cells;
-
+    LibraryCell* inverter_lib_cell = handler.smallestInverterCell();
+    if (inverter_cell_name.length())
+    {
+        inverter_lib_cell = handler.libraryCell(inverter_cell_name.c_str());
+    }
     if (tiehi_cell_name.length())
     {
         LibraryCell* cell = handler.libraryCell(tiehi_cell_name.c_str());
@@ -338,8 +408,10 @@ ConstantPropagationTransform::propagateConstants(psn::Psn*   psn_inst,
         auto lib_cells = handler.tieloCells();
         tielo_cells.insert(lib_cells.begin(), lib_cells.end());
     }
+
     Instance* first_tihi = nullptr;
     Instance* first_tilo = nullptr;
+
     for (auto instance : handler.instances())
     {
         auto instance_lib_cell = handler.libraryCell(instance);
@@ -381,16 +453,16 @@ ConstantPropagationTransform::propagateConstants(psn::Psn*   psn_inst,
                 auto output_pin = handler.outputPins(instance)[0];
                 PSN_LOG_DEBUG("TieHi Instance {}", handler.name(instance));
                 propagateTieHiLoCell(psn_inst, true, output_pin, max_depth,
-                                     instance, first_tilo, visited,
-                                     deleted_insts, deleted_pins);
+                                     instance, first_tilo, inverter_lib_cell,
+                                     visited, deleted_insts, deleted_pins);
             }
             else if (tielo_cells.count(instance_lib_cell))
             {
                 auto output_pin = handler.outputPins(instance)[0];
                 PSN_LOG_DEBUG("TieLo Instance {}", handler.name(instance));
                 propagateTieHiLoCell(psn_inst, false, output_pin, max_depth,
-                                     first_tihi, instance, visited,
-                                     deleted_insts, deleted_pins);
+                                     first_tihi, instance, inverter_lib_cell,
+                                     visited, deleted_insts, deleted_pins);
             }
         }
     }
@@ -409,9 +481,9 @@ ConstantPropagationTransform::isNumber(const std::string& s)
 int
 ConstantPropagationTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
-    std::string tiehi_cell_name, tielo_cell_name;
+    std::string tiehi_cell_name, tielo_cell_name, inverter_cell_name;
     int         max_depth = -1;
-    if (args.size() > 3)
+    if (args.size() > 4)
     {
         PSN_LOG_ERROR(help());
         return -1;
@@ -438,8 +510,12 @@ ConstantPropagationTransform::run(Psn* psn_inst, std::vector<std::string> args)
     {
         tiehi_cell_name = args[2];
     }
+    if (args.size() >= 4)
+    {
+        inverter_cell_name = args[2];
+    }
     prop_count_ = 0;
 
     return propagateConstants(psn_inst, tiehi_cell_name, tielo_cell_name,
-                              max_depth);
+                              inverter_cell_name, max_depth);
 }
