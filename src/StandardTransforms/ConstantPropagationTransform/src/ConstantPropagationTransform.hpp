@@ -44,17 +44,17 @@ private:
     bool isNumber(const std::string& s);
     int  prop_count_;
 
-    int propagateConstants(psn::Psn* psn_inst, std::string tiehi_cell_name,
-                           std::string tielo_cell_name,
-                           std::string inverter_cell_name, int max_depth);
-    void
-        propagateTieHiLoCell(psn::Psn* psn_inst, bool is_tiehi,
-                             psn::InstanceTerm* constant_term, int max_depth,
-                             psn::Instance* tiehi_cell, psn::Instance* tielo_cell,
-                             psn::LibraryCell*                   inverter_lib_cell,
-                             std::unordered_set<psn::Instance*>& visited,
-                             std::unordered_set<psn::Instance*>& deleted_inst,
-                             std::unordered_set<psn::InstanceTerm*>& deleted_pins);
+    int  propagateConstants(psn::Psn* psn_inst, std::string tiehi_cell_name,
+                            std::string tielo_cell_name,
+                            std::string inverter_cell_name, int max_depth,
+                            bool invereter_replace);
+    void propagateTieHiLoCell(
+        psn::Psn* psn_inst, bool is_tiehi, psn::InstanceTerm* constant_term,
+        int max_depth, bool invereter_replace, psn::Instance* tiehi_cell,
+        psn::Instance* tielo_cell, psn::LibraryCell* inverter_lib_cell,
+        std::unordered_set<psn::Instance*>&     visited,
+        std::unordered_set<psn::Instance*>&     deleted_inst,
+        std::unordered_set<psn::InstanceTerm*>& deleted_pins);
     int isTiedToConstant(psn::Psn* psn_inst, psn::InstanceTerm* constant_term,
                          bool constant_val);
     int isTiedToInput(psn::Psn* psn_inst, psn::InstanceTerm* input_term,
@@ -69,5 +69,6 @@ public:
 DEFINE_TRANSFORM(
     ConstantPropagationTransform, "constant_propagation", "1.0.0",
     "Performs design optimization through constant propagation",
-    "Usage: transform constant_propagation [max-depth] [tie-hi cell] [tie-lo "
+    "Usage: transform constant_propagation [enable-inverter-replacement] "
+    "[max-depth] [tie-hi cell] [tie-lo]"
     "cell] [inverter_cell]")

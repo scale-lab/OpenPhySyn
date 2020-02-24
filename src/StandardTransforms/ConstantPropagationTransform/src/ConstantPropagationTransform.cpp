@@ -39,6 +39,7 @@
 #include <OpenSTA/liberty/TimingModel.hh>
 #include <OpenSTA/liberty/TimingRole.hh>
 #include <OpenSTA/search/Corner.hh>
+#include "Utils/StringUtils.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -148,8 +149,9 @@ ConstantPropagationTransform::isTiedToConstant(psn::Psn*          psn_inst,
 void
 ConstantPropagationTransform::propagateTieHiLoCell(
     psn::Psn* psn_inst, bool is_tiehi, InstanceTerm* constant_term,
-    int max_depth, Instance* tiehi_cell, Instance* tielo_cell,
-    LibraryCell* inverter_lib_cell, std::unordered_set<Instance*>& visited,
+    int max_depth, bool invereter_replace, Instance* tiehi_cell,
+    Instance* tielo_cell, LibraryCell* inverter_lib_cell,
+    std::unordered_set<Instance*>&     visited,
     std::unordered_set<Instance*>&     deleted_inst,
     std::unordered_set<InstanceTerm*>& deleted_pins)
 {
@@ -198,11 +200,11 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                 // propagateTieHiLoCell(psn_inst, true, fanout_inst, max_depth?
                 // max_depth-1: 0, tiehi_cell, tielo_cell);
                 // Remove fanout_inst and Connect all fanouts to tiehi;
-                propagateTieHiLoCell(psn_inst, true, fanout_inst_output_pin,
-                                     max_depth == -1 ? max_depth
-                                                     : max_depth - 1,
-                                     tiehi_cell, tielo_cell, inverter_lib_cell,
-                                     visited, deleted_inst, deleted_pins);
+                propagateTieHiLoCell(
+                    psn_inst, true, fanout_inst_output_pin,
+                    max_depth == -1 ? max_depth : max_depth - 1,
+                    invereter_replace, tiehi_cell, tielo_cell,
+                    inverter_lib_cell, visited, deleted_inst, deleted_pins);
                 if (deleted_inst.count(fanout_inst))
                 {
                     continue;
@@ -239,11 +241,11 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                 // and Connect all fanouts to tiehi; Remove fanout_inst and
                 // Connect all fanouts to tielo;
 
-                propagateTieHiLoCell(psn_inst, false, fanout_inst_output_pin,
-                                     max_depth == -1 ? max_depth
-                                                     : max_depth - 1,
-                                     tiehi_cell, tielo_cell, inverter_lib_cell,
-                                     visited, deleted_inst, deleted_pins);
+                propagateTieHiLoCell(
+                    psn_inst, false, fanout_inst_output_pin,
+                    max_depth == -1 ? max_depth : max_depth - 1,
+                    invereter_replace, tiehi_cell, tielo_cell,
+                    inverter_lib_cell, visited, deleted_inst, deleted_pins);
                 if (deleted_inst.count(fanout_inst))
                 {
                     continue;
@@ -315,7 +317,8 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                         deleted_pins.insert(p);
                     }
                 }
-                else if (inverter_lib_cell && is_tied_to_input == -1)
+                else if (invereter_replace && inverter_lib_cell &&
+                         is_tied_to_input == -1)
                 {
                     auto fanout_sink_pins =
                         handler.fanoutPins(fanout_net, true);
@@ -366,7 +369,8 @@ ConstantPropagationTransform::propagateConstants(psn::Psn*   psn_inst,
                                                  std::string tiehi_cell_name,
                                                  std::string tielo_cell_name,
                                                  std::string inverter_cell_name,
-                                                 int         max_depth)
+                                                 int         max_depth,
+                                                 bool        invereter_replace)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
 
@@ -453,16 +457,18 @@ ConstantPropagationTransform::propagateConstants(psn::Psn*   psn_inst,
                 auto output_pin = handler.outputPins(instance)[0];
                 PSN_LOG_DEBUG("TieHi Instance {}", handler.name(instance));
                 propagateTieHiLoCell(psn_inst, true, output_pin, max_depth,
-                                     instance, first_tilo, inverter_lib_cell,
-                                     visited, deleted_insts, deleted_pins);
+                                     invereter_replace, instance, first_tilo,
+                                     inverter_lib_cell, visited, deleted_insts,
+                                     deleted_pins);
             }
             else if (tielo_cells.count(instance_lib_cell))
             {
                 auto output_pin = handler.outputPins(instance)[0];
                 PSN_LOG_DEBUG("TieLo Instance {}", handler.name(instance));
                 propagateTieHiLoCell(psn_inst, false, output_pin, max_depth,
-                                     first_tihi, instance, inverter_lib_cell,
-                                     visited, deleted_insts, deleted_pins);
+                                     invereter_replace, first_tihi, instance,
+                                     inverter_lib_cell, visited, deleted_insts,
+                                     deleted_pins);
             }
         }
     }
@@ -482,40 +488,45 @@ int
 ConstantPropagationTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
     std::string tiehi_cell_name, tielo_cell_name, inverter_cell_name;
-    int         max_depth = -1;
-    if (args.size() > 4)
+    int         max_depth         = -1;
+    bool        invereter_replace = true;
+    if (args.size() > 5)
     {
         PSN_LOG_ERROR(help());
         return -1;
     }
-    if (args.size() >= 1)
+    if (args.size() >= 1 && StringUtils::isFalsy(args[0]))
     {
-        if (!isNumber(args[0]))
+        invereter_replace = false;
+    }
+    if (args.size() >= 2)
+    {
+        if (!isNumber(args[1]))
         {
             PSN_LOG_ERROR(help());
             return -1;
         }
-        max_depth = atoi(args[0].c_str());
+        max_depth = atoi(args[1].c_str());
         if (max_depth < -1)
         {
             PSN_LOG_ERROR(help());
             return -1;
         }
     }
-    if (args.size() >= 2)
-    {
-        tielo_cell_name = args[1];
-    }
     if (args.size() >= 3)
     {
-        tiehi_cell_name = args[2];
+        tielo_cell_name = args[2];
     }
     if (args.size() >= 4)
     {
-        inverter_cell_name = args[2];
+        tiehi_cell_name = args[3];
+    }
+    if (args.size() >= 5)
+    {
+        inverter_cell_name = args[4];
     }
     prop_count_ = 0;
 
     return propagateConstants(psn_inst, tiehi_cell_name, tielo_cell_name,
-                              inverter_cell_name, max_depth);
+                              inverter_cell_name, max_depth, invereter_replace);
 }
