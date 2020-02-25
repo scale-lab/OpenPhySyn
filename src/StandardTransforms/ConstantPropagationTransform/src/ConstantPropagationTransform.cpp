@@ -52,9 +52,9 @@ ConstantPropagationTransform::ConstantPropagationTransform() : prop_count_(0)
 {
 }
 
-// 1: Tied to the input.
-// 0: Not tied.
-// -1: TODO tied to the negated input.
+//  1: Tied to the input.
+//  0: Not tied.
+// -1: Tied to the negated input.
 int
 ConstantPropagationTransform::isTiedToInput(psn::Psn*          psn_inst,
                                             psn::InstanceTerm* input_term,
@@ -70,7 +70,6 @@ ConstantPropagationTransform::isTiedToInput(psn::Psn*          psn_inst,
     InstanceTerm* out_pin = handler.outputPins(inst)[0];
 
     bool tied_to_input = true;
-
     for (int i = 0; i < 2; ++i)
     {
         std::unordered_map<LibraryTerm*, int> sim_vals;
@@ -90,7 +89,7 @@ ConstantPropagationTransform::isTiedToInput(psn::Psn*          psn_inst,
             std::unordered_map<LibraryTerm*, int> sim_vals;
             sim_vals[constant_library_term] = constant_val;
             sim_vals[input_library_term]    = i;
-            if (handler.evaluateFunctionExpression(out_pin, sim_vals) != ~i)
+            if (handler.evaluateFunctionExpression(out_pin, sim_vals) != !i)
             {
                 return 0;
             }
@@ -190,6 +189,7 @@ ConstantPropagationTransform::propagateTieHiLoCell(
         auto fanout_inst_output_pin = handler.outputPins(fanout_inst)[0];
         auto fanout_net             = handler.net(fanout_inst_output_pin);
         auto is_const               = isTiedToConstant(psn_inst, pin, is_tiehi);
+
         if (is_const >= 0)
         {
             if (tiehi_cell && is_const == 1)
@@ -322,11 +322,24 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                 {
                     auto fanout_sink_pins =
                         handler.fanoutPins(fanout_net, true);
-                    PSN_LOG_DEBUG("=========== {} is tied to inversion of "
-                                  "input {}. Constant pin: {}",
-                                  handler.name(fanout_inst),
-                                  handler.name(other_pin), handler.name(pin));
+
                     auto other_pin_net = handler.net(other_pin);
+                    auto inst_name     = handler.name(fanout_inst);
+                    auto inv_name      = inst_name + "_folded_inverter";
+                    auto out_net_name  = inst_name + "_folder_inverter_out";
+                    auto new_inverter  = handler.createInstance(
+                        inv_name.c_str(), inverter_lib_cell);
+                    auto inverter_input_pin =
+                        handler.libraryInputPins(inverter_lib_cell)[0];
+                    auto inverter_output_pin =
+                        handler.libraryOutputPins(inverter_lib_cell)[0];
+                    auto inverter_output_net =
+                        handler.createNet(out_net_name.c_str());
+                    handler.disconnect(other_pin);
+                    handler.connect(other_pin_net, new_inverter,
+                                    inverter_input_pin);
+                    handler.connect(inverter_output_net, new_inverter,
+                                    inverter_output_pin);
                     for (auto& sink_pin : fanout_sink_pins)
                     {
                         PSN_LOG_DEBUG("Connect {} to driver of {} [{}]",
@@ -334,29 +347,16 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                                       handler.name(other_pin),
                                       handler.name(other_pin_net));
                         handler.disconnect(sink_pin);
-                        handler.connect(other_pin_net, sink_pin);
+                        handler.connect(inverter_output_net, sink_pin);
                     }
                     assert(handler.fanoutPins(fanout_net, true).size() == 0);
-                    auto inst_name = handler.name(fanout_inst);
+
                     handler.del(fanout_inst);
                     deleted_inst.insert(fanout_inst);
                     deleted_pins.insert(fanout_inst_output_pin);
                     for (auto& p : fanout_inst_input_pins)
                     {
                         deleted_pins.insert(p);
-                    }
-                    auto new_inverter = handler.createInstance(
-                        inst_name.c_str(), inverter_lib_cell);
-                    auto inverter_input_pin =
-                        handler.libraryInputPins(inverter_lib_cell)[0];
-                    auto inverter_output_pin =
-                        handler.libraryInputPins(inverter_lib_cell)[0];
-                    handler.connect(other_pin_net, new_inverter,
-                                    inverter_input_pin);
-                    for (auto& sink_pin : fanout_sink_pins)
-                    {
-                        handler.connect(handler.net(sink_pin), new_inverter,
-                                        inverter_output_pin);
                     }
                 }
             }
@@ -373,6 +373,7 @@ ConstantPropagationTransform::propagateConstants(psn::Psn*   psn_inst,
                                                  bool        invereter_replace)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
+    PsnLogger::instance().setLevel(LogLevel::debug);
 
     std::unordered_set<LibraryCell*> tiehi_cells;
     std::unordered_set<LibraryCell*> tielo_cells;
@@ -460,6 +461,16 @@ ConstantPropagationTransform::propagateConstants(psn::Psn*   psn_inst,
                                      invereter_replace, instance, first_tilo,
                                      inverter_lib_cell, visited, deleted_insts,
                                      deleted_pins);
+                auto out_pins = handler.outputPins(instance, true);
+                if (out_pins.size() == 0)
+                {
+                    handler.del(instance);
+                    deleted_insts.insert(instance);
+                    for (auto& p : out_pins)
+                    {
+                        deleted_pins.insert(p);
+                    }
+                }
             }
             else if (tielo_cells.count(instance_lib_cell))
             {
@@ -469,6 +480,16 @@ ConstantPropagationTransform::propagateConstants(psn::Psn*   psn_inst,
                                      invereter_replace, first_tihi, instance,
                                      inverter_lib_cell, visited, deleted_insts,
                                      deleted_pins);
+                auto out_pins = handler.outputPins(instance, true);
+                if (out_pins.size() == 0)
+                {
+                    handler.del(instance);
+                    deleted_insts.insert(instance);
+                    for (auto& p : out_pins)
+                    {
+                        deleted_pins.insert(p);
+                    }
+                }
             }
         }
     }

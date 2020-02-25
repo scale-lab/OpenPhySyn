@@ -256,6 +256,7 @@ if (${OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED})
 set(PSN_TESTFILES
   ${PSN_TESTFILES}
   ${PROJECT_SOURCE_DIR}/tests/SimpleConstantPropagation.cpp
+  ${PROJECT_SOURCE_DIR}/tests/SimpleConstantPropagationInversion.cpp
   ${PROJECT_SOURCE_DIR}/tests/ComplexConstantPropagation.cpp
 )
 endif()

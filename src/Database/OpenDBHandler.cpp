@@ -779,6 +779,7 @@ OpenDBHandler::disconnect(InstanceTerm* term) const
 {
     InstanceTerm::disconnect(term);
 }
+
 void
 OpenDBHandler::swapPins(InstanceTerm* first, InstanceTerm* second)
 {

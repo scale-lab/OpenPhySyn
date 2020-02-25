@@ -93,7 +93,7 @@ namespace eval psn {
             if {[info exists keys(-tielo)]} {
                 set tielo_cell_name $keys(-tielo)
             }
-            set propg [transform constant_propagation $max_prop_depth $tiehi_cell_name $tielo_cell_name]
+            set propg [transform constant_propagation true $max_prop_depth $tiehi_cell_name $tielo_cell_name]
             if {$propg < 0} {
                 return $propg
             }
