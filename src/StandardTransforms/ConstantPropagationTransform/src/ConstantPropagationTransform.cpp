@@ -373,7 +373,6 @@ ConstantPropagationTransform::propagateConstants(psn::Psn*   psn_inst,
                                                  bool        invereter_replace)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
-    PsnLogger::instance().setLevel(LogLevel::debug);
 
     std::unordered_set<LibraryCell*> tiehi_cells;
     std::unordered_set<LibraryCell*> tielo_cells;
