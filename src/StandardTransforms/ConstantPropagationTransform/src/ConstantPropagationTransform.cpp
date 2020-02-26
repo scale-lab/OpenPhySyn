@@ -316,6 +316,7 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                     {
                         deleted_pins.insert(p);
                     }
+                    prop_count_++;
                 }
                 else if (invereter_replace && inverter_lib_cell &&
                          is_tied_to_input == -1)
@@ -358,6 +359,7 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                     {
                         deleted_pins.insert(p);
                     }
+                    prop_count_++;
                 }
             }
         }
