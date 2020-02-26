@@ -150,6 +150,7 @@ ConstantPropagationTransform::propagateTieHiLoCell(
     psn::Psn* psn_inst, bool is_tiehi, InstanceTerm* constant_term,
     int max_depth, bool invereter_replace, Instance* tiehi_cell,
     Instance* tielo_cell, LibraryCell* inverter_lib_cell,
+    psn::LibraryCell*                  smallest_buffer_lib_cell,
     std::unordered_set<Instance*>&     visited,
     std::unordered_set<Instance*>&     deleted_inst,
     std::unordered_set<InstanceTerm*>& deleted_pins)
@@ -208,24 +209,48 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                     psn_inst, true, fanout_inst_output_pin,
                     max_depth == -1 ? max_depth : max_depth - 1,
                     invereter_replace, tiehi_cell, tielo_cell,
-                    inverter_lib_cell, visited, deleted_inst, deleted_pins);
+                    inverter_lib_cell, smallest_buffer_lib_cell, visited,
+                    deleted_inst, deleted_pins);
                 if (deleted_inst.count(fanout_inst))
                 {
                     continue;
                 }
-                auto fanout_sink_pins = handler.fanoutPins(fanout_net, true);
                 PSN_LOG_DEBUG("Removing {}/{} (constant 1)",
                               handler.name(fanout_inst),
                               handler.name(handler.libraryCell(fanout_inst)));
+                auto   fanout_sink_pins = handler.fanoutPins(fanout_net, true);
+                size_t toplevel_count   = 0;
                 for (auto& sink_pin : fanout_sink_pins)
                 {
-                    handler.disconnect(sink_pin);
-                    handler.connect(tiehi_net, sink_pin);
-                    PSN_LOG_DEBUG("Connected {} to tiehi",
+                    PSN_LOG_DEBUG("Connected {} to tielo",
                                   handler.name(sink_pin));
+
+                    if (handler.isTopLevel(sink_pin))
+                    {
+                        auto out_buff_inst = handler.createInstance(
+                            std::string("buf_output_" + handler.name(sink_pin))
+                                .c_str(),
+                            smallest_buffer_lib_cell);
+
+                        auto out_buff_out_pin =
+                            handler.outputPins(out_buff_inst)[0];
+                        auto out_buff_in_pin =
+                            handler.inputPins(out_buff_inst)[0];
+                        auto sink_net = handler.net(handler.term(sink_pin));
+
+                        handler.connect(sink_net, out_buff_out_pin);
+                        handler.connect(tiehi_net, out_buff_in_pin);
+                        toplevel_count++;
+                    }
+                    else
+                    {
+                        handler.disconnect(sink_pin);
+                        handler.connect(tiehi_net, sink_pin);
+                    }
                 }
-                fanout_sink_pins = handler.fanoutPins(fanout_net, true);
-                assert(handler.fanoutPins(fanout_net, true).size() == 0);
+
+                assert(handler.fanoutPins(fanout_net, true).size() ==
+                       toplevel_count);
                 handler.del(fanout_inst);
                 deleted_inst.insert(fanout_inst);
                 deleted_pins.insert(fanout_inst_output_pin);
@@ -249,23 +274,51 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                     psn_inst, false, fanout_inst_output_pin,
                     max_depth == -1 ? max_depth : max_depth - 1,
                     invereter_replace, tiehi_cell, tielo_cell,
-                    inverter_lib_cell, visited, deleted_inst, deleted_pins);
+                    inverter_lib_cell, smallest_buffer_lib_cell, visited,
+                    deleted_inst, deleted_pins);
+
                 if (deleted_inst.count(fanout_inst))
                 {
+
                     continue;
                 }
+
                 auto fanout_sink_pins = handler.fanoutPins(fanout_net, true);
                 PSN_LOG_DEBUG("Removing {}/{} (constant 0)",
                               handler.name(fanout_inst),
                               handler.name(handler.libraryCell(fanout_inst)));
+                size_t toplevel_count = 0;
                 for (auto& sink_pin : fanout_sink_pins)
                 {
                     PSN_LOG_DEBUG("Connected {} to tielo",
                                   handler.name(sink_pin));
-                    handler.disconnect(sink_pin);
-                    handler.connect(tielo_net, sink_pin);
+
+                    if (handler.isTopLevel(sink_pin))
+                    {
+                        auto out_buff_inst = handler.createInstance(
+                            std::string("buf_output_" + handler.name(sink_pin))
+                                .c_str(),
+                            smallest_buffer_lib_cell);
+
+                        auto out_buff_out_pin =
+                            handler.outputPins(out_buff_inst)[0];
+                        auto out_buff_in_pin =
+                            handler.inputPins(out_buff_inst)[0];
+                        auto sink_net = handler.net(handler.term(sink_pin));
+
+                        handler.connect(sink_net, out_buff_out_pin);
+                        handler.connect(tielo_net, out_buff_in_pin);
+                        toplevel_count++;
+                    }
+                    else
+                    {
+                        handler.disconnect(sink_pin);
+                        handler.connect(tielo_net, sink_pin);
+                    }
                 }
-                assert(handler.fanoutPins(fanout_net, true).size() == 0);
+
+                assert(handler.fanoutPins(fanout_net, true).size() ==
+                       toplevel_count);
                 handler.del(fanout_inst);
                 deleted_inst.insert(fanout_inst);
                 deleted_pins.insert(fanout_inst_output_pin);
@@ -382,7 +435,13 @@ ConstantPropagationTransform::propagateConstants(psn::Psn*   psn_inst,
 
     std::unordered_set<LibraryCell*> tiehi_cells;
     std::unordered_set<LibraryCell*> tielo_cells;
-    LibraryCell* inverter_lib_cell = handler.smallestInverterCell();
+    LibraryCell* inverter_lib_cell        = handler.smallestInverterCell();
+    LibraryCell* smallest_buffer_lib_cell = handler.smallestBufferCell();
+    if (!smallest_buffer_lib_cell)
+    {
+        PSN_LOG_ERROR("Cannot find buffer cells in the provided library");
+        return -1;
+    }
     if (inverter_cell_name.length())
     {
         inverter_lib_cell = handler.libraryCell(inverter_cell_name.c_str());
@@ -464,8 +523,9 @@ ConstantPropagationTransform::propagateConstants(psn::Psn*   psn_inst,
                 PSN_LOG_DEBUG("TieHi Instance {}", handler.name(instance));
                 propagateTieHiLoCell(psn_inst, true, output_pin, max_depth,
                                      invereter_replace, instance, first_tilo,
-                                     inverter_lib_cell, visited, deleted_insts,
-                                     deleted_pins);
+                                     inverter_lib_cell,
+                                     smallest_buffer_lib_cell, visited,
+                                     deleted_insts, deleted_pins);
                 auto out_pins = handler.outputPins(instance, true);
                 if (out_pins.size() == 0)
                 {
@@ -483,8 +543,9 @@ ConstantPropagationTransform::propagateConstants(psn::Psn*   psn_inst,
                 PSN_LOG_DEBUG("TieLo Instance {}", handler.name(instance));
                 propagateTieHiLoCell(psn_inst, false, output_pin, max_depth,
                                      invereter_replace, first_tihi, instance,
-                                     inverter_lib_cell, visited, deleted_insts,
-                                     deleted_pins);
+                                     inverter_lib_cell,
+                                     smallest_buffer_lib_cell, visited,
+                                     deleted_insts, deleted_pins);
                 auto out_pins = handler.outputPins(instance, true);
                 if (out_pins.size() == 0)
                 {

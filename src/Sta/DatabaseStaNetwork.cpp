@@ -960,10 +960,12 @@ DatabaseStaNetwork::connect(Instance* inst, Port* port, Net* net)
     {
         const char* port_name = name(port);
         dbBTerm*    bterm     = block_->findBTerm(port_name);
+
         if (bterm)
             bterm->connect(dnet);
         else
             bterm = dbBTerm::create(dnet, port_name);
+
         PortDirection* dir = direction(port);
         dbSigType      sig_type;
         dbIoType       io_type;

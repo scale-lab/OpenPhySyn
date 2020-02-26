@@ -52,6 +52,7 @@ private:
         psn::Psn* psn_inst, bool is_tiehi, psn::InstanceTerm* constant_term,
         int max_depth, bool invereter_replace, psn::Instance* tiehi_cell,
         psn::Instance* tielo_cell, psn::LibraryCell* inverter_lib_cell,
+        psn::LibraryCell*                       smallest_buffer_lib_cell,
         std::unordered_set<psn::Instance*>&     visited,
         std::unordered_set<psn::Instance*>&     deleted_inst,
         std::unordered_set<psn::InstanceTerm*>& deleted_pins);
