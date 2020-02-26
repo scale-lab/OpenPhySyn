@@ -81,6 +81,7 @@ public:
     void processStartupProgramOptions();
     int  sourceTclScript(const char* script_path);
     virtual void setWireRC(float res_per_micon, float cap_per_micron);
+    virtual int  setWireRC(const char* layer_name);
     virtual int  linkDesign(const char* design_name);
 
     virtual DatabaseHandler* handler() const;

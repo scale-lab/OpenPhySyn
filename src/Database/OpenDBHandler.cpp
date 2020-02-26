@@ -433,6 +433,11 @@ OpenDBHandler::dbuToMeters(uint dist) const
 {
     return dist * 1E-9;
 }
+double
+OpenDBHandler::dbuToMicrons(uint dist) const
+{
+    return (1.0 * dist) / db_->getTech()->getLefUnits();
+}
 bool
 OpenDBHandler::isPlaced(InstanceTerm* term) const
 {

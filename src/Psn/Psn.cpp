@@ -820,6 +820,32 @@ Psn::setWireRC(float res_per_micon, float cap_per_micron)
         ->setCapacitancePerMicron(cap_per_micron);
 }
 int
+Psn::setWireRC(const char* layer_name)
+{
+    auto tech = db_->getTech();
+
+    if (!tech)
+    {
+        PSN_LOG_ERROR("Could not find any loaded technology file.");
+        return -1;
+    }
+
+    auto layer = tech->findLayer(layer_name);
+    if (!layer)
+    {
+        PSN_LOG_ERROR("Could not find layer with the name {}.", layer_name);
+        return -1;
+    }
+    auto  width         = handler()->dbuToMicrons(layer->getWidth());
+    float res_per_micon = (layer->getResistance() / width) * 1E6;
+    float cap_per_micron =
+        (handler()->dbuToMicrons(1) * width * layer->getCapacitance() +
+         layer->getEdgeCapacitance() * 2.0) *
+        1E-12 * 1E6;
+    setWireRC(res_per_micon, cap_per_micron);
+    return 1;
+}
+int
 Psn::linkDesign(const char* design_name)
 {
     int rc = sta_->linkDesign(design_name);

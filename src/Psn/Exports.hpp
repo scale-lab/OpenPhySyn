@@ -53,6 +53,7 @@ int   export_db(const char* db_path);
 int   print_liberty_cells();
 bool  has_transform(const char* transform_name);
 int   set_wire_rc(float res_per_micon, float cap_per_micron);
+int   set_wire_rc(const char* layer_name);
 int   set_max_area(float area);
 int   link(const char* top_module);
 int   link_design(const char* top_module);
