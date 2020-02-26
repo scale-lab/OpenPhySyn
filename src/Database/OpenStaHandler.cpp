@@ -264,6 +264,18 @@ OpenStaHandler::smallestInverterCell() const
     return nullptr;
 }
 std::vector<LibraryCell*>
+OpenStaHandler::bufferCells() const
+{
+    std::vector<LibraryCell*> cells;
+    auto                      all_libs = allLibs();
+    for (auto& lib : all_libs)
+    {
+        auto lib_buffers = lib->buffers();
+        cells.insert(cells.end(), lib_buffers->begin(), lib_buffers->end());
+    }
+    return cells;
+}
+std::vector<LibraryCell*>
 OpenStaHandler::tieloCells() const
 {
     std::vector<LibraryCell*> cells;

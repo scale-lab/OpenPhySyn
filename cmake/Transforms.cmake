@@ -75,3 +75,11 @@ install(
   DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
 )
 endif()
+
+if (${OPENPHYSYN_TRANSFORM_BUFFER_RESIZE_ENABLED})
+add_subdirectory(src/StandardTransforms/BufferResizeTransform)
+install(
+  TARGETS buffer_resize
+  DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
+)
+endif()

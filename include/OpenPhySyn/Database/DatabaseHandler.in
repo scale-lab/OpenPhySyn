@@ -94,6 +94,7 @@ virtual std::vector<LibraryTerm*> libraryOutputPins(LibraryCell* cell) const;
 virtual std::vector<LibraryCell*> tiehiCells() const;
 virtual std::vector<LibraryCell*> tieloCells() const;
 virtual std::vector<LibraryCell*> inverterCells() const;
+virtual std::vector<LibraryCell*> bufferCells() const;
 virtual LibraryCell*              smallestInverterCell() const;
 virtual bool                      isClocked(InstanceTerm* term) const;
 virtual bool                      isPrimary(Net* net) const;

@@ -129,6 +129,12 @@ OpenDBHandler::inverterCells() const
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, inverterCells)
     return std::vector<LibraryCell*>();
 }
+std::vector<LibraryCell*>
+OpenDBHandler::bufferCells() const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bufferCells)
+    return std::vector<LibraryCell*>();
+}
 LibraryCell*
 OpenDBHandler::smallestInverterCell() const
 {
