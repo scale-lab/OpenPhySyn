@@ -129,10 +129,22 @@ OpenDBHandler::inverterCells() const
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, inverterCells)
     return std::vector<LibraryCell*>();
 }
+std::vector<LibraryCell*>
+OpenDBHandler::bufferCells() const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bufferCells)
+    return std::vector<LibraryCell*>();
+}
 LibraryCell*
 OpenDBHandler::smallestInverterCell() const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, smallestInverterCell)
+    return std::vector<LibraryCell*>();
+}
+LibraryCell*
+OpenDBHandler::smallestBufferCell() const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, smallestBufferCell)
     return std::vector<LibraryCell*>();
 }
 std::vector<LibraryCell*>
@@ -457,6 +469,12 @@ OpenDBHandler::isDriver(InstanceTerm* term) const
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isDriver)
     return false;
 }
+bool
+OpenDBHandler::isTopLevel(InstanceTerm* term) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isTopLevel)
+    return false;
+}
 
 float
 OpenDBHandler::pinCapacitance(InstanceTerm* term) const
@@ -703,7 +721,18 @@ OpenDBHandler::net(const char* name) const
     }
     return block->findNet(name);
 }
-
+Term*
+OpenDBHandler::term(InstanceTerm* term) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, term)
+    return nullptr;
+}
+Net*
+OpenDBHandler::net(Term* term) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, net)
+    return nullptr;
+}
 LibraryTerm*
 OpenDBHandler::libraryPin(const char* cell_name, const char* pin_name) const
 {

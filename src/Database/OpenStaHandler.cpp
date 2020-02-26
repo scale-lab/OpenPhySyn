@@ -107,6 +107,16 @@ OpenStaHandler::net(InstanceTerm* term) const
 {
     return network()->net(term);
 }
+Term*
+OpenStaHandler::term(InstanceTerm* term) const
+{
+    return network()->term(term);
+}
+Net*
+OpenStaHandler::net(Term* term) const
+{
+    return network()->net(term);
+}
 std::vector<InstanceTerm*>
 OpenStaHandler::connectedPins(Net* net) const
 {
@@ -159,21 +169,21 @@ OpenStaHandler::fanoutPins(Net* pin_net, bool include_top_level) const
 
     auto filtered_inst_pins =
         filterPins(inst_pins, PinDirection::input(), include_top_level);
+
     if (include_top_level)
     {
-        auto itr = network()->pinIterator(network()->topInstance());
+        std::vector<InstanceTerm*> filtered_top_pins;
+        auto itr = network()->connectedPinIterator(pin_net);
         while (itr->hasNext())
         {
-
-            auto top_pin = itr->next();
-            if (network()->isConnected(pin_net, top_pin))
+            InstanceTerm* term = itr->next();
+            if (network()->isTopLevelPort(term) &&
+                network()->direction(term)->isOutput())
             {
-                inst_pins.push_back(top_pin);
+                filtered_top_pins.push_back(term);
             }
         }
-        auto filtered_top_pins =
-            filterPins(inst_pins, PinDirection::output(), include_top_level);
-
+        delete itr;
         filtered_inst_pins.insert(filtered_inst_pins.end(),
                                   filtered_top_pins.begin(),
                                   filtered_top_pins.end());
@@ -263,6 +273,38 @@ OpenStaHandler::smallestInverterCell() const
     }
     return nullptr;
 }
+std::vector<LibraryCell*>
+OpenStaHandler::bufferCells() const
+{
+    std::vector<LibraryCell*> cells;
+    auto                      all_libs = allLibs();
+    for (auto& lib : all_libs)
+    {
+        auto buff_libs = lib->buffers();
+        cells.insert(cells.end(), buff_libs->begin(), buff_libs->end());
+    }
+    return cells;
+}
+
+LibraryCell*
+OpenStaHandler::smallestBufferCell() const
+{
+    auto buff_cells = bufferCells();
+    if (buff_cells.size())
+    {
+        auto smallest = *(buff_cells.begin());
+        for (auto& lib : buff_cells)
+        {
+            if (area(lib) < area(smallest))
+            {
+                smallest = lib;
+            }
+        }
+        return smallest;
+    }
+    return nullptr;
+}
+
 std::vector<LibraryCell*>
 OpenStaHandler::tieloCells() const
 {
@@ -1021,6 +1063,12 @@ OpenStaHandler::filterPins(std::vector<InstanceTerm*>& terms,
         }
     }
     return inst_terms;
+}
+
+bool
+OpenStaHandler::isTopLevel(InstanceTerm* term) const
+{
+    return network()->isTopLevelPort(term);
 }
 void
 OpenStaHandler::del(Net* net) const
