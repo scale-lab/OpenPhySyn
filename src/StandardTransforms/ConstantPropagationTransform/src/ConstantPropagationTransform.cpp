@@ -161,6 +161,10 @@ ConstantPropagationTransform::propagateTieHiLoCell(
     {
         return;
     }
+    if (handler.dontTouch(inst))
+    {
+        return;
+    }
 
     visited.insert(inst);
 

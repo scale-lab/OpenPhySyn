@@ -147,6 +147,7 @@ virtual float slew(InstanceTerm* term, bool is_rise = true) const;
 virtual float required(InstanceTerm* term, bool worst = true) const;
 virtual bool  isCommutative(InstanceTerm* first, InstanceTerm* second) const;
 virtual bool  dontUse(LibraryCell* cell) const;
+virtual bool  dontTouch(Instance* cell) const;
 virtual void  resetDelays();
 virtual void  resetDelays(InstanceTerm* term);
 virtual std::vector<Net*>      nets() const;

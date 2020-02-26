@@ -922,6 +922,11 @@ OpenDBHandler::dontUse(LibraryCell* cell) const
 {
     return false;
 }
+bool
+OpenDBHandler::dontTouch(Instance* cell) const
+{
+    return false;
+}
 void
 OpenDBHandler::resetDelays()
 {

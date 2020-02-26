@@ -89,7 +89,10 @@ BufferResizeTransform::fixViolations(
     {
         for (auto& lib_cell : handler.bufferCells())
         {
-            buffer_lib.insert(lib_cell);
+            if (!handler.dontUse(lib_cell))
+            {
+                buffer_lib.insert(lib_cell);
+            }
         }
     }
     else
@@ -112,7 +115,10 @@ BufferResizeTransform::fixViolations(
         {
             for (auto& lib_cell : handler.inverterCells())
             {
-                inverter_lib.insert(lib_cell);
+                if (!handler.dontUse(lib_cell))
+                {
+                    inverter_lib.insert(lib_cell);
+                }
             }
         }
         else

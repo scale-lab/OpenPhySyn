@@ -1722,6 +1722,11 @@ OpenStaHandler::dontUse(LibraryCell*) const
 {
     return false;
 }
+bool
+OpenStaHandler::dontTouch(Instance*) const
+{
+    return false;
+}
 void
 OpenStaHandler::resetDelays()
 {
