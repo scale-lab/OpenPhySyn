@@ -94,6 +94,8 @@ private:
     void      findBufferTargetSlews(sta::LibertyLibrarySeq* resize_libs);
     void      findBufferTargetSlews(Liberty* library, sta::Slew slews[],
                                     int counts[]);
+    void      slewLimit(InstanceTerm* pin, sta::MinMax* min_max, float& limit,
+                        bool& exists) const;
     float     pinTableAverage(LibraryTerm* from, LibraryTerm* to,
                               bool is_delay = true, bool is_rise = true) const;
     float     pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,

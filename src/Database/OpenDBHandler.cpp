@@ -683,15 +683,22 @@ OpenDBHandler::isTriState(LibraryTerm* term) const
 }
 
 bool
-OpenDBHandler::hasMaxCapViolation(InstanceTerm* term, float load_cap) const
+OpenDBHandler::violatesMaximumCapacitance(InstanceTerm* term,
+                                          float         load_cap) const
 {
-    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, hasMaxCapViolation)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, violatesMaximumCapacitance)
     return false;
 }
 bool
-OpenDBHandler::hasMaxCapViolation(InstanceTerm* term) const
+OpenDBHandler::violatesMaximumCapacitance(InstanceTerm* term) const
 {
-    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, hasMaxCapViolation)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, violatesMaximumCapacitance)
+    return false;
+}
+bool
+OpenDBHandler::violatesMaximumTransition(InstanceTerm* term) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, violatesMaximumTransition)
     return false;
 }
 

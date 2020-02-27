@@ -72,6 +72,13 @@ BufferResizeTransform::fixSlewViolations(
     std::unordered_set<psn::LibraryCell*>& inverter_lib, bool resize_gates,
     bool use_inverter_pair)
 {
+    DatabaseHandler& handler = *(psn_inst->handler());
+    for (auto& pin : handler.levelDriverPins())
+    {
+        if (handler.violatesMaximumTransition(pin))
+        {
+        }
+    }
 }
 
 int
