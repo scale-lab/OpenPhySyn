@@ -240,7 +240,6 @@ OpenStaHandler::inverterCells() const
             {
                 continue;
             }
-            auto           input_pin   = input_pins[1];
             auto           output_pin  = output_pins[0];
             sta::FuncExpr* output_func = output_pin->function();
             if (!output_func)
