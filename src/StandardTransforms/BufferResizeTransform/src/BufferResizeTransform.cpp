@@ -64,6 +64,17 @@ BufferResizeTransform::fixCapacitanceViolations(
     std::unordered_set<psn::LibraryCell*>& inverter_lib, bool resize_gates,
     bool use_inverter_pair)
 {
+    DatabaseHandler& handler = *(psn_inst->handler());
+    for (auto& pin : handler.levelDriverPins())
+    {
+        if (handler.violatesMaximumCapacitance(pin))
+        {
+            PSN_LOG_DEBUG("Fix max. cap. violation for pin {}",
+                          handler.name(pin));
+            bufferPin(psn_inst, pin, buffer_lib, inverter_lib, resize_gates,
+                      use_inverter_pair);
+        }
+    }
 }
 
 void
@@ -77,8 +88,103 @@ BufferResizeTransform::fixSlewViolations(
     {
         if (handler.violatesMaximumTransition(pin))
         {
+            PSN_LOG_DEBUG("Fix max. trans. violation for pin {}",
+                          handler.name(pin));
+            bufferPin(psn_inst, pin, buffer_lib, inverter_lib, resize_gates,
+                      use_inverter_pair);
         }
     }
+}
+
+void
+BufferResizeTransform::bufferPin(
+    psn::Psn* psn_inst, psn::InstanceTerm* pin,
+    std::unordered_set<psn::LibraryCell*>& buffer_lib,
+    std::unordered_set<psn::LibraryCell*>& inverter_lib, bool resize_gates,
+    bool use_inverter_pair)
+{
+    DatabaseHandler& handler = *(psn_inst->handler());
+    if (handler.isTopLevel(pin))
+    {
+        PSN_LOG_WARN("Not handled yet!");
+        return;
+    }
+    auto pin_net = handler.net(pin);
+    auto st_tree = SteinerTree::create(pin_net, psn_inst);
+    if (!st_tree)
+    {
+        PSN_LOG_ERROR("Failed to create steiner tree for {}",
+                      handler.name(pin));
+        return;
+    }
+    auto driver_point = st_tree->driverPoint();
+    auto top_point    = st_tree->top();
+    auto buff_sol = bottomUp(psn_inst, pin, top_point, driver_point, buffer_lib,
+                             inverter_lib, std::move(st_tree), resize_gates,
+                             use_inverter_pair);
+    if (buff_sol)
+    {
+        auto buff_tree = buff_sol->optimalTree();
+        if (buff_tree)
+        {
+            topDown(psn_inst, pin, std::move(buff_tree));
+        }
+    }
+}
+
+std::unique_ptr<BufferResizeTransform::BufferSolution>
+BufferResizeTransform::bottomUp(
+    Psn* psn_inst, InstanceTerm* pin, SteinerPoint pt, SteinerPoint prev,
+    std::unordered_set<psn::LibraryCell*>& buffer_lib,
+    std::unordered_set<psn::LibraryCell*>& inverter_lib,
+    std::shared_ptr<SteinerTree> st_tree, bool resize_gates,
+    bool use_inverter_pair)
+{
+    DatabaseHandler& handler = *(psn_inst->handler());
+    if (pt != SteinerNull)
+    {
+        auto pt_pin = st_tree->pin(pt);
+        // TODO calculate res & cap
+        float res = 0.0;
+        float cap = 0.0;
+        if (pt_pin && handler.isLoad(pt_pin))
+        {
+            float cap = handler.loadCapacitance(pin);
+            float req = handler.required(pin);
+            auto  base_buffer_tree =
+                std::shared_ptr<BufferTree>(new BufferTree(cap, req));
+            std::unique_ptr<BufferSolution> buff_sol =
+                std::make_unique<BufferSolution>();
+            buff_sol->addTree(base_buffer_tree);
+            buff_sol->addWireDelays(res, cap);
+            buff_sol->addLeafTree(buffer_lib, inverter_lib);
+            return buff_sol;
+        }
+        else
+        {
+            auto left  = bottomUp(psn_inst, pin, st_tree->left(pt), pt,
+                                 buffer_lib, inverter_lib, st_tree,
+                                 resize_gates, use_inverter_pair);
+            auto right = bottomUp(psn_inst, pin, st_tree->right(pt), pt,
+                                  buffer_lib, inverter_lib, st_tree,
+                                  resize_gates, use_inverter_pair);
+            std::unique_ptr<BufferSolution> buff_sol =
+                std::unique_ptr<BufferSolution>(
+                    new BufferSolution(std::move(left), std::move(right)));
+            buff_sol->addWireDelays(res, cap);
+            buff_sol->prune();
+            buff_sol->addLeafTree(buffer_lib, inverter_lib);
+            return buff_sol;
+        }
+    }
+    return nullptr;
+}
+void
+BufferResizeTransform::topDown(
+    psn::Psn* psn_inst, psn::InstanceTerm* pin,
+    std::shared_ptr<BufferResizeTransform::BufferTree> tree)
+{
+    // TODO apply buffering solution.
 }
 
 int

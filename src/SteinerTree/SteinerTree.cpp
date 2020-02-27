@@ -374,6 +374,11 @@ SteinerTree::right(SteinerPoint pt) const
         return SteinerNull;
     return right_[pt];
 }
+bool
+SteinerTree::isLeaf(SteinerPoint pt) const
+{
+    return left(pt) == SteinerNull && right(pt) == SteinerNull;
+}
 
 SteinerPoint
 SteinerTree::top() const

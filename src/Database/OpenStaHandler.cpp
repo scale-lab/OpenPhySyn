@@ -1454,6 +1454,11 @@ OpenStaHandler::violatesMaximumTransition(InstanceTerm* term) const
     }
     return false;
 }
+bool
+OpenStaHandler::isLoad(InstanceTerm* term) const
+{
+    return network()->isLoad(term);
+}
 void
 OpenStaHandler::makeEquivalentCells()
 {

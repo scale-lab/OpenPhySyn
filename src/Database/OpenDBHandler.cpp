@@ -701,6 +701,12 @@ OpenDBHandler::violatesMaximumTransition(InstanceTerm* term) const
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, violatesMaximumTransition)
     return false;
 }
+bool
+OpenDBHandler::isLoad(InstanceTerm* term) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isLoad)
+    return false;
+}
 
 Instance*
 OpenDBHandler::instance(const char* name) const
