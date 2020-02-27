@@ -1833,9 +1833,9 @@ OpenStaHandler::findBufferTargetSlews(sta::LibertyLibrarySeq* resize_libs)
         target_slews_[rf] /= tgt_counts[rf];
 }
 bool
-OpenStaHandler::dontUse(LibraryCell*) const
+OpenStaHandler::dontUse(LibraryCell* cell) const
 {
-    return false;
+    return cell->dontUse();
 }
 bool
 OpenStaHandler::dontTouch(Instance*) const
