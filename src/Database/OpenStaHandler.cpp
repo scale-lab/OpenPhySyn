@@ -240,7 +240,6 @@ OpenStaHandler::inverterCells() const
             {
                 continue;
             }
-            auto           input_pin   = input_pins[1];
             auto           output_pin  = output_pins[0];
             sta::FuncExpr* output_func = output_pin->function();
             if (!output_func)
@@ -1420,13 +1419,14 @@ OpenStaHandler::isTriState(LibraryTerm* term) const
     return term->direction()->isTristate();
 }
 bool
-OpenStaHandler::hasMaxCapViolation(InstanceTerm* term) const
+OpenStaHandler::violatesMaximumCapacitance(InstanceTerm* term) const
 {
     float load_cap = loadCapacitance(term);
-    return hasMaxCapViolation(term, load_cap);
+    return violatesMaximumCapacitance(term, load_cap);
 }
 bool
-OpenStaHandler::hasMaxCapViolation(InstanceTerm* term, float load_cap) const
+OpenStaHandler::violatesMaximumCapacitance(InstanceTerm* term,
+                                           float         load_cap) const
 {
     LibraryTerm* port = network()->libertyPort(term);
     if (port)
@@ -1435,6 +1435,22 @@ OpenStaHandler::hasMaxCapViolation(InstanceTerm* term, float load_cap) const
         bool  exists;
         port->capacitanceLimit(sta::MinMax::max(), cap_limit, exists);
         return exists && load_cap > cap_limit;
+    }
+    return false;
+}
+
+bool
+OpenStaHandler::violatesMaximumTransition(InstanceTerm* term) const
+{
+    auto  vert = network()->graph()->pinDrvrVertex(term);
+    float limit;
+    bool  exists;
+    slewLimit(term, sta::MinMax::max(), limit, exists);
+    for (auto rf : sta::RiseFall::range())
+    {
+        auto slew = network()->graph()->slew(vert, rf, dcalc_ap_->index());
+        if (slew > limit)
+            return true;
     }
     return false;
 }
@@ -1723,6 +1739,64 @@ OpenStaHandler::findTargetLoad(LibraryCell* cell, sta::TimingArc* arc,
         return load_cap;
     }
     return 0.0;
+}
+void
+OpenStaHandler::slewLimit(InstanceTerm* pin, sta::MinMax* min_max,
+                          // Return values.
+                          float& limit, bool& exists) const
+
+{
+    exists         = false;
+    auto  top_cell = network()->cell(network()->topInstance());
+    float top_limit;
+    bool  top_limit_exists;
+    network()->sdc()->slewLimit(top_cell, min_max, top_limit, top_limit_exists);
+
+    // Default to top ("design") limit.
+    exists = top_limit_exists;
+    limit  = top_limit;
+    if (network()->isTopLevelPort(pin))
+    {
+        auto  port = network()->port(pin);
+        float port_limit;
+        bool  port_limit_exists;
+        network()->sdc()->slewLimit(port, min_max, port_limit,
+                                    port_limit_exists);
+        // Use the tightest limit.
+        if (port_limit_exists &&
+            (!exists || min_max->compare(limit, port_limit)))
+        {
+            limit  = port_limit;
+            exists = true;
+        }
+    }
+    else
+    {
+        float pin_limit;
+        bool  pin_limit_exists;
+        network()->sdc()->slewLimit(pin, min_max, pin_limit, pin_limit_exists);
+        // Use the tightest limit.
+        if (pin_limit_exists && (!exists || min_max->compare(limit, pin_limit)))
+        {
+            limit  = pin_limit;
+            exists = true;
+        }
+
+        float port_limit;
+        bool  port_limit_exists;
+        auto  port = network()->libertyPort(pin);
+        if (port)
+        {
+            port->slewLimit(min_max, port_limit, port_limit_exists);
+            // Use the tightest limit.
+            if (port_limit_exists &&
+                (!exists || min_max->compare(limit, port_limit)))
+            {
+                limit  = port_limit;
+                exists = true;
+            }
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////
