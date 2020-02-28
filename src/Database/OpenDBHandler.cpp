@@ -537,6 +537,41 @@ OpenDBHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, gateDelay);
     return 0.0;
 }
+float
+OpenDBHandler::gateDelay(LibraryTerm* out_port, float load_cap)
+{
+
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, gateDelay);
+    return 0.0;
+}
+float
+OpenDBHandler::bufferDelay(psn::LibraryCell* buffer_cell, float load_cap)
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bufferDelay);
+    return 0.0;
+}
+
+float
+OpenDBHandler::pinCapacitance(const InstanceTerm* term)
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinCapacitance)
+}
+
+float
+OpenDBHandler::portCapacitance(const LibraryTerm* port, bool isMax)
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, portCapacitance)
+}
+float
+OpenDBHandler::bufferInputCapacitance(LibraryCell* buffer_cell)
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bufferInputCapacitance)
+}
+float
+OpenDBHandler::bufferOutputCapacitance(LibraryCell* buffer_cell)
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bufferOutputCapacitance)
+}
 
 float
 OpenDBHandler::maxLoad(LibraryCell* cell)

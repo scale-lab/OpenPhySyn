@@ -1804,6 +1804,67 @@ OpenStaHandler::slewLimit(InstanceTerm* pin, sta::MinMax* min_max,
     }
 }
 
+float
+OpenStaHandler::gateDelay(LibraryTerm* out_port, float load_cap)
+{
+    auto cell = out_port->libertyCell();
+    // Max rise/fall delays.
+    sta::ArcDelay                        max_delay = -sta::INF;
+    sta::LibertyCellTimingArcSetIterator set_iter(cell);
+    while (set_iter.hasNext())
+    {
+        sta::TimingArcSet* arc_set = set_iter.next();
+        if (arc_set->to() == out_port)
+        {
+            sta::TimingArcSetArcIterator arc_iter(arc_set);
+            while (arc_iter.hasNext())
+            {
+                sta::TimingArc* arc     = arc_iter.next();
+                sta::RiseFall*  in_rf   = arc->fromTrans()->asRiseFall();
+                float           in_slew = target_slews_[in_rf->index()];
+                sta::ArcDelay   gate_delay;
+                sta::Slew       drvr_slew;
+                sta_->arcDelayCalc()->gateDelay(cell, arc, in_slew, load_cap,
+                                                nullptr, 0.0, pvt_, dcalc_ap_,
+                                                gate_delay, drvr_slew);
+                max_delay = std::max(max_delay, gate_delay);
+            }
+        }
+    }
+    return max_delay;
+}
+
+float
+OpenStaHandler::bufferDelay(psn::LibraryCell* buffer_cell, float load_cap)
+{
+    psn::LibraryTerm *input, *output;
+    buffer_cell->bufferPorts(input, output);
+    return gateDelay(output, load_cap);
+}
+
+float
+OpenStaHandler::portCapacitance(const LibraryTerm* port, bool isMax)
+{
+    float cap1 = port->capacitance(
+        sta::RiseFall::rise(), isMax ? sta::MinMax::max() : sta::MinMax::min());
+    float cap2 = port->capacitance(
+        sta::RiseFall::fall(), isMax ? sta::MinMax::max() : sta::MinMax::min());
+    return std::max(cap1, cap2);
+}
+float
+OpenStaHandler::bufferInputCapacitance(LibraryCell* buffer_cell)
+{
+    LibraryTerm *input, *output;
+    buffer_cell->bufferPorts(input, output);
+    return portCapacitance(input);
+}
+float
+OpenStaHandler::bufferOutputCapacitance(LibraryCell* buffer_cell)
+{
+    LibraryTerm *input, *output;
+    buffer_cell->bufferPorts(input, output);
+    return portCapacitance(input);
+}
 ////////////////////////////////////////////////////////////////
 
 sta::Slew

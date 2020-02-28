@@ -98,5 +98,6 @@
     "external/doctest/*/**": true,
     "external/flue/*/**": true
   },
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "cmake.configureOnOpen": true
 }
