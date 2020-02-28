@@ -76,10 +76,10 @@ install(
 )
 endif()
 
-if (${OPENPHYSYN_TRANSFORM_BUFFER_RESIZE_ENABLED})
-add_subdirectory(src/StandardTransforms/BufferResizeTransform)
+if (${OPENPHYSYN_TRANSFORM_timing_buffer_ENABLED})
+add_subdirectory(src/StandardTransforms/TimingBufferTransform)
 install(
-  TARGETS buffer_resize
+  TARGETS timing_buffer
   DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
 )
 endif()

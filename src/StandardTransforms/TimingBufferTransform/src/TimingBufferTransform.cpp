@@ -29,7 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "BufferResizeTransform.hpp"
+#include "TimingBufferTransform.hpp"
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <OpenPhySyn/Sta/PathPoint.hpp>
 #include <OpenPhySyn/Utils/PsnGlobal.hpp>
@@ -47,19 +47,24 @@
 #include <sstream>
 
 // Objectives:
-// 1- Standard Van Ginneken buffering (with pruning) [TODO].
-// 2- Multiple buffer sizes [TODO].
-// 3- Inverter pair instead of buffer pairs [TODO].
-// 4- Simultaneous buffering and gate sizing [TODO].
+// * Standard Van Ginneken buffering (with pruning). [InProgress]
+// * Multiple buffer sizes. [TODO]
+// * Inverter pair instead of buffer pairs. [TODO]
+// * Simultaneous buffering and gate sizing. [TODO]
+// * Preslack pruning. [TODO]
+// * Buffer library pruning. [TODO]
+// * Timerless buffering. [TODO]
+// * Layout aware buffering. [TODO]
+// * Logic aware buffering. [TODO]
 
 using namespace psn;
 
-BufferResizeTransform::BufferResizeTransform() : buffer_count_(0)
+TimingBufferTransform::TimingBufferTransform() : buffer_count_(0)
 {
 }
 
 void
-BufferResizeTransform::fixCapacitanceViolations(
+TimingBufferTransform::fixCapacitanceViolations(
     Psn* psn_inst, std::unordered_set<psn::LibraryCell*>& buffer_lib,
     std::unordered_set<psn::LibraryCell*>& inverter_lib, bool resize_gates,
     bool use_inverter_pair)
@@ -78,7 +83,7 @@ BufferResizeTransform::fixCapacitanceViolations(
 }
 
 void
-BufferResizeTransform::fixSlewViolations(
+TimingBufferTransform::fixSlewViolations(
     Psn* psn_inst, std::unordered_set<psn::LibraryCell*>& buffer_lib,
     std::unordered_set<psn::LibraryCell*>& inverter_lib, bool resize_gates,
     bool use_inverter_pair)
@@ -97,7 +102,7 @@ BufferResizeTransform::fixSlewViolations(
 }
 
 void
-BufferResizeTransform::bufferPin(
+TimingBufferTransform::bufferPin(
     psn::Psn* psn_inst, psn::InstanceTerm* pin,
     std::unordered_set<psn::LibraryCell*>& buffer_lib,
     std::unordered_set<psn::LibraryCell*>& inverter_lib, bool resize_gates,
@@ -132,8 +137,8 @@ BufferResizeTransform::bufferPin(
     }
 }
 
-std::unique_ptr<BufferResizeTransform::BufferSolution>
-BufferResizeTransform::bottomUp(
+std::unique_ptr<TimingBufferTransform::BufferSolution>
+TimingBufferTransform::bottomUp(
     Psn* psn_inst, InstanceTerm* pin, SteinerPoint pt, SteinerPoint prev,
     std::unordered_set<psn::LibraryCell*>& buffer_lib,
     std::unordered_set<psn::LibraryCell*>& inverter_lib,
@@ -180,15 +185,15 @@ BufferResizeTransform::bottomUp(
     return nullptr;
 }
 void
-BufferResizeTransform::topDown(
+TimingBufferTransform::topDown(
     psn::Psn* psn_inst, psn::InstanceTerm* pin,
-    std::shared_ptr<BufferResizeTransform::BufferTree> tree)
+    std::shared_ptr<TimingBufferTransform::BufferTree> tree)
 {
     // TODO apply buffering solution.
 }
 
 int
-BufferResizeTransform::fixViolations(
+TimingBufferTransform::fixViolations(
     Psn* psn_inst, bool fix_cap, bool fix_slew,
     std::unordered_set<std::string> buffer_lib_names,
     std::unordered_set<std::string> inverter_lib_names, bool resize_gates,
@@ -264,7 +269,7 @@ BufferResizeTransform::fixViolations(
 }
 
 int
-BufferResizeTransform::run(Psn* psn_inst, std::vector<std::string> args)
+TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
     buffer_count_                                     = 0;
     bool                            resize_gates      = false;

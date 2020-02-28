@@ -38,7 +38,7 @@
 #include <memory>
 #include <unordered_set>
 
-class BufferResizeTransform : public psn::PsnTransform
+class TimingBufferTransform : public psn::PsnTransform
 {
     class BufferTree
     {
@@ -108,13 +108,13 @@ class BufferResizeTransform : public psn::PsnTransform
     class BufferSolution
     {
         std::vector<std::shared_ptr<BufferTree>> buffer_trees;
-        std::shared_ptr<BufferTree>              optimalTree;
+        std::shared_ptr<BufferTree>              optimal_tree_;
 
     public:
-        BufferSolution() : optimalTree(nullptr){};
+        BufferSolution() : optimal_tree_(nullptr){};
         BufferSolution(std::unique_ptr<BufferSolution> left,
                        std::unique_ptr<BufferSolution> right)
-            : optimalTree(nullptr)
+            : optimal_tree_(nullptr)
         {
             // TODO merge trees
         }
@@ -192,14 +192,14 @@ private:
                        bool use_inverter_pair = false);
 
 public:
-    BufferResizeTransform();
+    TimingBufferTransform();
 
     int run(psn::Psn* psn_inst, std::vector<std::string> args) override;
 };
 
 DEFINE_TRANSFORM(
-    BufferResizeTransform, "buffer_resize", "1.0.0",
+    TimingBufferTransform, "timing_buffer", "1.0.0",
     "Performs several variations of buffering and resizing to fix timing "
     "violations",
-    "Usage: transform buffer_resize buffers -all|<set of buffers> [inverters "
+    "Usage: transform timing_buffer buffers -all|<set of buffers> [inverters "
     "-all|<set of inverters>] [enable_gate_resize] [enable_inverter_pair]")

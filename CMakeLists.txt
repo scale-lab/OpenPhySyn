@@ -14,7 +14,7 @@ option(OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED "Build Buffer Fan-Out transfor
 option(OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED "Build Gate Clone transform" ON)
 option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
 option(OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED "Build Constant Propagation transform" ON)
-option(OPENPHYSYN_TRANSFORM_BUFFER_RESIZE_ENABLED "Build Buffer Resize transform" ON)
+option(OPENPHYSYN_TRANSFORM_timing_buffer_ENABLED "Build Buffer Resize transform" ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-error")
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -262,7 +262,7 @@ set(PSN_TESTFILES
 )
 endif()
 
-if (${OPENPHYSYN_TRANSFORM_BUFFER_RESIZE_ENABLED})
+if (${OPENPHYSYN_TRANSFORM_timing_buffer_ENABLED})
 set(PSN_TESTFILES
   ${PSN_TESTFILES}
 )

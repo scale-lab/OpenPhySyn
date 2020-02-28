@@ -6,6 +6,6 @@ sta create_clock [sta get_ports clk] -name core_clock -period 5
 # sta create_clock [sta get_ports clk_i] -name core_clock -period 5
 sta report_checks -path_delay min_max
 sta report_check_types -all_violators
-transform buffer_resize -buffers BUF_X4
+transform timing_buffer -buffers BUF_X4
 # export_def ./outputs/buffered.def
 exit 0

@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-project(BufferResizeTransform VERSION 1.0.0 LANGUAGES CXX)
+project(TimingBufferTransform VERSION 1.0.0 LANGUAGES CXX)
 
-set(TRANSFORM_NAME buffer_resize)
+set(TRANSFORM_NAME timing_buffer)
 
 set(PSN_HOME "/usr/include/OpenPhySyn" CACHE FILEPATH "The path to OpenPhySyn includes")
 
@@ -31,7 +31,7 @@ if(NOT PSN_LIB_PATH STREQUAL 0)
 link_directories(${PSN_LIB_PATH})
 endif()
 
-add_library(${TRANSFORM_NAME} SHARED src/BufferResizeTransform.cpp)
+add_library(${TRANSFORM_NAME} SHARED src/TimingBufferTransform.cpp)
 
 target_include_directories(${TRANSFORM_NAME} PUBLIC
   src/
