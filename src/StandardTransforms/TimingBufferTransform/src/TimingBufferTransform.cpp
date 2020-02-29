@@ -127,12 +127,12 @@ TimingBufferTransform::bufferPin(
         auto buff_tree = buff_sol->optimalTree(psn_inst);
         if (buff_tree)
         {
-            topDown(psn_inst, pin, std::move(buff_tree));
+            topDown(psn_inst, pin, buff_tree);
         }
     }
 }
 
-std::shared_ptr<TimingBufferTransform::BufferSolution>
+std::shared_ptr<BufferSolution>
 TimingBufferTransform::bottomUp(
     Psn* psn_inst, InstanceTerm* pin, SteinerPoint pt, SteinerPoint prev,
     std::unordered_set<psn::LibraryCell*>& buffer_lib,
@@ -189,12 +189,21 @@ TimingBufferTransform::bottomUp(
     return nullptr;
 }
 void
-TimingBufferTransform::topDown(
-    psn::Psn* psn_inst, psn::InstanceTerm* pin,
-    std::shared_ptr<TimingBufferTransform::BufferTree> tree)
+TimingBufferTransform::topDown(psn::Psn* psn_inst, psn::InstanceTerm* pin,
+                               std::shared_ptr<BufferTree>& tree)
 {
+    topDown(psn_inst, psn_inst->handler()->net(pin), tree);
+}
+void
+TimingBufferTransform::topDown(psn::Psn* psn_inst, psn::Net* net,
+                               std::shared_ptr<BufferTree>& tree)
+{
+    if (!net)
+    {
+        PSN_LOG_WARN("topDown buffering without target net!");
+        return;
+    }
     PSN_UNUSED(psn_inst);
-    PSN_UNUSED(pin);
     PSN_UNUSED(tree);
     // TODO apply buffering solution.
 }
