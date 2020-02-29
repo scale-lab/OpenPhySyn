@@ -32,30 +32,22 @@
 #include <OpenPhySyn/Database/DatabaseHandler.hpp>
 #include <OpenPhySyn/Database/Types.hpp>
 #include <OpenPhySyn/Psn/Psn.hpp>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
 #include <OpenPhySyn/Transform/PsnTransform.hpp>
 #include <cstring>
-#include <memory>
 
 namespace psn
 {
-class PinSwapTransform : public PsnTransform
+class HelloTransform : public PsnTransform
 {
 private:
-    bool isNumber(const std::string& s);
-    int  swap_count_;
-
 public:
-    PinSwapTransform();
-    int timingPinSwap(Psn* psn_inst);
-    int powerPinSwap(Psn* psn_inst, int path_count);
-
+    int addWire(Psn* psn_inst, std::string name);
     int run(Psn* psn_inst, std::vector<std::string> args) override;
 };
 
 DEFINE_TRANSFORM(
-    PinSwapTransform, "pin_swap", "1.0.0",
-    "Performs timing-driven/power-driven commutative pin swapping optimization",
-    "Usage: transform pin_swap [optimize_power] [max_num_optimize_power_paths]")
-
+    HelloTransform, "hello_transform", "1.0.0",
+    "Hello transform, a toy transform that adds an unconnected net",
+    "Usage:\n transform hello_transform "
+    "<net_name>\n")
 } // namespace psn

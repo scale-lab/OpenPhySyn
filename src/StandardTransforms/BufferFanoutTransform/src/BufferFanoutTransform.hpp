@@ -35,16 +35,18 @@
 #include <OpenPhySyn/Transform/PsnTransform.hpp>
 #include <cstring>
 
-class BufferFanoutTransform : public psn::PsnTransform
+namespace psn
+{
+class BufferFanoutTransform : public PsnTransform
 {
 public:
-    int buffer(psn::Psn* psn_inst, int max_fanout, std::string buffer_cell);
+    int buffer(Psn* psn_inst, int max_fanout, std::string buffer_cell);
 
-    int         run(psn::Psn* psn_inst, std::vector<std::string> args) override;
-    std::string bufferName(int index);
-    std::string bufferNetName(int index);
-    std::string bufferName(std::vector<int> indices);
-    std::string bufferNetName(std::vector<int> indices);
+    int              run(Psn* psn_inst, std::vector<std::string> args) override;
+    std::string      bufferName(int index);
+    std::string      bufferNetName(int index);
+    std::string      bufferName(std::vector<int> indices);
+    std::string      bufferNetName(std::vector<int> indices);
     std::vector<int> nextBuffer(std::vector<int> current_buffer,
                                 int              max_fanout);
 };
@@ -53,3 +55,4 @@ DEFINE_TRANSFORM(BufferFanoutTransform, "buffer_fanout", "1.0.0",
                  "Inserts buffers based on max fan-out",
                  "Usage: transform buffer_fanout "
                  "<max_fanout> <buffer_cell>")
+} // namespace psn

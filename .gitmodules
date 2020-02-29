@@ -6,7 +6,3 @@
 	path = external/OpenDB
 	url = https://github.com/The-OpenROAD-Project/OpenDB.git
 	branch = develop
-[submodule "src/StandardTransforms/HelloTransform"]
-	path = src/StandardTransforms/HelloTransform
-	url = https://github.com/The-OpenROAD-Project/OpenPhySynHelloTransform.git
-	branch = master

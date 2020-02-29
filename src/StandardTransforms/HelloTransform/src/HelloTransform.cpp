@@ -29,33 +29,42 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <OpenPhySyn/Database/DatabaseHandler.hpp>
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Psn/Psn.hpp>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
-#include <OpenPhySyn/Transform/PsnTransform.hpp>
-#include <cstring>
-#include <memory>
+#include "HelloTransform.hpp"
+#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
+#include <algorithm>
+#include <cmath>
 
-namespace psn
+using namespace psn;
+
+int
+HelloTransform::addWire(Psn* psn_inst, std::string name)
 {
-class PinSwapTransform : public PsnTransform
+    DatabaseHandler& handler = *(psn_inst->handler());
+    Net*             n1      = handler.createNet(name.c_str());
+    return (n1 != nullptr);
+}
+
+int
+HelloTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
-private:
-    bool isNumber(const std::string& s);
-    int  swap_count_;
 
-public:
-    PinSwapTransform();
-    int timingPinSwap(Psn* psn_inst);
-    int powerPinSwap(Psn* psn_inst, int path_count);
+    PSN_LOG_DEBUG("Passed arguments:");
+    for (auto& arg : args)
+    {
+        PSN_LOG_DEBUG("{}", arg);
+    }
 
-    int run(Psn* psn_inst, std::vector<std::string> args) override;
-};
+    if (args.size() == 1)
+    {
+        std::string net_name = args[0];
+        PSN_LOG_INFO("Adding random wire {}", net_name);
+        return addWire(psn_inst, net_name);
+    }
+    else
+    {
+        PSN_LOG_ERROR("Usage:\n transform hello_transform "
+                      "<net_name>\n");
+    }
 
-DEFINE_TRANSFORM(
-    PinSwapTransform, "pin_swap", "1.0.0",
-    "Performs timing-driven/power-driven commutative pin swapping optimization",
-    "Usage: transform pin_swap [optimize_power] [max_num_optimize_power_paths]")
-
-} // namespace psn
+    return -1;
+}

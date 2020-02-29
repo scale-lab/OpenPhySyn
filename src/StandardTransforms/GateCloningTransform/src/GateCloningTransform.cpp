@@ -121,9 +121,9 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
     topDownClone(psn_inst, tree, tree->driverPoint(), c_limit);
 }
 void
-GateCloningTransform::topDownClone(psn::Psn*                          psn_inst,
-                                   std::unique_ptr<psn::SteinerTree>& tree,
-                                   psn::SteinerPoint k, float c_limit)
+GateCloningTransform::topDownClone(Psn*                          psn_inst,
+                                   std::unique_ptr<SteinerTree>& tree,
+                                   SteinerPoint k, float c_limit)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
     float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
@@ -171,9 +171,9 @@ GateCloningTransform::topDownClone(psn::Psn*                          psn_inst,
     }
 }
 void
-GateCloningTransform::topDownConnect(psn::Psn* psn_inst,
-                                     std::unique_ptr<psn::SteinerTree>& tree,
-                                     psn::SteinerPoint k, psn::Net* net)
+GateCloningTransform::topDownConnect(Psn*                          psn_inst,
+                                     std::unique_ptr<SteinerTree>& tree,
+                                     SteinerPoint k, Net* net)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
     if (k == SteinerNull)
@@ -192,9 +192,9 @@ GateCloningTransform::topDownConnect(psn::Psn* psn_inst,
     }
 }
 void
-GateCloningTransform::cloneInstance(psn::Psn*                          psn_inst,
-                                    std::unique_ptr<psn::SteinerTree>& tree,
-                                    psn::SteinerPoint                  k)
+GateCloningTransform::cloneInstance(Psn*                          psn_inst,
+                                    std::unique_ptr<SteinerTree>& tree,
+                                    SteinerPoint                  k)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
 
