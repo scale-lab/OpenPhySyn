@@ -53,7 +53,6 @@ TEST_CASE("Should perform simple constant propagation")
         CHECK(psn_inst.handler()->instances().size() == 3);
         psn_inst.runTransform("constant_propagation",
                               std::vector<std::string>({}));
-        psn_inst.writeDef("QQ.def");
         bool orFound = false;
         for (auto& inst : psn_inst.handler()->instances())
         {
