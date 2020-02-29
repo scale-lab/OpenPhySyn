@@ -86,6 +86,11 @@ virtual float targetLoad(LibraryCell* cell);
 virtual float gateDelay(Instance* inst, InstanceTerm* to, float in_slew = 0,
                         LibraryTerm* from = nullptr, float* drvr_slew = nullptr,
                         int rise_fall = -1);
+virtual float gateDelay(LibraryTerm* out_port, float load_cap);
+virtual float bufferInputCapacitance(LibraryCell* buffer_cell);
+virtual float bufferOutputCapacitance(LibraryCell* buffer_cell);
+virtual float portCapacitance(const LibraryTerm* port, bool isMax = true);
+virtual float bufferDelay(psn::LibraryCell* buffer_cell, float load_cap);
 virtual float maxLoad(LibraryTerm* term);
 virtual Net*  net(const char* name) const;
 virtual LibraryTerm* libraryPin(const char* cell_name,
@@ -123,6 +128,7 @@ virtual bool      violatesMaximumCapacitance(InstanceTerm* term,
                                              float         load_cap) const;
 virtual bool      violatesMaximumCapacitance(InstanceTerm* term) const;
 virtual bool      violatesMaximumTransition(InstanceTerm* term) const;
+virtual bool      isLoad(InstanceTerm* term) const;
 virtual Instance* createInstance(const char* inst_name, LibraryCell* cell);
 virtual void createClock(const char* clock_name, std::vector<BlockTerm*> ports,
                          float period);

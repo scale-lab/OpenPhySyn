@@ -53,7 +53,7 @@ TEST_CASE("Should perform deep multi-level constant propagation")
         CHECK(psn_inst.handler()->instances().size() == 6);
         psn_inst.runTransform("constant_propagation",
                               std::vector<std::string>({}));
-        CHECK(psn_inst.handler()->instances().size() == 2);
+        CHECK(psn_inst.handler()->instances().size() == 3);
     }
     catch (PsnException& e)
     {

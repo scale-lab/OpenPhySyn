@@ -56,16 +56,16 @@ ConstantPropagationTransform::ConstantPropagationTransform() : prop_count_(0)
 //  0: Not tied.
 // -1: Tied to the negated input.
 int
-ConstantPropagationTransform::isTiedToInput(psn::Psn*          psn_inst,
-                                            psn::InstanceTerm* input_term,
-                                            psn::InstanceTerm* constant_term,
-                                            bool               constant_val)
+ConstantPropagationTransform::isTiedToInput(Psn*          psn_inst,
+                                            InstanceTerm* input_term,
+                                            InstanceTerm* constant_term,
+                                            bool          constant_val)
 
 {
     DatabaseHandler& handler               = *(psn_inst->handler());
     LibraryTerm*     constant_library_term = handler.libraryPin(constant_term);
     LibraryTerm*     input_library_term    = handler.libraryPin(input_term);
-    psn::Instance*   inst                  = handler.instance(constant_term);
+    Instance*        inst                  = handler.instance(constant_term);
 
     InstanceTerm* out_pin = handler.outputPins(inst)[0];
 
@@ -106,12 +106,12 @@ ConstantPropagationTransform::isTiedToInput(psn::Psn*          psn_inst,
 // 0: Tied to logic 0
 // -1: Not tied constant value
 int
-ConstantPropagationTransform::isTiedToConstant(psn::Psn*          psn_inst,
-                                               psn::InstanceTerm* constant_term,
-                                               bool               constant_val)
+ConstantPropagationTransform::isTiedToConstant(Psn*          psn_inst,
+                                               InstanceTerm* constant_term,
+                                               bool          constant_val)
 {
     DatabaseHandler&           handler  = *(psn_inst->handler());
-    psn::Instance*             inst     = handler.instance(constant_term);
+    Instance*                  inst     = handler.instance(constant_term);
     std::vector<InstanceTerm*> in_pins  = handler.inputPins(inst);
     InstanceTerm*              out_pin  = handler.outputPins(inst)[0];
     int                        last_val = -1;
@@ -147,10 +147,9 @@ ConstantPropagationTransform::isTiedToConstant(psn::Psn*          psn_inst,
 }
 void
 ConstantPropagationTransform::propagateTieHiLoCell(
-    psn::Psn* psn_inst, bool is_tiehi, InstanceTerm* constant_term,
-    int max_depth, bool invereter_replace, Instance* tiehi_cell,
-    Instance* tielo_cell, LibraryCell* inverter_lib_cell,
-    psn::LibraryCell*                  smallest_buffer_lib_cell,
+    Psn* psn_inst, bool is_tiehi, InstanceTerm* constant_term, int max_depth,
+    bool invereter_replace, Instance* tiehi_cell, Instance* tielo_cell,
+    LibraryCell* inverter_lib_cell, LibraryCell* smallest_buffer_lib_cell,
     std::unordered_set<Instance*>&     visited,
     std::unordered_set<Instance*>&     deleted_inst,
     std::unordered_set<InstanceTerm*>& deleted_pins)
@@ -424,12 +423,9 @@ ConstantPropagationTransform::propagateTieHiLoCell(
 }
 
 int
-ConstantPropagationTransform::propagateConstants(psn::Psn*   psn_inst,
-                                                 std::string tiehi_cell_name,
-                                                 std::string tielo_cell_name,
-                                                 std::string inverter_cell_name,
-                                                 int         max_depth,
-                                                 bool        invereter_replace)
+ConstantPropagationTransform::propagateConstants(
+    Psn* psn_inst, std::string tiehi_cell_name, std::string tielo_cell_name,
+    std::string inverter_cell_name, int max_depth, bool invereter_replace)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
 
@@ -506,10 +502,10 @@ ConstantPropagationTransform::propagateConstants(psn::Psn*   psn_inst,
     {
         PSN_LOG_DEBUG("Constant Propagation Iteration {}/{}", i + 1,
                       iteration_count);
-        std::unordered_set<Instance*>          visited;
-        std::unordered_set<psn::Instance*>     deleted_insts;
-        std::unordered_set<psn::InstanceTerm*> deleted_pins;
-        auto                                   instances = handler.instances();
+        std::unordered_set<Instance*>     visited;
+        std::unordered_set<Instance*>     deleted_insts;
+        std::unordered_set<InstanceTerm*> deleted_pins;
+        auto                              instances = handler.instances();
         for (auto instance : instances)
         {
             if (deleted_insts.count(instance))
