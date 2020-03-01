@@ -150,6 +150,7 @@ ConstantPropagationTransform::propagateTieHiLoCell(
     Psn* psn_inst, bool is_tiehi, InstanceTerm* constant_term, int max_depth,
     bool invereter_replace, Instance* tiehi_cell, Instance* tielo_cell,
     LibraryCell* inverter_lib_cell, LibraryCell* smallest_buffer_lib_cell,
+    LibraryCell* tiehi_lib_cell, LibraryCell* tielo_lib_cell,
     std::unordered_set<Instance*>&     visited,
     std::unordered_set<Instance*>&     deleted_inst,
     std::unordered_set<InstanceTerm*>& deleted_pins)
@@ -208,8 +209,8 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                     psn_inst, true, fanout_inst_output_pin,
                     max_depth == -1 ? max_depth : max_depth - 1,
                     invereter_replace, tiehi_cell, tielo_cell,
-                    inverter_lib_cell, smallest_buffer_lib_cell, visited,
-                    deleted_inst, deleted_pins);
+                    inverter_lib_cell, smallest_buffer_lib_cell, tiehi_lib_cell,
+                    tielo_lib_cell, visited, deleted_inst, deleted_pins);
                 if (deleted_inst.count(fanout_inst))
                 {
                     continue;
@@ -223,22 +224,42 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                 {
                     PSN_LOG_DEBUG("Connected {} to tielo",
                                   handler.name(sink_pin));
-
+                    // There does not seem to be a way for the DB to connect two
+                    // nets So for the top-level port add tie-cell or buffer to
+                    // connect multiple nets.
                     if (handler.isTopLevel(sink_pin))
                     {
-                        auto out_buff_inst = handler.createInstance(
-                            std::string("buf_output_" + handler.name(sink_pin))
-                                .c_str(),
-                            smallest_buffer_lib_cell);
+                        if (tiehi_lib_cell)
+                        {
+                            auto out_tiehi_inst = handler.createInstance(
+                                std::string("tiehi_output_" +
+                                            handler.name(sink_pin))
+                                    .c_str(),
+                                tiehi_lib_cell);
 
-                        auto out_buff_out_pin =
-                            handler.outputPins(out_buff_inst)[0];
-                        auto out_buff_in_pin =
-                            handler.inputPins(out_buff_inst)[0];
-                        auto sink_net = handler.net(handler.term(sink_pin));
+                            auto out_tiehi_out_pin =
+                                handler.outputPins(out_tiehi_inst)[0];
+                            auto sink_net = handler.net(handler.term(sink_pin));
 
-                        handler.connect(sink_net, out_buff_out_pin);
-                        handler.connect(tiehi_net, out_buff_in_pin);
+                            handler.connect(sink_net, out_tiehi_out_pin);
+                        }
+                        else
+                        {
+                            auto out_buff_inst = handler.createInstance(
+                                std::string("buf_output_" +
+                                            handler.name(sink_pin))
+                                    .c_str(),
+                                smallest_buffer_lib_cell);
+
+                            auto out_buff_out_pin =
+                                handler.outputPins(out_buff_inst)[0];
+                            auto out_buff_in_pin =
+                                handler.inputPins(out_buff_inst)[0];
+                            auto sink_net = handler.net(handler.term(sink_pin));
+
+                            handler.connect(sink_net, out_buff_out_pin);
+                            handler.connect(tiehi_net, out_buff_in_pin);
+                        }
                         toplevel_count++;
                     }
                     else
@@ -273,8 +294,8 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                     psn_inst, false, fanout_inst_output_pin,
                     max_depth == -1 ? max_depth : max_depth - 1,
                     invereter_replace, tiehi_cell, tielo_cell,
-                    inverter_lib_cell, smallest_buffer_lib_cell, visited,
-                    deleted_inst, deleted_pins);
+                    inverter_lib_cell, smallest_buffer_lib_cell, tiehi_lib_cell,
+                    tielo_lib_cell, visited, deleted_inst, deleted_pins);
 
                 if (deleted_inst.count(fanout_inst))
                 {
@@ -292,21 +313,42 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                     PSN_LOG_DEBUG("Connected {} to tielo",
                                   handler.name(sink_pin));
 
+                    // There does not seem to be a way for the DB to connect two
+                    // nets So for the top-level port add tie-cell or buffer to
+                    // connect multiple nets.
                     if (handler.isTopLevel(sink_pin))
                     {
-                        auto out_buff_inst = handler.createInstance(
-                            std::string("buf_output_" + handler.name(sink_pin))
-                                .c_str(),
-                            smallest_buffer_lib_cell);
+                        if (tielo_lib_cell)
+                        {
+                            auto out_tielo_inst = handler.createInstance(
+                                std::string("tielo_output_" +
+                                            handler.name(sink_pin))
+                                    .c_str(),
+                                tielo_lib_cell);
 
-                        auto out_buff_out_pin =
-                            handler.outputPins(out_buff_inst)[0];
-                        auto out_buff_in_pin =
-                            handler.inputPins(out_buff_inst)[0];
-                        auto sink_net = handler.net(handler.term(sink_pin));
+                            auto out_tielo_out_pin =
+                                handler.outputPins(out_tielo_inst)[0];
+                            auto sink_net = handler.net(handler.term(sink_pin));
 
-                        handler.connect(sink_net, out_buff_out_pin);
-                        handler.connect(tielo_net, out_buff_in_pin);
+                            handler.connect(sink_net, out_tielo_out_pin);
+                        }
+                        else
+                        {
+                            auto out_buff_inst = handler.createInstance(
+                                std::string("buf_output_" +
+                                            handler.name(sink_pin))
+                                    .c_str(),
+                                smallest_buffer_lib_cell);
+
+                            auto out_buff_out_pin =
+                                handler.outputPins(out_buff_inst)[0];
+                            auto out_buff_in_pin =
+                                handler.inputPins(out_buff_inst)[0];
+                            auto sink_net = handler.net(handler.term(sink_pin));
+
+                            handler.connect(sink_net, out_buff_out_pin);
+                            handler.connect(tielo_net, out_buff_in_pin);
+                        }
                         toplevel_count++;
                     }
                     else
@@ -474,6 +516,17 @@ ConstantPropagationTransform::propagateConstants(
         tielo_cells.insert(lib_cells.begin(), lib_cells.end());
     }
 
+    LibraryCell* tiehi_cell = nullptr;
+    LibraryCell* tielo_cell = nullptr;
+    if (tiehi_cells.size())
+    {
+        tiehi_cell = *(tiehi_cells.begin());
+    }
+    if (tielo_cells.size())
+    {
+        tielo_cell = *(tielo_cells.begin());
+    }
+
     Instance* first_tihi = nullptr;
     Instance* first_tilo = nullptr;
 
@@ -516,12 +569,12 @@ ConstantPropagationTransform::propagateConstants(
             if (tiehi_cells.count(instance_lib_cell))
             {
                 auto output_pin = handler.outputPins(instance)[0];
-                PSN_LOG_DEBUG("TieHi Instance {}", handler.name(instance));
-                propagateTieHiLoCell(psn_inst, true, output_pin, max_depth,
-                                     invereter_replace, instance, first_tilo,
-                                     inverter_lib_cell,
-                                     smallest_buffer_lib_cell, visited,
-                                     deleted_insts, deleted_pins);
+                PSN_LOG_DEBUG("Tie-Hi Instance {}", handler.name(instance));
+                propagateTieHiLoCell(
+                    psn_inst, true, output_pin, max_depth, invereter_replace,
+                    instance, first_tilo, inverter_lib_cell,
+                    smallest_buffer_lib_cell, tiehi_cell, tielo_cell, visited,
+                    deleted_insts, deleted_pins);
                 auto out_pins = handler.outputPins(instance, true);
                 if (out_pins.size() == 0)
                 {
@@ -536,12 +589,12 @@ ConstantPropagationTransform::propagateConstants(
             else if (tielo_cells.count(instance_lib_cell))
             {
                 auto output_pin = handler.outputPins(instance)[0];
-                PSN_LOG_DEBUG("TieLo Instance {}", handler.name(instance));
-                propagateTieHiLoCell(psn_inst, false, output_pin, max_depth,
-                                     invereter_replace, first_tihi, instance,
-                                     inverter_lib_cell,
-                                     smallest_buffer_lib_cell, visited,
-                                     deleted_insts, deleted_pins);
+                PSN_LOG_DEBUG("Tie-Lo Instance {}", handler.name(instance));
+                propagateTieHiLoCell(
+                    psn_inst, false, output_pin, max_depth, invereter_replace,
+                    first_tihi, instance, inverter_lib_cell,
+                    smallest_buffer_lib_cell, tiehi_cell, tielo_cell, visited,
+                    deleted_insts, deleted_pins);
                 auto out_pins = handler.outputPins(instance, true);
                 if (out_pins.size() == 0)
                 {
