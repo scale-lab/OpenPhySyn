@@ -60,14 +60,15 @@
 
 using namespace psn;
 
-TimingBufferTransform::TimingBufferTransform() : buffer_count_(0)
+TimingBufferTransform::TimingBufferTransform()
+    : buffer_count_(0), net_index_(0), buff_index_(0)
 {
 }
 
 void
 TimingBufferTransform::fixCapacitanceViolations(
-    Psn* psn_inst, std::unordered_set<psn::LibraryCell*>& buffer_lib,
-    std::unordered_set<psn::LibraryCell*>& inverter_lib, bool resize_gates)
+    Psn* psn_inst, std::unordered_set<LibraryCell*>& buffer_lib,
+    std::unordered_set<LibraryCell*>& inverter_lib, bool resize_gates)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
     for (auto& pin : handler.levelDriverPins())
@@ -83,8 +84,8 @@ TimingBufferTransform::fixCapacitanceViolations(
 
 void
 TimingBufferTransform::fixSlewViolations(
-    Psn* psn_inst, std::unordered_set<psn::LibraryCell*>& buffer_lib,
-    std::unordered_set<psn::LibraryCell*>& inverter_lib, bool resize_gates)
+    Psn* psn_inst, std::unordered_set<LibraryCell*>& buffer_lib,
+    std::unordered_set<LibraryCell*>& inverter_lib, bool resize_gates)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
     for (auto& pin : handler.levelDriverPins())
@@ -99,10 +100,10 @@ TimingBufferTransform::fixSlewViolations(
 }
 
 void
-TimingBufferTransform::bufferPin(
-    psn::Psn* psn_inst, psn::InstanceTerm* pin,
-    std::unordered_set<psn::LibraryCell*>& buffer_lib,
-    std::unordered_set<psn::LibraryCell*>& inverter_lib, bool resize_gates)
+TimingBufferTransform::bufferPin(Psn* psn_inst, InstanceTerm* pin,
+                                 std::unordered_set<LibraryCell*>& buffer_lib,
+                                 std::unordered_set<LibraryCell*>& inverter_lib,
+                                 bool                              resize_gates)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
     if (handler.isTopLevel(pin))
@@ -133,11 +134,12 @@ TimingBufferTransform::bufferPin(
 }
 
 std::shared_ptr<BufferSolution>
-TimingBufferTransform::bottomUp(
-    Psn* psn_inst, InstanceTerm* pin, SteinerPoint pt, SteinerPoint prev,
-    std::unordered_set<psn::LibraryCell*>& buffer_lib,
-    std::unordered_set<psn::LibraryCell*>& inverter_lib,
-    std::shared_ptr<SteinerTree> st_tree, bool resize_gates)
+TimingBufferTransform::bottomUp(Psn* psn_inst, InstanceTerm* pin,
+                                SteinerPoint pt, SteinerPoint prev,
+                                std::unordered_set<LibraryCell*>& buffer_lib,
+                                std::unordered_set<LibraryCell*>& inverter_lib,
+                                std::shared_ptr<SteinerTree>      st_tree,
+                                bool                              resize_gates)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
     if (pt != SteinerNull)
@@ -179,7 +181,6 @@ TimingBufferTransform::bottomUp(
             std::shared_ptr<BufferSolution> buff_sol =
                 std::shared_ptr<BufferSolution>(new BufferSolution(
                     std::move(left), std::move(right), location));
-            buff_sol->prune();
             buff_sol->addWireDelayAndCapacitance(wire_delay, wire_cap);
             buff_sol->addLeafTrees(psn_inst, prev_location, buffer_lib,
                                    inverter_lib);
@@ -189,23 +190,76 @@ TimingBufferTransform::bottomUp(
     return nullptr;
 }
 void
-TimingBufferTransform::topDown(psn::Psn* psn_inst, psn::InstanceTerm* pin,
+TimingBufferTransform::topDown(Psn* psn_inst, InstanceTerm* pin,
                                std::shared_ptr<BufferTree>& tree)
 {
     topDown(psn_inst, psn_inst->handler()->net(pin), tree);
 }
 void
-TimingBufferTransform::topDown(psn::Psn* psn_inst, psn::Net* net,
+TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
                                std::shared_ptr<BufferTree>& tree)
 {
+    DatabaseHandler& handler = *(psn_inst->handler());
     if (!net)
     {
         PSN_LOG_WARN("topDown buffering without target net!");
         return;
     }
-    PSN_UNUSED(psn_inst);
-    PSN_UNUSED(tree);
-    // TODO apply buffering solution.
+    if (!tree)
+    {
+        return;
+    }
+    if (tree->isUnbuffered())
+    {
+        auto tree_pin = tree->pin();
+        auto tree_net = handler.net(tree_pin);
+        if (tree_net != net)
+        {
+            auto inst = handler.instance(tree_pin);
+            handler.disconnect(tree_pin);
+            handler.connect(net, inst, handler.libraryPin(tree_pin));
+        }
+    }
+    else if (tree->isBuffered())
+    {
+        auto buf_inst = handler.createInstance(
+            generateBufferName(psn_inst).c_str(), tree->bufferCell());
+        auto buf_net = handler.createNet(generateNetName(psn_inst).c_str());
+        auto buff_in_port  = handler.libraryInputPins(tree->bufferCell())[0];
+        auto buff_out_port = handler.libraryOutputPins(tree->bufferCell())[0];
+        handler.connect(net, buf_inst, buff_in_port);
+        handler.connect(buf_net, buf_inst, buff_out_port);
+        handler.setLocation(buf_inst, tree->location());
+        topDown(psn_inst, buf_net, tree->left());
+        buffer_count_++;
+    }
+    else if (tree->isBranched())
+    {
+        topDown(psn_inst, net, tree->left());
+        topDown(psn_inst, net, tree->right());
+    }
+}
+
+std::string
+TimingBufferTransform::generateNetName(Psn* psn_inst)
+{
+    DatabaseHandler& handler = *(psn_inst->handler());
+    std::string      name;
+    do
+        name = std::string("net_") + std::to_string(net_index_++);
+    while (handler.net(name.c_str()));
+    return name;
+}
+std::string
+TimingBufferTransform::generateBufferName(Psn* psn_inst)
+{
+    DatabaseHandler& handler = *(psn_inst->handler());
+
+    std::string name;
+    do
+        name = std::string("buff_") + std::to_string(buff_index_++);
+    while (handler.instance(name.c_str()));
+    return name;
 }
 
 int
@@ -215,9 +269,9 @@ TimingBufferTransform::fixViolations(
     std::unordered_set<std::string> inverter_lib_names, bool resize_gates,
     bool use_inverter_pair)
 {
-    std::unordered_set<psn::LibraryCell*> buffer_lib;
-    std::unordered_set<psn::LibraryCell*> inverter_lib;
-    DatabaseHandler&                      handler = *(psn_inst->handler());
+    std::unordered_set<LibraryCell*> buffer_lib;
+    std::unordered_set<LibraryCell*> inverter_lib;
+    DatabaseHandler&                 handler = *(psn_inst->handler());
 
     if (!buffer_lib_names.size())
     {
@@ -287,6 +341,8 @@ int
 TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
     buffer_count_                                     = 0;
+    net_index_                                        = 0;
+    buff_index_                                       = 0;
     bool                            resize_gates      = false;
     bool                            use_inverter_pair = false;
     bool                            use_all_buffers   = false;

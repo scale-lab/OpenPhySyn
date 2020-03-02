@@ -41,38 +41,39 @@
 
 namespace psn
 {
-class TimingBufferTransform : public psn::PsnTransform
+class TimingBufferTransform : public PsnTransform
 {
 
 private:
-    int  buffer_count_;
-    void fixCapacitanceViolations(
-        psn::Psn* psn_inst, std::unordered_set<psn::LibraryCell*>& buffer_lib,
-        std::unordered_set<psn::LibraryCell*>& inverter_lib,
-        bool                                   resize_gates = false);
+    int buffer_count_;
+    int net_index_;
+    int buff_index_;
+    void
+    fixCapacitanceViolations(Psn*                              psn_inst,
+                             std::unordered_set<LibraryCell*>& buffer_lib,
+                             std::unordered_set<LibraryCell*>& inverter_lib,
+                             bool resize_gates = false);
 
-    void bufferPin(psn::Psn* psn_inst, psn::InstanceTerm* pin,
-                   std::unordered_set<psn::LibraryCell*>& buffer_lib,
-                   std::unordered_set<psn::LibraryCell*>& inverter_lib,
-                   bool                                   resize_gates = false);
+    void bufferPin(Psn* psn_inst, InstanceTerm* pin,
+                   std::unordered_set<LibraryCell*>& buffer_lib,
+                   std::unordered_set<LibraryCell*>& inverter_lib,
+                   bool                              resize_gates = false);
     std::shared_ptr<BufferSolution>
-         bottomUp(psn::Psn* psn_inst, psn::InstanceTerm* pin, psn::SteinerPoint pt,
-                  psn::SteinerPoint                      prev,
-                  std::unordered_set<psn::LibraryCell*>& buffer_lib,
-                  std::unordered_set<psn::LibraryCell*>& inverter_lib,
-                  std::shared_ptr<psn::SteinerTree>      st_tree,
-                  bool                                   resize_gates = false);
-    void topDown(psn::Psn* psn_inst, psn::InstanceTerm* pin,
+         bottomUp(Psn* psn_inst, InstanceTerm* pin, SteinerPoint pt,
+                  SteinerPoint prev, std::unordered_set<LibraryCell*>& buffer_lib,
+                  std::unordered_set<LibraryCell*>& inverter_lib,
+                  std::shared_ptr<SteinerTree> st_tree, bool resize_gates = false);
+    void topDown(Psn* psn_inst, InstanceTerm* pin,
                  std::shared_ptr<BufferTree>& tree);
-    void topDown(psn::Psn* psn_inst, psn::Net* net,
-                 std::shared_ptr<BufferTree>& tree);
+    void topDown(Psn* psn_inst, Net* net, std::shared_ptr<BufferTree>& tree);
+    std::string generateBufferName(Psn* psn_inst);
+    std::string generateNetName(Psn* psn_inst);
 
-    void fixSlewViolations(psn::Psn*                              psn_inst,
-                           std::unordered_set<psn::LibraryCell*>& buffer_lib,
-                           std::unordered_set<psn::LibraryCell*>& inverter_lib,
+    void fixSlewViolations(Psn*                              psn_inst,
+                           std::unordered_set<LibraryCell*>& buffer_lib,
+                           std::unordered_set<LibraryCell*>& inverter_lib,
                            bool resize_gates = false);
-    int  fixViolations(psn::Psn* psn_inst, bool fix_cap = true,
-                       bool                            fix_slew = true,
+    int  fixViolations(Psn* psn_inst, bool fix_cap = true, bool fix_slew = true,
                        std::unordered_set<std::string> buffer_lib_names =
                            std::unordered_set<std::string>(),
                        std::unordered_set<std::string> inverter_lib_names =
@@ -83,7 +84,7 @@ private:
 public:
     TimingBufferTransform();
 
-    int run(psn::Psn* psn_inst, std::vector<std::string> args) override;
+    int run(Psn* psn_inst, std::vector<std::string> args) override;
 };
 
 DEFINE_TRANSFORM(

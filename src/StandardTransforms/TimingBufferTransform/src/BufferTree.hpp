@@ -44,16 +44,15 @@ class BufferTree
     float                       wire_capacitance_;
     float                       wire_delay_;
     float                       cost_;
-    psn::Point                  location_;
+    Point                       location_;
     std::shared_ptr<BufferTree> left_, right_;
-    psn::LibraryCell*           buffer_cell_;
-    psn::InstanceTerm*          pin_;
+    LibraryCell*                buffer_cell_;
+    InstanceTerm*               pin_;
 
 public:
     BufferTree(float cap = 0.0, float req = 0.0, float cost = 0.0,
-               psn::Point         location    = psn::Point(0, 0),
-               psn::InstanceTerm* pin         = nullptr,
-               psn::LibraryCell*  buffer_cell = nullptr)
+               Point location = Point(0, 0), InstanceTerm* pin = nullptr,
+               LibraryCell* buffer_cell = nullptr)
         : capacitance_(cap),
           required_(req),
           cost_(cost),
@@ -63,7 +62,7 @@ public:
     {
     }
     BufferTree(std::shared_ptr<BufferTree>& left,
-               std::shared_ptr<BufferTree>& right, psn::Point location)
+               std::shared_ptr<BufferTree>& right, Point location)
 
     {
         left_             = left;
@@ -100,7 +99,7 @@ public:
     {
         return cost_;
     }
-    psn::InstanceTerm*
+    InstanceTerm*
     pin() const
     {
         return pin_;
@@ -131,18 +130,18 @@ public:
         cost_ = cost;
     }
     void
-    setPin(psn::InstanceTerm* pin)
+    setPin(InstanceTerm* pin)
     {
         pin_ = pin;
     }
     float
-    bufferRequired(psn::Psn* psn_inst, psn::LibraryCell* buffer_cell) const
+    bufferRequired(Psn* psn_inst, LibraryCell* buffer_cell) const
     {
         return required_ - wire_delay_ -
                psn_inst->handler()->bufferDelay(buffer_cell, capacitance_);
     }
     float
-    bufferRequired(psn::Psn* psn_inst) const
+    bufferRequired(Psn* psn_inst) const
     {
         return bufferRequired(psn_inst, buffer_cell_);
     }
@@ -166,15 +165,21 @@ public:
     {
         right_ = right;
     }
-    psn::LibraryCell*
+    LibraryCell*
     bufferCell() const
     {
         return buffer_cell_;
     }
     void
-    setBufferCell(psn::LibraryCell* buffer_cell)
+    setBufferCell(LibraryCell* buffer_cell)
     {
         buffer_cell_ = buffer_cell;
+    }
+
+    Point
+    location() const
+    {
+        return location_;
     }
 
     bool
@@ -225,8 +230,14 @@ class BufferSolution
 public:
     BufferSolution(){};
     BufferSolution(std::shared_ptr<BufferSolution> left,
-                   std::shared_ptr<BufferSolution> right, psn::Point location)
+                   std::shared_ptr<BufferSolution> right, Point location)
 
+    {
+        mergeBranches(left, right, location);
+    }
+    void
+    mergeBranches(std::shared_ptr<BufferSolution> left,
+                  std::shared_ptr<BufferSolution> right, Point location)
     {
         buffer_trees_.resize(left->bufferTrees().size() +
                              right->bufferTrees().size());
@@ -239,6 +250,7 @@ public:
                     new BufferTree(left_branch, right_branch, location));
             }
         }
+        prune();
     }
     void
     addTree(std::shared_ptr<BufferTree> tree)
@@ -261,9 +273,9 @@ public:
     }
 
     void
-    addLeafTrees(psn::Psn* psn_inst, psn::Point pt,
-                 std::unordered_set<psn::LibraryCell*>& buffer_lib,
-                 std::unordered_set<psn::LibraryCell*>&)
+    addLeafTrees(Psn* psn_inst, Point pt,
+                 std::unordered_set<LibraryCell*>& buffer_lib,
+                 std::unordered_set<LibraryCell*>&)
     {
         if (!buffer_trees_.size())
         {
@@ -293,7 +305,7 @@ public:
         }
     }
     std::shared_ptr<BufferTree>
-    optimalTree(psn::Psn* psn_inst)
+    optimalTree(Psn* psn_inst)
     {
         if (!buffer_trees_.size())
         {
