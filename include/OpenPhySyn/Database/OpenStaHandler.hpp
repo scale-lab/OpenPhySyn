@@ -84,6 +84,17 @@ private:
     const sta::Pvt*                 pvt_;
     const sta::ParasiticAnalysisPt* parasitics_ap_;
     sta::Slew                       target_slews_[sta::RiseFall::index_count];
+    float pinTableAverage(LibraryTerm* from, LibraryTerm* to,
+                          bool is_delay = true, bool is_rise = true) const;
+    float pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,
+                         float cap, bool is_delay = true,
+                         bool is_rise = true) const;
+    std::vector<std::vector<PathPoint>> getPaths(bool get_max,
+                                                 int  path_count = 1) const;
+    std::vector<PathPoint>              expandPath(sta::PathEnd* path_end,
+                                                   bool          enumed = false) const;
+    std::vector<PathPoint>              expandPath(sta::Path* path,
+                                                   bool       enumed = false) const;
 
     void      findTargetLoads(sta::LibertyLibrarySeq* resize_libs);
     void      findTargetLoads(Liberty* library, sta::Slew slews[]);
@@ -96,17 +107,6 @@ private:
                                     int counts[]);
     void      slewLimit(InstanceTerm* pin, sta::MinMax* min_max, float& limit,
                         bool& exists) const;
-    float     pinTableAverage(LibraryTerm* from, LibraryTerm* to,
-                              bool is_delay = true, bool is_rise = true) const;
-    float     pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,
-                             float cap, bool is_delay = true,
-                             bool is_rise = true) const;
-    std::vector<std::vector<PathPoint>> getPaths(bool get_max,
-                                                 int  path_count = 1) const;
-    std::vector<PathPoint>              expandPath(sta::PathEnd* path_end,
-                                                   bool          enumed = false) const;
-    std::vector<PathPoint>              expandPath(sta::Path* path,
-                                                   bool       enumed = false) const;
 };
 
 } // namespace psn
