@@ -50,19 +50,18 @@ private:
                             std::string tielo_cell_name,
                             std::string inverter_cell_name, int max_depth,
                             bool invereter_replace);
-    void propagateTieHiLoCell(Psn* psn_inst, bool is_tiehi,
-                              InstanceTerm* constant_term, int max_depth,
-                              bool invereter_replace, Instance* tiehi_cell,
-                              Instance*    tielo_cell,
-                              LibraryCell* inverter_lib_cell,
-                              LibraryCell* smallest_buffer_lib_cell,
-                              std::unordered_set<Instance*>&     visited,
-                              std::unordered_set<Instance*>&     deleted_inst,
-                              std::unordered_set<InstanceTerm*>& deleted_pins);
-    int  isTiedToConstant(Psn* psn_inst, InstanceTerm* constant_term,
-                          bool constant_val);
-    int  isTiedToInput(Psn* psn_inst, InstanceTerm* input_term,
-                       InstanceTerm* constant_term, bool constant_val);
+    void propagateTieHiLoCell(
+        Psn* psn_inst, bool is_tiehi, InstanceTerm* constant_term,
+        int max_depth, bool invereter_replace, Instance* tiehi_cell,
+        Instance* tielo_cell, LibraryCell* inverter_lib_cell,
+        LibraryCell* smallest_buffer_lib_cell, LibraryCell* tiehi_lib_cell,
+        LibraryCell* tielo_lib_cell, std::unordered_set<Instance*>& visited,
+        std::unordered_set<Instance*>&     deleted_inst,
+        std::unordered_set<InstanceTerm*>& deleted_pins);
+    int isTiedToConstant(Psn* psn_inst, InstanceTerm* constant_term,
+                         bool constant_val);
+    int isTiedToInput(Psn* psn_inst, InstanceTerm* input_term,
+                      InstanceTerm* constant_term, bool constant_val);
 
 public:
     ConstantPropagationTransform();
