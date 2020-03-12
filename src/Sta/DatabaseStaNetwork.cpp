@@ -388,6 +388,14 @@ DatabaseStaNetwork::setDb(dbDatabase* db)
 }
 
 void
+DatabaseStaNetwork::setBlock(dbBlock* block)
+{
+    db_    = block->getDataBase();
+    block_ = block;
+    makeTopCell();
+}
+
+void
 DatabaseStaNetwork::clear()
 {
     db_ = nullptr;
@@ -890,6 +898,7 @@ DatabaseStaNetwork::readLibertyAfter(LibertyLibrary* lib)
                     LibertyCell* lcell = lib->findLibertyCell(ccell->name());
                     if (lcell)
                     {
+                        lcell->setExtCell(ccell->extCell());
                         ccell->setLibertyCell(lcell);
                         ConcreteCellPortBitIterator* port_iter =
                             ccell->portBitIterator();
@@ -960,12 +969,10 @@ DatabaseStaNetwork::connect(Instance* inst, Port* port, Net* net)
     {
         const char* port_name = name(port);
         dbBTerm*    bterm     = block_->findBTerm(port_name);
-
         if (bterm)
             bterm->connect(dnet);
         else
             bterm = dbBTerm::create(dnet, port_name);
-
         PortDirection* dir = direction(port);
         dbSigType      sig_type;
         dbIoType       io_type;
@@ -1091,12 +1098,10 @@ DatabaseStaNetwork::staToDb(const Pin* pin,
     if (type == dbITermObj)
     {
         iterm = static_cast<dbITerm*>(obj);
-        // TODO: Validate DB instance exists.
         bterm = nullptr;
     }
     else if (type == dbBTermObj)
     {
-        // TODO: Validate DB instance exists.
         iterm = nullptr;
         bterm = static_cast<dbBTerm*>(obj);
     }
