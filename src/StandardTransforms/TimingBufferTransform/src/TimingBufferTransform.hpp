@@ -45,15 +45,9 @@ class TimingBufferTransform : public PsnTransform
 {
 
 private:
-    int buffer_count_;
-    int net_index_;
-    int buff_index_;
-    void
-    fixCapacitanceViolations(Psn*                              psn_inst,
-                             std::unordered_set<LibraryCell*>& buffer_lib,
-                             std::unordered_set<LibraryCell*>& inverter_lib,
-                             bool resize_gates = false);
-
+    int  buffer_count_;
+    int  net_index_;
+    int  buff_index_;
     void bufferPin(Psn* psn_inst, InstanceTerm* pin,
                    std::unordered_set<LibraryCell*>& buffer_lib,
                    std::unordered_set<LibraryCell*>& inverter_lib,
@@ -69,17 +63,16 @@ private:
     std::string generateBufferName(Psn* psn_inst);
     std::string generateNetName(Psn* psn_inst);
 
-    void fixSlewViolations(Psn*                              psn_inst,
-                           std::unordered_set<LibraryCell*>& buffer_lib,
-                           std::unordered_set<LibraryCell*>& inverter_lib,
-                           bool resize_gates = false);
-    int  fixViolations(Psn* psn_inst, bool fix_cap = true, bool fix_slew = true,
-                       std::unordered_set<std::string> buffer_lib_names =
-                           std::unordered_set<std::string>(),
-                       std::unordered_set<std::string> inverter_lib_names =
-                           std::unordered_set<std::string>(),
-                       bool resize_gates      = false,
-                       bool use_inverter_pair = false);
+    int timingBuffer(Psn* psn_inst, bool fix_cap = true, bool fix_slew = true,
+                     std::unordered_set<std::string> buffer_lib_names =
+                         std::unordered_set<std::string>(),
+                     std::unordered_set<std::string> inverter_lib_names =
+                         std::unordered_set<std::string>(),
+                     bool resize_gates = false, bool use_inverter_pair = false);
+    int fixViolations(Psn* psn_inst, bool fix_cap, bool fix_slew,
+                      std::unordered_set<LibraryCell*>& buffer_lib,
+                      std::unordered_set<LibraryCell*>& inverter_lib,
+                      bool                              resize_gates = false);
 
 public:
     TimingBufferTransform();
