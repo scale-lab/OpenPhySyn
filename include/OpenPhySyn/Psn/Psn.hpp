@@ -66,6 +66,7 @@ public:
     virtual int writeDef(const char* path);
 
     virtual int writeDatabase(const char* path);
+    virtual int readDatabase(const char* path);
 
     int         loadTransforms();
     bool        hasTransform(std::string transform_name);
