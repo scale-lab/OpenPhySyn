@@ -63,6 +63,11 @@ export_def(const char* lib_path)
     return Psn::instance().writeDef(lib_path);
 }
 int
+import_db(const char* db_path)
+{
+    return Psn::instance().readDatabase(db_path);
+}
+int
 export_db(const char* db_path)
 {
     return Psn::instance().writeDatabase(db_path);

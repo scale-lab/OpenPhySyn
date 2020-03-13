@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.1...3.15)
 
 project(OpenPhySyn VERSION 1.3.0 LANGUAGES CXX)
 
@@ -347,7 +347,7 @@ set(PRIVATE_INCLUDE_DIRS
 set(PUBLIC_LIBRARIES
 opendb
 OpenSTA
-# sta_swig
+sta_swig
 flute
 ${PUBLIC_LIBRARIES}
 )
