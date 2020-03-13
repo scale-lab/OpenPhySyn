@@ -340,7 +340,7 @@ set(PRIVATE_INCLUDE_DIRS
 set(PUBLIC_LIBRARIES
 opendb
 OpenSTA
-# sta_swig
+sta_swig
 flute
 ${PUBLIC_LIBRARIES}
 )
