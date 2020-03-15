@@ -39,7 +39,8 @@
 
 namespace psn
 {
-OpenDBHandler::OpenDBHandler(sta::DatabaseSta* sta) : sta_(sta), db_(sta->db())
+OpenDBHandler::OpenDBHandler(Psn* psn_inst, sta::DatabaseSta* sta)
+    : sta_(sta), db_(sta->db())
 {
 }
 

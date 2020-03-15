@@ -391,5 +391,11 @@ SteinerTree::top() const
     }
     return top;
 }
+InstanceTerm*
+SteinerTree::alias(SteinerPoint pt)
+{
+    Flute::Branch& branch_pt = tree_.branch[pt];
+    return pin_loc_[Point(branch_pt.x, branch_pt.y)];
+}
 
 } // namespace psn

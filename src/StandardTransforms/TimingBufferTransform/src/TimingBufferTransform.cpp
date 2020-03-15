@@ -85,13 +85,25 @@ TimingBufferTransform::bufferPin(Psn* psn_inst, InstanceTerm* pin,
                       handler.name(pin));
         return;
     }
+
     auto driver_point = st_tree->driverPoint();
     auto top_point    = st_tree->top();
-    auto buff_sol = bottomUp(psn_inst, pin, top_point, driver_point, buffer_lib,
+    auto buff_sol     = bottomUp(psn_inst, top_point, driver_point, buffer_lib,
                              inverter_lib, std::move(st_tree), resize_gates);
-    if (buff_sol)
+    if (buff_sol->bufferTrees().size())
     {
-        auto buff_tree = buff_sol->optimalTree(psn_inst);
+        for (size_t i = 0; i < buff_sol->bufferTrees().size(); i++)
+        {
+            PSN_LOG_DEBUG(
+                "({}, {}) Options {} Cap ({}) + Wire: {}, Req {} - Wire: {}",
+                buff_sol->bufferTrees()[i]->location().getX(),
+                buff_sol->bufferTrees()[i]->location().getY(), i,
+                buff_sol->bufferTrees()[i]->capacitance(),
+                buff_sol->bufferTrees()[i]->totalCapacitance(),
+                buff_sol->bufferTrees()[i]->required(),
+                buff_sol->bufferTrees()[i]->totalRequired());
+        }
+        auto buff_tree = buff_sol->optimalDriverTree(psn_inst, pin);
         if (buff_tree)
         {
             topDown(psn_inst, pin, buff_tree);
@@ -100,8 +112,8 @@ TimingBufferTransform::bufferPin(Psn* psn_inst, InstanceTerm* pin,
 }
 
 std::shared_ptr<BufferSolution>
-TimingBufferTransform::bottomUp(Psn* psn_inst, InstanceTerm* pin,
-                                SteinerPoint pt, SteinerPoint prev,
+TimingBufferTransform::bottomUp(Psn* psn_inst, SteinerPoint pt,
+                                SteinerPoint                      prev,
                                 std::unordered_set<LibraryCell*>& buffer_lib,
                                 std::unordered_set<LibraryCell*>& inverter_lib,
                                 std::shared_ptr<SteinerTree>      st_tree,
@@ -110,8 +122,7 @@ TimingBufferTransform::bottomUp(Psn* psn_inst, InstanceTerm* pin,
     DatabaseHandler& handler = *(psn_inst->handler());
     if (pt != SteinerNull)
     {
-        auto pt_pin = st_tree->pin(pt);
-
+        auto  pt_pin = st_tree->pin(pt);
         float wire_length =
             psn_inst->handler()->dbuToMeters(st_tree->distance(prev, pt));
         float wire_res =
@@ -121,32 +132,44 @@ TimingBufferTransform::bottomUp(Psn* psn_inst, InstanceTerm* pin,
         float wire_delay    = wire_cap * wire_res;
         auto  location      = st_tree->location(pt);
         auto  prev_location = st_tree->location(prev);
+        PSN_LOG_DEBUG("Point: ({}, {})", location.getX(), location.getY());
+        PSN_LOG_DEBUG("Prev: ({}, {})", prev_location.getX(),
+                      prev_location.getY());
 
         if (pt_pin && handler.isLoad(pt_pin))
         {
-            float cap              = handler.loadCapacitance(pin);
-            float req              = handler.required(pin);
-            auto  base_buffer_tree = std::shared_ptr<BufferTree>(
-                new BufferTree(cap, req, 0, location, pt_pin));
+            PSN_LOG_DEBUG("{} ({}, {}) bottomUp leaf", handler.name(pt_pin),
+                          location.getX(), location.getY());
+            float cap = handler.pinCapacitance(pt_pin);
+            float req = handler.required(pt_pin);
+            auto  base_buffer_tree =
+                std::make_shared<BufferTree>(cap, req, 0, location, pt_pin);
             std::shared_ptr<BufferSolution> buff_sol =
-                std::make_unique<BufferSolution>();
+                std::make_shared<BufferSolution>();
             buff_sol->addTree(base_buffer_tree);
             buff_sol->addWireDelayAndCapacitance(wire_delay, wire_cap);
             buff_sol->addLeafTrees(psn_inst, prev_location, buffer_lib,
                                    inverter_lib);
+            buff_sol->addUpstreamReferences(psn_inst, base_buffer_tree);
+
             return buff_sol;
         }
         else if (!pt_pin)
         {
-            auto left =
-                bottomUp(psn_inst, pin, st_tree->left(pt), pt, buffer_lib,
-                         inverter_lib, st_tree, resize_gates);
-            auto right =
-                bottomUp(psn_inst, pin, st_tree->right(pt), pt, buffer_lib,
-                         inverter_lib, st_tree, resize_gates);
+            PSN_LOG_DEBUG("({}, {}) bottomUp ---> left", location.getX(),
+                          location.getY());
+            auto left = bottomUp(psn_inst, st_tree->left(pt), pt, buffer_lib,
+                                 inverter_lib, st_tree, resize_gates);
+            PSN_LOG_DEBUG("({}, {}) bottomUp ---> right", location.getX(),
+                          location.getY());
+            auto right = bottomUp(psn_inst, st_tree->right(pt), pt, buffer_lib,
+                                  inverter_lib, st_tree, resize_gates);
+
+            PSN_LOG_DEBUG("({}, {}) bottomUp merging", location.getX(),
+                          location.getY());
             std::shared_ptr<BufferSolution> buff_sol =
-                std::shared_ptr<BufferSolution>(new BufferSolution(
-                    std::move(left), std::move(right), location));
+                std::make_shared<BufferSolution>(psn_inst, left, right,
+                                                 location);
             buff_sol->addWireDelayAndCapacitance(wire_delay, wire_cap);
             buff_sol->addLeafTrees(psn_inst, prev_location, buffer_lib,
                                    inverter_lib);
@@ -157,13 +180,13 @@ TimingBufferTransform::bottomUp(Psn* psn_inst, InstanceTerm* pin,
 }
 void
 TimingBufferTransform::topDown(Psn* psn_inst, InstanceTerm* pin,
-                               std::shared_ptr<BufferTree>& tree)
+                               std::shared_ptr<BufferTree> tree)
 {
     topDown(psn_inst, psn_inst->handler()->net(pin), tree);
 }
 void
 TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
-                               std::shared_ptr<BufferTree>& tree)
+                               std::shared_ptr<BufferTree> tree)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
     if (!net)
@@ -177,7 +200,8 @@ TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
     }
     if (tree->isUnbuffered())
     {
-        PSN_LOG_DEBUG("{}: not adding buffer", handler.name(net));
+        PSN_LOG_DEBUG("{}: unbuffered at ({}, {})", handler.name(net),
+                      tree->location().getX(), tree->location().getY());
         auto tree_pin = tree->pin();
         auto tree_net = handler.net(tree_pin);
         if (tree_net != net)
@@ -205,9 +229,9 @@ TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
     }
     else if (tree->isBranched())
     {
-        PSN_LOG_DEBUG("{}: Going left..", handler.name(net));
+        PSN_LOG_DEBUG("{}: Buffering left..", handler.name(net));
         topDown(psn_inst, net, tree->left());
-        PSN_LOG_DEBUG("{}: Going right..", handler.name(net));
+        PSN_LOG_DEBUG("{}: Buffering right..", handler.name(net));
         topDown(psn_inst, net, tree->right());
     }
 }
@@ -240,14 +264,40 @@ TimingBufferTransform::fixViolations(
     std::unordered_set<LibraryCell*>& buffer_lib,
     std::unordered_set<LibraryCell*>& inverter_lib, bool resize_gates)
 {
-    DatabaseHandler& handler = *(psn_inst->handler());
-    for (auto& pin : handler.levelDriverPins())
+    DatabaseHandler& handler    = *(psn_inst->handler());
+    auto             driverPins = handler.levelDriverPins();
+    std::reverse(driverPins.begin(), driverPins.end());
+    for (auto& pin : driverPins)
     {
-        if ((fix_cap && handler.violatesMaximumCapacitance(pin)) ||
-            (fix_slew && handler.violatesMaximumTransition(pin)))
+        auto pin_net = handler.net(pin);
+        if (pin_net)
         {
-            PSN_LOG_DEBUG("Fixing violations for pin {}", handler.name(pin));
-            bufferPin(psn_inst, pin, buffer_lib, inverter_lib, resize_gates);
+            // TODO escape clock nets.
+            auto net_pins = handler.pins(pin_net);
+            bool fix      = false;
+            for (auto connected_pin : net_pins)
+            {
+                if ((fix_cap &&
+                     handler.violatesMaximumCapacitance(connected_pin)) ||
+                    (fix_slew &&
+                     handler.violatesMaximumTransition(connected_pin)))
+                {
+                    PSN_LOG_DEBUG(
+                        "Violating pin {} -> {}, C {} T {}", handler.name(pin),
+                        handler.name(connected_pin),
+                        handler.violatesMaximumCapacitance(connected_pin),
+                        handler.violatesMaximumTransition(connected_pin));
+                    fix = true;
+                    break;
+                }
+            }
+            if (fix)
+            {
+                PSN_LOG_DEBUG("Fixing violations for pin {}",
+                              handler.name(pin));
+                bufferPin(psn_inst, pin, buffer_lib, inverter_lib,
+                          resize_gates);
+            }
         }
     }
     return buffer_count_;

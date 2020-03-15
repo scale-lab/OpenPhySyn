@@ -53,13 +53,13 @@ private:
                    std::unordered_set<LibraryCell*>& inverter_lib,
                    bool                              resize_gates = false);
     std::shared_ptr<BufferSolution>
-         bottomUp(Psn* psn_inst, InstanceTerm* pin, SteinerPoint pt,
-                  SteinerPoint prev, std::unordered_set<LibraryCell*>& buffer_lib,
+         bottomUp(Psn* psn_inst, SteinerPoint pt, SteinerPoint prev,
+                  std::unordered_set<LibraryCell*>& buffer_lib,
                   std::unordered_set<LibraryCell*>& inverter_lib,
                   std::shared_ptr<SteinerTree> st_tree, bool resize_gates = false);
     void topDown(Psn* psn_inst, InstanceTerm* pin,
-                 std::shared_ptr<BufferTree>& tree);
-    void topDown(Psn* psn_inst, Net* net, std::shared_ptr<BufferTree>& tree);
+                 std::shared_ptr<BufferTree> tree);
+    void topDown(Psn* psn_inst, Net* net, std::shared_ptr<BufferTree> tree);
     std::string generateBufferName(Psn* psn_inst);
     std::string generateNetName(Psn* psn_inst);
 

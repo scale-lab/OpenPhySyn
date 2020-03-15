@@ -74,6 +74,8 @@ public:
     float totalLoad(float cap_per_micron) const;
     float subtreeLoad(float cap_per_micron, SteinerPoint pt) const;
 
+    InstanceTerm* alias(SteinerPoint pt);
+
     ~SteinerTree();
 
 private:

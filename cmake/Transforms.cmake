@@ -76,7 +76,7 @@ install(
 )
 endif()
 
-if (${OPENPHYSYN_TRANSFORM_timing_buffer_ENABLED})
+if (${OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED})
 add_subdirectory(src/StandardTransforms/TimingBufferTransform)
 install(
   TARGETS timing_buffer
