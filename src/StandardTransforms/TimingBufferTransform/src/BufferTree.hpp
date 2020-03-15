@@ -68,12 +68,12 @@ public:
                std::shared_ptr<BufferTree> right, Point location)
 
     {
-        left_                 = left;
-        right_                = right;
-        capacitance_          = left_->capacitance() + right_->capacitance();
-        required_             = std::min(left->required(), right->required());
-        cost_                 = left_->cost() + right_->cost();
-        wire_delay_           = 0;
+        left_        = left;
+        right_       = right;
+        capacitance_ = left_->totalCapacitance() + right_->totalCapacitance();
+        required_    = std::min(left->totalRequired(), right->totalRequired());
+        cost_        = left_->cost() + right_->cost();
+        wire_delay_  = 0;
         wire_capacitance_     = 0;
         location_             = location;
         buffer_cell_          = nullptr;
@@ -441,10 +441,9 @@ public:
     }
 
     void
-    prune(Psn* psn_inst, const int prune_threshold = 0)
+    prune(Psn* psn_inst, const float prune_threshold = 1E-6F)
     {
         // TODO Add squeeze pruning
-        PSN_UNUSED(prune_threshold);
 
         std::sort(buffer_trees_.begin(), buffer_trees_.end(),
                   [=](const std::shared_ptr<BufferTree>& a,
@@ -455,43 +454,54 @@ public:
                   });
 
         size_t index = 0;
+        // PSN_LOG_INFO("Before prune {}", buffer_trees_.size());
         // PSN_LOG_DEBUG("Before prune {}", buffer_trees_.size());
         // for (size_t i = 0; i < buffer_trees_.size(); i++)
         // {
         //     PSN_LOG_DEBUG("i {} Cap ({}) + RC: {}, Req {}, UREQ {} ( + RC:
         //     {})",
-        //                  i, buffer_trees_[i]->capacitance(),
-        //                  buffer_trees_[i]->totalCapacitance(),
-        //                  buffer_trees_[i]->required(),
-        //                  buffer_trees_[i]->upstreamBufferRequired(psn_inst),
-        //                  buffer_trees_[i]->upstreamBufferRequired(psn_inst) +
-        //                      buffer_trees_[i]->wireDelay());
+        //                   i, buffer_trees_[i]->capacitance(),
+        //                   buffer_trees_[i]->totalCapacitance(),
+        //                   buffer_trees_[i]->required(),
+        //                   buffer_trees_[i]->upstreamBufferRequired(psn_inst),
+        //                   buffer_trees_[i]->upstreamBufferRequired(psn_inst)
+        //                   +
+        //                       buffer_trees_[i]->wireDelay());
         // }
         for (size_t i = 0; i < buffer_trees_.size(); i++)
         {
             index = i + 1;
             for (size_t j = i + 1; j < buffer_trees_.size(); j++)
             {
-                if (buffer_trees_[j]->totalCapacitance() <=
+                if (buffer_trees_[j]->totalCapacitance() <
                         buffer_trees_[i]->totalCapacitance() &&
-                    buffer_trees_[i]->cost() <= buffer_trees_[j]->cost())
+                    !(std::abs(buffer_trees_[j]->totalCapacitance() -
+                               buffer_trees_[i]->totalCapacitance()) <
+                      prune_threshold *
+                          std::max(
+                              std::abs(buffer_trees_[j]->totalCapacitance()),
+                              std::abs(buffer_trees_[i]->totalCapacitance()))))
+                // &&
+                // buffer_trees_[i]->cost() <= buffer_trees_[j]->cost())
                 {
                     buffer_trees_[index++] = buffer_trees_[j];
                 }
             }
             buffer_trees_.resize(index);
         }
+        // PSN_LOG_INFO("After prune {}", buffer_trees_.size());
         // PSN_LOG_DEBUG("After prune {}", buffer_trees_.size());
         // for (size_t i = 0; i < buffer_trees_.size(); i++)
         // {
-        //     PSN_LOG_DEBUG("i {} Cap ({}) + RC: {}, Req {}, UREQ {} ( + RC:
-        //     {})",
-        //                  i, buffer_trees_[i]->capacitance(),
-        //                  buffer_trees_[i]->totalCapacitance(),
-        //                  buffer_trees_[i]->required(),
-        //                  buffer_trees_[i]->upstreamBufferRequired(psn_inst),
-        //                  buffer_trees_[i]->upstreamBufferRequired(psn_inst) +
-        //                      buffer_trees_[i]->wireDelay());
+        //     PSN_LOG_DEBUG("i {} Cap ({}) + RC: {}, Req {}, UREQ {} ( +
+        //     RC:{})",
+        //                   i, buffer_trees_[i]->capacitance(),
+        //                   buffer_trees_[i]->totalCapacitance(),
+        //                   buffer_trees_[i]->required(),
+        //                   buffer_trees_[i]->upstreamBufferRequired(psn_inst),
+        //                   buffer_trees_[i]->upstreamBufferRequired(psn_inst)
+        //                   +
+        //                       buffer_trees_[i]->wireDelay());
         // }
     }
 };

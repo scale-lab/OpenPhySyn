@@ -4,7 +4,7 @@ import_def ../tests/data/designs/timing_buffer/ibex_resized.def
 # import_db ibex.db
 sta read_sdc ../tests/data/designs/timing_buffer/ibex.sdc
 sta report_checks
-set_log_level debug
+# set_log_level debug
 
 set_wire_rc metal2
 set num_buffers [transform timing_buffer -buffers BUF_X4]
