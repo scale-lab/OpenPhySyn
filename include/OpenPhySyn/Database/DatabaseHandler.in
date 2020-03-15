@@ -86,6 +86,7 @@ virtual float targetLoad(LibraryCell* cell);
 virtual float gateDelay(Instance* inst, InstanceTerm* to, float in_slew = 0,
                         LibraryTerm* from = nullptr, float* drvr_slew = nullptr,
                         int rise_fall = -1);
+virtual float gateDelay(InstanceTerm* out_port, float load_cap);
 virtual float gateDelay(LibraryTerm* out_port, float load_cap);
 virtual float bufferInputCapacitance(LibraryCell* buffer_cell);
 virtual float bufferOutputCapacitance(LibraryCell* buffer_cell);
@@ -96,6 +97,8 @@ virtual Net*  net(const char* name) const;
 virtual LibraryTerm* libraryPin(const char* cell_name,
                                 const char* pin_name) const;
 virtual LibraryTerm* libraryPin(LibraryCell* cell, const char* pin_name) const;
+virtual LibraryTerm* bufferInputPin(LibraryCell* buffer_cell) const;
+virtual LibraryTerm* bufferOutputPin(LibraryCell* buffer_cell) const;
 virtual std::vector<LibraryTerm*> libraryPins(Instance* inst) const;
 virtual std::vector<LibraryTerm*> libraryPins(LibraryCell* cell) const;
 virtual std::vector<LibraryTerm*> libraryInputPins(LibraryCell* cell) const;
@@ -107,6 +110,7 @@ virtual std::vector<LibraryCell*> bufferCells() const;
 virtual LibraryCell*              smallestInverterCell() const;
 virtual LibraryCell*              smallestBufferCell() const;
 virtual bool                      isClocked(InstanceTerm* term) const;
+virtual bool                      isClock(Net* net) const;
 virtual bool                      isPrimary(Net* net) const;
 virtual bool                      isInput(InstanceTerm* term) const;
 virtual bool                      isOutput(InstanceTerm* term) const;
@@ -176,4 +180,6 @@ virtual std::string            name(Library* object) const;
 virtual std::string            name(LibraryCell* object) const;
 virtual std::string            name(LibraryTerm* object) const;
 virtual std::string            topName() const;
-virtual HandlerType            handlerType() const;
+virtual void        setWireRC(float res_per_micon, float cap_per_micron);
+virtual bool        hasWireRC();
+virtual HandlerType handlerType() const;

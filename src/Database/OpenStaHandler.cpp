@@ -48,8 +48,10 @@
 #include <OpenSTA/liberty/TimingModel.hh>
 #include <OpenSTA/liberty/TimingRole.hh>
 #include <OpenSTA/liberty/Transition.hh>
+#include <OpenSTA/liberty/Units.hh>
 #include <OpenSTA/network/NetworkCmp.hh>
 #include <OpenSTA/network/PortDirection.hh>
+#include <OpenSTA/parasitics/Parasitics.hh>
 #include <OpenSTA/sdc/Sdc.hh>
 #include <OpenSTA/search/Corner.hh>
 #include <OpenSTA/search/PathEnd.hh>
@@ -63,11 +65,13 @@
 
 namespace psn
 {
-OpenStaHandler::OpenStaHandler(sta::DatabaseSta* sta)
+OpenStaHandler::OpenStaHandler(Psn* psn_inst, sta::DatabaseSta* sta)
     : sta_(sta),
       db_(sta->db()),
       has_equiv_cells_(false),
-      has_target_loads_(false)
+      has_target_loads_(false),
+      psn_(psn_inst),
+      has_wire_rc_(false)
 {
     // Use default corner for now
     corner_        = sta_->findCorner("default");
@@ -411,9 +415,14 @@ OpenStaHandler::arrival(InstanceTerm* term, int ap_index, bool is_rise) const
 float
 OpenStaHandler::required(InstanceTerm* term, bool worst) const
 {
-    sta_->vertexRequired(vertex(term),
-                         worst ? sta::MinMax::min() : sta::MinMax::max());
-    return 0;
+    auto req =
+        sta_->vertexRequired(network()->graph()->pinLoadVertex(term), min_max_);
+    //  worst ? sta::MinMax::min() : sta::MinMax::max());
+    if (sta::fuzzyInf(req))
+    {
+        return 0;
+    }
+    return req;
 }
 std::vector<std::vector<PathPoint>>
 OpenStaHandler::getPaths(bool get_max, int path_count) const
@@ -840,8 +849,8 @@ OpenStaHandler::pinCapacitance(InstanceTerm* term) const
 float
 OpenStaHandler::pinCapacitance(LibraryTerm* term) const
 {
-    float cap1 = term->capacitance(sta::RiseFall::rise(), min_max_);
-    float cap2 = term->capacitance(sta::RiseFall::fall(), min_max_);
+    float cap1 = term->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
+    float cap2 = term->capacitance(sta::RiseFall::fall(), sta::MinMax::max());
     return std::max(cap1, cap2);
 }
 
@@ -1161,7 +1170,12 @@ OpenStaHandler::createClock(const char*              clock_name,
 Net*
 OpenStaHandler::createNet(const char* net_name)
 {
-    return network()->makeNet(net_name, network()->topInstance());
+    auto net = network()->makeNet(net_name, network()->topInstance());
+    if (net && hasWireRC())
+    {
+        calculateParasitics(net);
+    }
+    return net;
 }
 
 InstanceTerm*
@@ -1388,6 +1402,27 @@ OpenStaHandler::isCombinational(LibraryCell* cell) const
             !cell->hasSequentials());
 }
 
+void
+OpenStaHandler::setWireRC(float res_per_micon, float cap_per_micron)
+{
+    sta_->ensureGraph();
+    sta_->ensureLevelized();
+    sta_->graphDelayCalc()->delaysInvalid();
+    sta_->search()->arrivalsInvalid();
+
+    res_per_micron_ = res_per_micon;
+    cap_per_micron_ = cap_per_micron;
+    has_wire_rc_    = true;
+    calculateParasitics();
+    sta_->findDelays();
+}
+
+bool
+OpenStaHandler::hasWireRC()
+{
+    return has_wire_rc_;
+}
+
 bool
 OpenStaHandler::isInput(LibraryTerm* term) const
 {
@@ -1442,15 +1477,22 @@ OpenStaHandler::violatesMaximumCapacitance(InstanceTerm* term,
 bool
 OpenStaHandler::violatesMaximumTransition(InstanceTerm* term) const
 {
-    auto  vert = network()->graph()->pinDrvrVertex(term);
+    sta::Vertex *vert, *bi;
+    sta_->graph()->pinVertices(term, vert, bi);
     float limit;
     bool  exists;
     slewLimit(term, sta::MinMax::max(), limit, exists);
     for (auto rf : sta::RiseFall::range())
     {
-        auto slew = network()->graph()->slew(vert, rf, dcalc_ap_->index());
+        auto slew = sta_->graph()->slew(vert, rf, dcalc_ap_->index());
         if (slew > limit)
             return true;
+        if (bi)
+        {
+            slew = sta_->graph()->slew(bi, rf, dcalc_ap_->index());
+            if (slew > limit)
+                return true;
+        }
     }
     return false;
 }
@@ -1755,7 +1797,7 @@ OpenStaHandler::slewLimit(InstanceTerm* pin, sta::MinMax* min_max,
     auto  top_cell = network()->cell(network()->topInstance());
     float top_limit;
     bool  top_limit_exists;
-    network()->sdc()->slewLimit(top_cell, min_max, top_limit, top_limit_exists);
+    sta_->sdc()->slewLimit(top_cell, min_max, top_limit, top_limit_exists);
 
     // Default to top ("design") limit.
     exists = top_limit_exists;
@@ -1765,8 +1807,7 @@ OpenStaHandler::slewLimit(InstanceTerm* pin, sta::MinMax* min_max,
         auto  port = network()->port(pin);
         float port_limit;
         bool  port_limit_exists;
-        network()->sdc()->slewLimit(port, min_max, port_limit,
-                                    port_limit_exists);
+        sta_->sdc()->slewLimit(port, min_max, port_limit, port_limit_exists);
         // Use the tightest limit.
         if (port_limit_exists &&
             (!exists || min_max->compare(limit, port_limit)))
@@ -1779,7 +1820,7 @@ OpenStaHandler::slewLimit(InstanceTerm* pin, sta::MinMax* min_max,
     {
         float pin_limit;
         bool  pin_limit_exists;
-        network()->sdc()->slewLimit(pin, min_max, pin_limit, pin_limit_exists);
+        sta_->sdc()->slewLimit(pin, min_max, pin_limit, pin_limit_exists);
         // Use the tightest limit.
         if (pin_limit_exists && (!exists || min_max->compare(limit, pin_limit)))
         {
@@ -1805,8 +1846,18 @@ OpenStaHandler::slewLimit(InstanceTerm* pin, sta::MinMax* min_max,
 }
 
 float
+OpenStaHandler::gateDelay(InstanceTerm* pin, float load_cap)
+{
+    return gateDelay(libraryPin(pin), load_cap);
+}
+
+float
 OpenStaHandler::gateDelay(LibraryTerm* out_port, float load_cap)
 {
+    if (!has_target_loads_)
+    {
+        findTargetLoads();
+    }
     auto cell = out_port->libertyCell();
     // Max rise/fall delays.
     sta::ArcDelay                        max_delay = -sta::INF;
@@ -1851,6 +1902,22 @@ OpenStaHandler::portCapacitance(const LibraryTerm* port, bool isMax)
         sta::RiseFall::fall(), isMax ? sta::MinMax::max() : sta::MinMax::min());
     return std::max(cap1, cap2);
 }
+
+LibraryTerm*
+OpenStaHandler::bufferInputPin(LibraryCell* buffer_cell) const
+{
+    LibraryTerm *input, *output;
+    buffer_cell->bufferPorts(input, output);
+    return input;
+}
+LibraryTerm*
+OpenStaHandler::bufferOutputPin(LibraryCell* buffer_cell) const
+{
+    LibraryTerm *input, *output;
+    buffer_cell->bufferPorts(input, output);
+    return output;
+}
+
 float
 OpenStaHandler::bufferInputCapacitance(LibraryCell* buffer_cell)
 {
@@ -1964,6 +2031,96 @@ OpenStaHandler::findBufferTargetSlews(Liberty* library,
                 }
             }
         }
+    }
+}
+void
+OpenStaHandler::calculateParasitics()
+{
+    for (auto& net : nets())
+    {
+        if (isClock(net))
+        {
+            continue;
+        }
+        calculateParasitics(net);
+    }
+}
+bool
+OpenStaHandler::isClock(Net* net) const
+{
+
+    auto net_pin = faninPin(net);
+    if (net_pin)
+    {
+        auto vert = vertex(net_pin);
+        if (vert)
+        {
+
+            if (network()->search()->isClock(vert))
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+void
+OpenStaHandler::calculateParasitics(Net* net)
+{
+    auto tree = SteinerTree::create(net, psn_);
+    if (tree && tree->isPlaced())
+    {
+        sta::Parasitic* parasitic = sta_->parasitics()->makeParasiticNetwork(
+            net, false, parasitics_ap_);
+        int branch_count = tree->branchCount();
+        for (int i = 0; i < branch_count; i++)
+        {
+            auto                branch = tree->branch(i);
+            sta::ParasiticNode* n1 =
+                findParasiticNode(tree, parasitic, net, branch.firstPin(),
+                                  branch.firstSteinerPoint());
+            sta::ParasiticNode* n2 =
+                findParasiticNode(tree, parasitic, net, branch.secondPin(),
+                                  branch.secondSteinerPoint());
+            if (n1 != n2)
+            {
+                if (branch.wireLength() == 0)
+                    sta_->parasitics()->makeResistor(nullptr, n1, n2, 1.0e-3,
+                                                     parasitics_ap_);
+                else
+                {
+                    float wire_length = dbuToMeters(branch.wireLength());
+                    float wire_cap    = wire_length * cap_per_micron_;
+                    float wire_res    = wire_length * res_per_micron_;
+                    sta_->parasitics()->incrCap(n1, wire_cap / 2.0,
+                                                parasitics_ap_);
+                    sta_->parasitics()->makeResistor(nullptr, n1, n2, wire_res,
+                                                     parasitics_ap_);
+                    sta_->parasitics()->incrCap(n2, wire_cap / 2.0,
+                                                parasitics_ap_);
+                }
+            }
+        }
+    }
+}
+sta::ParasiticNode*
+OpenStaHandler::findParasiticNode(std::unique_ptr<SteinerTree>& tree,
+                                  sta::Parasitic* parasitic, const Net* net,
+                                  const InstanceTerm* pin, SteinerPoint pt)
+{
+    if (pin == nullptr)
+    {
+        pin = tree->alias(pt);
+    }
+    if (pin)
+    {
+        return sta_->parasitics()->ensureParasiticNode(parasitic, pin);
+    }
+    else
+    {
+        return sta_->parasitics()->ensureParasiticNode(parasitic, net, pt);
     }
 }
 HandlerType

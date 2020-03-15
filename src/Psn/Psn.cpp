@@ -82,7 +82,7 @@ Psn::Psn(Database* db) : db_(db), interp_(nullptr)
     exec_path_ = FileUtils::executablePath();
     settings_  = new DesignSettings();
     initializeSta();
-    db_handler_ = new DatabaseHandler(sta_);
+    db_handler_ = new DatabaseHandler(this, sta_);
 }
 void
 Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp,
@@ -114,7 +114,7 @@ Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
     exec_path_  = FileUtils::executablePath();
     db_         = sta_->db();
     settings_   = new DesignSettings();
-    db_handler_ = new DatabaseHandler(sta_);
+    db_handler_ = new DatabaseHandler(this, sta_);
 }
 
 void
@@ -827,10 +827,15 @@ Psn::sourceTclScript(const char* script_path)
 void
 Psn::setWireRC(float res_per_micon, float cap_per_micron)
 {
-    handler()->resetDelays();
+    if (!database() || database()->getChip() == nullptr)
+    {
+        PSN_LOG_ERROR("Could not find any loaded design.");
+        return;
+    }
     settings()
         ->setResistancePerMicron(res_per_micon)
         ->setCapacitancePerMicron(cap_per_micron);
+    handler()->setWireRC(res_per_micon, cap_per_micron);
 }
 int
 Psn::setWireRC(const char* layer_name)

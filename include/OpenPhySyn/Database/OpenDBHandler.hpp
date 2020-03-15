@@ -44,7 +44,7 @@ namespace psn
 class OpenDBHandler
 {
 public:
-    OpenDBHandler(sta::DatabaseSta* sta);
+    OpenDBHandler(Psn* psn_inst, sta::DatabaseSta* sta);
 #include <OpenPhySyn/Database/DatabaseHandler.in>
     Point        OpenStaHandler::location(BlockTerm* term);
     bool         isPlaced(BlockTerm* term) const;

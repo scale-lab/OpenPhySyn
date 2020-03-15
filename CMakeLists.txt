@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1...3.15)
 
-project(OpenPhySyn VERSION 1.3.0 LANGUAGES CXX)
+project(OpenPhySyn VERSION 1.4.0 LANGUAGES CXX)
 
 
 option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add flags and defines.
@@ -14,6 +14,8 @@ option(OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED "Build Buffer Fan-Out transfor
 option(OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED "Build Gate Clone transform" ON)
 option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
 option(OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED "Build Constant Propagation transform" ON)
+option(OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED "Build Buffer Resize transform" ON)
+option(OPENPHYSYN_READLINE_ENABLED "Enable Tcl Readline" ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-error -Wno-deprecated-copy")
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -23,6 +25,9 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+if(${OPENPHYSYN_READLINE_ENABLED})
+add_definitions(-DOPENPHYSYN_READLINE_ENABLED)
+endif()
 
 # Tool build configuration
 option(OPENROAD_BUILD "Indicates if the tool is being built as a module in the top level application" OFF)
@@ -258,6 +263,12 @@ set(PSN_TESTFILES
   ${PROJECT_SOURCE_DIR}/tests/SimpleConstantPropagation.cpp
   ${PROJECT_SOURCE_DIR}/tests/SimpleConstantPropagationInversion.cpp
   ${PROJECT_SOURCE_DIR}/tests/ComplexConstantPropagation.cpp
+)
+endif()
+
+if (${OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED})
+set(PSN_TESTFILES
+  ${PSN_TESTFILES}
 )
 endif()
 

@@ -374,6 +374,11 @@ SteinerTree::right(SteinerPoint pt) const
         return SteinerNull;
     return right_[pt];
 }
+bool
+SteinerTree::isLeaf(SteinerPoint pt) const
+{
+    return left(pt) == SteinerNull && right(pt) == SteinerNull;
+}
 
 SteinerPoint
 SteinerTree::top() const
@@ -385,6 +390,12 @@ SteinerTree::top() const
         top = right(driver);
     }
     return top;
+}
+InstanceTerm*
+SteinerTree::alias(SteinerPoint pt)
+{
+    Flute::Branch& branch_pt = tree_.branch[pt];
+    return pin_loc_[Point(branch_pt.x, branch_pt.y)];
 }
 
 } // namespace psn
