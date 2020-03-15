@@ -1,6 +1,6 @@
-# OpenPhySyn Constant Propagation Transform
+# OpenPhySyn Constant Timing Buffer
 
-Design optimization through constant propagation.
+Fix design rule violation by RAT-based buffer tree insertion.
 
 ## Building
 
@@ -23,6 +23,7 @@ Example:
 > ./Psn
 > import_lef <lef file>
 > import_def <def file>
-> transform constant_propagation
+> transform timing_buffer [buffers -all|<set of buffers>] [inverters "
+    "-all|<set of inverters>] [enable_gate_resize] [enable_inverter_pair]
 > write_def out.def
 ```
