@@ -70,7 +70,7 @@ print_usage		Print usage instructions
 print_version		Print tool version
 set_log			Alias for set_log_level
 set_log_level		Set log level [trace, debug, info, warn, error, critical, off]
-set_log_pattern	Set log printing pattern, refer to spdlog logger for pattern formats
+set_log_pattern	        Set log printing pattern, refer to spdlog logger for pattern formats
 set_max_area		Set maximum design area
 set_wire_rc		Set wire resistance/capacitance per micron, you can also specify technology layer
 transform		Run loaded transform
