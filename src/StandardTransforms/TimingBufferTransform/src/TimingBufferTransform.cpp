@@ -45,9 +45,8 @@
 #include <cmath>
 #include <limits>
 #include <sstream>
-
 // Objectives:
-// * Standard Van Ginneken buffering (with pruning). [InProgress]
+// * Standard Van Ginneken buffering (with pruning). [Done]
 // * Multiple buffer sizes. [TODO]
 // * Inverter pair instead of buffer pairs. [TODO]
 // * Simultaneous buffering and gate sizing. [TODO]
@@ -92,17 +91,6 @@ TimingBufferTransform::bufferPin(Psn* psn_inst, InstanceTerm* pin,
                              inverter_lib, std::move(st_tree), resize_gates);
     if (buff_sol->bufferTrees().size())
     {
-        for (size_t i = 0; i < buff_sol->bufferTrees().size(); i++)
-        {
-            PSN_LOG_DEBUG(
-                "({}, {}) Options {} Cap ({}) + Wire: {}, Req {} - Wire: {}",
-                buff_sol->bufferTrees()[i]->location().getX(),
-                buff_sol->bufferTrees()[i]->location().getY(), i,
-                buff_sol->bufferTrees()[i]->capacitance(),
-                buff_sol->bufferTrees()[i]->totalCapacitance(),
-                buff_sol->bufferTrees()[i]->required(),
-                buff_sol->bufferTrees()[i]->totalRequired());
-        }
         auto buff_tree = buff_sol->optimalDriverTree(psn_inst, pin);
         if (buff_tree)
         {
@@ -219,11 +207,13 @@ TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
         auto buf_inst = handler.createInstance(
             generateBufferName(psn_inst).c_str(), tree->bufferCell());
         auto buf_net = handler.createNet(generateNetName(psn_inst).c_str());
-        auto buff_in_port  = handler.libraryInputPins(tree->bufferCell())[0];
-        auto buff_out_port = handler.libraryOutputPins(tree->bufferCell())[0];
+        auto buff_in_port  = handler.bufferInputPin(tree->bufferCell());
+        auto buff_out_port = handler.bufferOutputPin(tree->bufferCell());
         handler.connect(net, buf_inst, buff_in_port);
         handler.connect(buf_net, buf_inst, buff_out_port);
         handler.setLocation(buf_inst, tree->location());
+        handler.calculateParasitics(net);
+        handler.calculateParasitics(buf_net);
         topDown(psn_inst, buf_net, tree->left());
         buffer_count_++;
     }
@@ -259,41 +249,32 @@ TimingBufferTransform::generateBufferName(Psn* psn_inst)
 }
 
 int
-TimingBufferTransform::fixViolations(
-    Psn* psn_inst, bool fix_cap, bool fix_slew,
+TimingBufferTransform::fixCapacitanceViolations(
+    Psn* psn_inst, std::vector<InstanceTerm*> driver_pins,
     std::unordered_set<LibraryCell*>& buffer_lib,
     std::unordered_set<LibraryCell*>& inverter_lib, bool resize_gates)
 {
-    DatabaseHandler& handler    = *(psn_inst->handler());
-    auto             driverPins = handler.levelDriverPins();
-    std::reverse(driverPins.begin(), driverPins.end());
-    for (auto& pin : driverPins)
+    PSN_LOG_DEBUG("Fixing capacitance violations");
+    DatabaseHandler& handler = *(psn_inst->handler());
+    for (auto& pin : driver_pins)
     {
         auto pin_net = handler.net(pin);
-        if (pin_net)
+        if (pin_net && !handler.isClock(pin_net))
         {
-            // TODO escape clock nets.
             auto net_pins = handler.pins(pin_net);
             bool fix      = false;
             for (auto connected_pin : net_pins)
             {
-                if ((fix_cap &&
-                     handler.violatesMaximumCapacitance(connected_pin)) ||
-                    (fix_slew &&
-                     handler.violatesMaximumTransition(connected_pin)))
+                if (handler.violatesMaximumCapacitance(connected_pin))
                 {
-                    PSN_LOG_DEBUG(
-                        "Violating pin {} -> {}, C {} T {}", handler.name(pin),
-                        handler.name(connected_pin),
-                        handler.violatesMaximumCapacitance(connected_pin),
-                        handler.violatesMaximumTransition(connected_pin));
+                    PSN_LOG_DEBUG("Violating pin {}", handler.name(pin));
                     fix = true;
                     break;
                 }
             }
             if (fix)
             {
-                PSN_LOG_DEBUG("Fixing violations for pin {}",
+                PSN_LOG_DEBUG("Fixing cap. violations for pin {}",
                               handler.name(pin));
                 bufferPin(psn_inst, pin, buffer_lib, inverter_lib,
                           resize_gates);
@@ -303,8 +284,46 @@ TimingBufferTransform::fixViolations(
     return buffer_count_;
 }
 int
+TimingBufferTransform::fixTransitionViolations(
+    Psn* psn_inst, std::vector<InstanceTerm*> driver_pins,
+    std::unordered_set<LibraryCell*>& buffer_lib,
+    std::unordered_set<LibraryCell*>& inverter_lib, bool resize_gates)
+{
+    PSN_LOG_DEBUG("Fixing transition violations");
+    DatabaseHandler& handler = *(psn_inst->handler());
+    handler.resetDelays();
+    for (auto& pin : driver_pins)
+    {
+        auto pin_net = handler.net(pin);
+        if (pin_net && !handler.isClock(pin_net))
+        {
+            auto net_pins = handler.pins(pin_net);
+            bool fix      = false;
+            for (auto connected_pin : net_pins)
+            {
+                if (handler.violatesMaximumTransition(connected_pin))
+                {
+                    PSN_LOG_DEBUG("Violating pin {}", handler.name(pin));
+
+                    fix = true;
+                    break;
+                }
+            }
+            if (fix)
+            {
+                PSN_LOG_DEBUG("Fixing transition violations for pin {}",
+                              handler.name(pin));
+                bufferPin(psn_inst, pin, buffer_lib, inverter_lib,
+                          resize_gates);
+            }
+        }
+    }
+    return buffer_count_;
+}
+
+int
 TimingBufferTransform::timingBuffer(
-    Psn* psn_inst, bool fix_cap, bool fix_slew,
+    Psn* psn_inst, bool fix_cap, bool fix_transition,
     std::unordered_set<std::string> buffer_lib_names,
     std::unordered_set<std::string> inverter_lib_names, bool resize_gates,
     bool use_inverter_pair)
@@ -364,8 +383,21 @@ TimingBufferTransform::timingBuffer(
             }
         }
     }
-    return fixViolations(psn_inst, fix_cap, fix_slew, buffer_lib, inverter_lib,
-                         resize_gates);
+
+    auto driver_pins = handler.levelDriverPins();
+    std::reverse(driver_pins.begin(), driver_pins.end());
+
+    if (fix_cap)
+    {
+        fixCapacitanceViolations(psn_inst, driver_pins, buffer_lib,
+                                 inverter_lib, resize_gates);
+    }
+    if (fix_transition)
+    {
+        fixTransitionViolations(psn_inst, driver_pins, buffer_lib, inverter_lib,
+                                resize_gates);
+    }
+    return buffer_count_;
 }
 
 int

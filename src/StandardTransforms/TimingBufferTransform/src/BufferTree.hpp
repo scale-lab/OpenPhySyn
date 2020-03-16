@@ -50,6 +50,7 @@ class BufferTree
     LibraryCell*                buffer_cell_;
     InstanceTerm*               pin_;
     LibraryCell*                upstream_buffer_cell_;
+    int                         polarity_;
 
 public:
     BufferTree(float cap = 0.0, float req = 0.0, float cost = 0.0,
@@ -57,28 +58,35 @@ public:
                LibraryCell* buffer_cell = nullptr)
         : capacitance_(cap),
           required_(req),
+          wire_capacitance_(0.0),
+          wire_delay_(0.0),
           cost_(cost),
           location_(location),
+          left_(nullptr),
+          right_(nullptr),
           buffer_cell_(buffer_cell),
           pin_(pin),
-          upstream_buffer_cell_(buffer_cell)
+          upstream_buffer_cell_(buffer_cell),
+          polarity_(0)
+
     {
     }
     BufferTree(Psn* psn_inst, std::shared_ptr<BufferTree> left,
                std::shared_ptr<BufferTree> right, Point location)
+        : capacitance_(left->totalCapacitance() + right->totalCapacitance()),
+          required_(std::min(left->totalRequired(), right->totalRequired())),
+          wire_capacitance_(0.0),
+          wire_delay_(0.0),
+          cost_(left->cost() + right->cost()),
+          location_(location),
+          left_(left),
+          right_(right),
+          buffer_cell_(nullptr),
+          pin_(nullptr),
+          upstream_buffer_cell_(nullptr),
+          polarity_(0)
 
     {
-        left_        = left;
-        right_       = right;
-        capacitance_ = left_->totalCapacitance() + right_->totalCapacitance();
-        required_    = std::min(left->totalRequired(), right->totalRequired());
-        cost_        = left_->cost() + right_->cost();
-        wire_delay_  = 0;
-        wire_capacitance_     = 0;
-        location_             = location;
-        buffer_cell_          = nullptr;
-        upstream_buffer_cell_ = nullptr;
-
         if (left->hasUpstreamBufferCell())
         {
             if (right->hasUpstreamBufferCell())
@@ -140,6 +148,11 @@ public:
     {
         return cost_;
     }
+    int
+    polarity() const
+    {
+        return polarity_;
+    }
     InstanceTerm*
     pin() const
     {
@@ -169,6 +182,11 @@ public:
     setCost(float cost)
     {
         cost_ = cost;
+    }
+    void
+    setPolarity(int polarity)
+    {
+        polarity_ = polarity;
     }
     void
     setPin(InstanceTerm* pin)
@@ -368,6 +386,7 @@ public:
             auto buffer_cap = psn_inst->handler()->bufferInputCapacitance(buff);
             auto buffer_opt = std::make_shared<BufferTree>(
                 buffer_cap, buff_required, buffer_cost, pt, nullptr, buff);
+
             buffer_opt->setLeft(optimal_tree);
             buffer_trees_.push_back(buffer_opt);
         }
@@ -480,9 +499,9 @@ public:
                       prune_threshold *
                           std::max(
                               std::abs(buffer_trees_[j]->totalCapacitance()),
-                              std::abs(buffer_trees_[i]->totalCapacitance()))))
-                // &&
-                // buffer_trees_[i]->cost() <= buffer_trees_[j]->cost())
+                              std::abs(
+                                  buffer_trees_[i]->totalCapacitance()))) &&
+                    buffer_trees_[i]->cost() <= buffer_trees_[j]->cost())
                 {
                     buffer_trees_[index++] = buffer_trees_[j];
                 }
