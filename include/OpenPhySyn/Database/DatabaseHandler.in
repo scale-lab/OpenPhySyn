@@ -183,3 +183,5 @@ virtual std::string            topName() const;
 virtual void        setWireRC(float res_per_micon, float cap_per_micron);
 virtual bool        hasWireRC();
 virtual HandlerType handlerType() const;
+virtual void        calculateParasitics();
+virtual void        calculateParasitics(Net* net);

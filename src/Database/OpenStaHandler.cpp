@@ -555,11 +555,13 @@ OpenStaHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
 std::vector<InstanceTerm*>
 OpenStaHandler::levelDriverPins() const
 {
+    sta_->ensureGraph();
+    sta_->ensureLevelized();
+
     auto                       handler_network = network();
     std::vector<InstanceTerm*> terms;
     std::vector<sta::Vertex*>  vertices;
-    sta_->ensureLevelized();
-    sta::VertexIterator itr(handler_network->graph());
+    sta::VertexIterator        itr(handler_network->graph());
     while (itr.hasNext())
     {
         sta::Vertex* vtx = itr.next();
@@ -1479,6 +1481,11 @@ OpenStaHandler::violatesMaximumTransition(InstanceTerm* term) const
 {
     sta::Vertex *vert, *bi;
     sta_->graph()->pinVertices(term, vert, bi);
+    if (!vert)
+    {
+        sta_->graph()->makePinVertices(term);
+        sta_->graph()->pinVertices(term, vert, bi);
+    }
     float limit;
     bool  exists;
     slewLimit(term, sta::MinMax::max(), limit, exists);

@@ -263,12 +263,13 @@ set(PSN_TESTFILES
   ${PROJECT_SOURCE_DIR}/tests/SimpleConstantPropagation.cpp
   ${PROJECT_SOURCE_DIR}/tests/SimpleConstantPropagationInversion.cpp
   ${PROJECT_SOURCE_DIR}/tests/ComplexConstantPropagation.cpp
-)
-endif()
+  )
+  endif()
 
 if (${OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED})
-set(PSN_TESTFILES
+  set(PSN_TESTFILES
   ${PSN_TESTFILES}
+  ${PROJECT_SOURCE_DIR}/tests/TimingBuffer.cpp
 )
 endif()
 

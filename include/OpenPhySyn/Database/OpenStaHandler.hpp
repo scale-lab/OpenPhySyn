@@ -117,8 +117,6 @@ private:
                                           const Net*          net,
                                           const InstanceTerm* pin,
                                           SteinerPoint        pt);
-    void                calculateParasitics();
-    void                calculateParasitics(Net* net);
 };
 
 } // namespace psn

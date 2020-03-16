@@ -39,7 +39,6 @@ To build a new transform, refer to the transform [template](https://github.com/s
 
 ### List available commands:
 
-
 ```bash
 > ./Psn
 > help
@@ -48,6 +47,7 @@ version                               Print version
 help                                  Print help
 print_usage                           Print help
 print_transforms                      List loaded transforms
+import_lef <file path>                Load LEF file
 import_lef <file path>                Load LEF file
 import_def <file path>                Load DEF file
 import_lib <file path>                Load a liberty file
@@ -71,18 +71,21 @@ set_log_pattern <pattern>             Set log printing pattern, refer to spdlog 
 ```
 
 ### List loaded transforms:
+
 ```bash
 > ./Psn
 > print_transforms
 ```
 
 ### Print usage information for a transform:
+
 ```bash
 > ./Psn
 > transform <transform name> help
 ```
 
 ### Running OpenSTA commands:
+
 ```bash
 > ./Psn
 > import_lef <lef file>
@@ -95,11 +98,11 @@ set_log_pattern <pattern>             Set log printing pattern, refer to spdlog 
 
 By default, the following transforms are built with OpenPhySyn:
 
-- `hello_transform`: a demo transform that adds a random wire.
-- `buffer_fanout`: adds buffers to high fan-out nets.
-- `gate_clone`: performs load driven gate cloning.
-- `pin_swap`: performs timing-driven/power-driven commutative pin-swapping optimization.
-- `constant propagation`: Perform constant propagation optimization across the design hierarchy.
+-   `hello_transform`: a demo transform that adds a random wire.
+-   `buffer_fanout`: adds buffers to high fan-out nets.
+-   `gate_clone`: performs load driven gate cloning.
+-   `pin_swap`: performs timing-driven/power-driven commutative pin-swapping optimization.
+-   `constant propagation`: Perform constant propagation optimization across the design hierarchy.
 
 ## Optimization Commands
 
@@ -108,29 +111,30 @@ The main provided command for optimization are `optimize_design` for physical de
 Currently, `optimize_design` performs pin swapping and load-driven gate-cloning to enhance the design timing. `optimize_logic` performs constant propagation optimization across the design hierarchy.
 
 `optimize_design` options:
-- `[-no_gate_clone]`: Disable gate-cloning.
-- `[-no_pin_swap]`: Disable pin-swap.
-- `[-clone_max_cap_factor <factor>]`: Set gate-cloning capacitance load ratio, defaults to *1.5*.
-- `[-clone_non_largest_cells]`: Allow cloning of cells that are not the largest of their cell-footprint, not recommended.
+
+-   `[-no_gate_clone]`: Disable gate-cloning.
+-   `[-no_pin_swap]`: Disable pin-swap.
+-   `[-clone_max_cap_factor <factor>]`: Set gate-cloning capacitance load ratio, defaults to _1.5_.
+-   `[-clone_non_largest_cells]`: Allow cloning of cells that are not the largest of their cell-footprint, not recommended.
 
 `optimize_logic` options:
-- `[-no_constant_propagation]`: Disable constant propagation.
-- `[-tihi tihi_cell_name]`: Manually specify the Logic 1 cell for constant propagation.
-- `[-tilo tilo_cell_name]`: Manually specify the Logic 0 cell for constant propagation.
 
+-   `[-no_constant_propagation]`: Disable constant propagation.
+-   `[-tihi tihi_cell_name]`: Manually specify the Logic 1 cell for constant propagation.
+-   `[-tilo tilo_cell_name]`: Manually specify the Logic 0 cell for constant propagation.
 
 ## Dependencies
 
 OpenPhySyn depends on the following libraries:
 
-- [CPP TaskFlow](https://github.com/cpp-taskflow/cpp-taskflow) [included, optional]
-- [Flute](https://github.com/The-OpenROAD-Project/flute3) [included]
-- [OpenSTA](https://github.com/The-OpenROAD-Project/OpenSTA) [included]
-- [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) [included]
-- [cxxopts](https://github.com/jarro2783/cxxopts) [included]
-- [SWIG](http://www.swig.org/Doc1.3/Tcl.html)
-- [Doxygen](http://www.doxygen.nl) [included, optional]
-- [Doctests](https://github.com/onqtam/doctest) [included, optional]
+-   [CPP TaskFlow](https://github.com/cpp-taskflow/cpp-taskflow) [included, optional]
+-   [Flute](https://github.com/The-OpenROAD-Project/flute3) [included]
+-   [OpenSTA](https://github.com/The-OpenROAD-Project/OpenSTA) [included]
+-   [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) [included]
+-   [cxxopts](https://github.com/jarro2783/cxxopts) [included]
+-   [SWIG](http://www.swig.org/Doc1.3/Tcl.html)
+-   [Doxygen](http://www.doxygen.nl) [included, optional]
+-   [Doctests](https://github.com/onqtam/doctest) [included, optional]
 
 ## Issues
 
@@ -138,17 +142,17 @@ Please open a GitHub [issue](https://github.com/scale-lab/OpenPhySyn/issues/new)
 
 ## To-Do
 
-- [x] Integrate Steiner Tree
-- [x] Integrate Liberty Parser
-- [x] Integrate OpenSTA
-- [x] Support reading scripts from a file
-- [x] Add unit tests
-- [x] Add Gate Cloning Transform
-- [x] Fix issues with OpenSTA commands integration
-- [x] Support command-line options for Tcl functions instead of just positional arguments
-- [x] Support passing parsed options to the transform body
-- [ ] Fix inconsistencies in the DB handlers between `const char *` and `std::string` 
-- [ ] Expose lower-level APIs through Tcl/Python interface
-- [ ] Add profiling tool (i.e., Valgrind).
-- [ ] Add API documentation
-- [ ] Add Coding Guideline and Contribution Guide
+-   [x] Integrate Steiner Tree
+-   [x] Integrate Liberty Parser
+-   [x] Integrate OpenSTA
+-   [x] Support reading scripts from a file
+-   [x] Add unit tests
+-   [x] Add Gate Cloning Transform
+-   [x] Fix issues with OpenSTA commands integration
+-   [x] Support command-line options for Tcl functions instead of just positional arguments
+-   [x] Support passing parsed options to the transform body
+-   [ ] Fix inconsistencies in the DB handlers between `const char *` and `std::string`
+-   [ ] Expose lower-level APIs through Tcl/Python interface
+-   [ ] Add profiling tool (i.e., Valgrind).
+-   [ ] Add API documentation
+-   [ ] Add Coding Guideline and Contribution Guide

@@ -50,6 +50,7 @@ class BufferTree
     LibraryCell*                buffer_cell_;
     InstanceTerm*               pin_;
     LibraryCell*                upstream_buffer_cell_;
+    int                         polarity_;
 
 public:
     BufferTree(float cap = 0.0, float req = 0.0, float cost = 0.0,
@@ -57,28 +58,35 @@ public:
                LibraryCell* buffer_cell = nullptr)
         : capacitance_(cap),
           required_(req),
+          wire_capacitance_(0.0),
+          wire_delay_(0.0),
           cost_(cost),
           location_(location),
+          left_(nullptr),
+          right_(nullptr),
           buffer_cell_(buffer_cell),
           pin_(pin),
-          upstream_buffer_cell_(buffer_cell)
+          upstream_buffer_cell_(buffer_cell),
+          polarity_(0)
+
     {
     }
     BufferTree(Psn* psn_inst, std::shared_ptr<BufferTree> left,
                std::shared_ptr<BufferTree> right, Point location)
+        : capacitance_(left->totalCapacitance() + right->totalCapacitance()),
+          required_(std::min(left->totalRequired(), right->totalRequired())),
+          wire_capacitance_(0.0),
+          wire_delay_(0.0),
+          cost_(left->cost() + right->cost()),
+          location_(location),
+          left_(left),
+          right_(right),
+          buffer_cell_(nullptr),
+          pin_(nullptr),
+          upstream_buffer_cell_(nullptr),
+          polarity_(0)
 
     {
-        left_                 = left;
-        right_                = right;
-        capacitance_          = left_->capacitance() + right_->capacitance();
-        required_             = std::min(left->required(), right->required());
-        cost_                 = left_->cost() + right_->cost();
-        wire_delay_           = 0;
-        wire_capacitance_     = 0;
-        location_             = location;
-        buffer_cell_          = nullptr;
-        upstream_buffer_cell_ = nullptr;
-
         if (left->hasUpstreamBufferCell())
         {
             if (right->hasUpstreamBufferCell())
@@ -140,6 +148,11 @@ public:
     {
         return cost_;
     }
+    int
+    polarity() const
+    {
+        return polarity_;
+    }
     InstanceTerm*
     pin() const
     {
@@ -169,6 +182,11 @@ public:
     setCost(float cost)
     {
         cost_ = cost;
+    }
+    void
+    setPolarity(int polarity)
+    {
+        polarity_ = polarity;
     }
     void
     setPin(InstanceTerm* pin)
@@ -368,6 +386,7 @@ public:
             auto buffer_cap = psn_inst->handler()->bufferInputCapacitance(buff);
             auto buffer_opt = std::make_shared<BufferTree>(
                 buffer_cap, buff_required, buffer_cost, pt, nullptr, buff);
+
             buffer_opt->setLeft(optimal_tree);
             buffer_trees_.push_back(buffer_opt);
         }
@@ -441,10 +460,9 @@ public:
     }
 
     void
-    prune(Psn* psn_inst, const int prune_threshold = 0)
+    prune(Psn* psn_inst, const float prune_threshold = 1E-6F)
     {
         // TODO Add squeeze pruning
-        PSN_UNUSED(prune_threshold);
 
         std::sort(buffer_trees_.begin(), buffer_trees_.end(),
                   [=](const std::shared_ptr<BufferTree>& a,
@@ -455,25 +473,34 @@ public:
                   });
 
         size_t index = 0;
+        // PSN_LOG_INFO("Before prune {}", buffer_trees_.size());
         // PSN_LOG_DEBUG("Before prune {}", buffer_trees_.size());
         // for (size_t i = 0; i < buffer_trees_.size(); i++)
         // {
         //     PSN_LOG_DEBUG("i {} Cap ({}) + RC: {}, Req {}, UREQ {} ( + RC:
         //     {})",
-        //                  i, buffer_trees_[i]->capacitance(),
-        //                  buffer_trees_[i]->totalCapacitance(),
-        //                  buffer_trees_[i]->required(),
-        //                  buffer_trees_[i]->upstreamBufferRequired(psn_inst),
-        //                  buffer_trees_[i]->upstreamBufferRequired(psn_inst) +
-        //                      buffer_trees_[i]->wireDelay());
+        //                   i, buffer_trees_[i]->capacitance(),
+        //                   buffer_trees_[i]->totalCapacitance(),
+        //                   buffer_trees_[i]->required(),
+        //                   buffer_trees_[i]->upstreamBufferRequired(psn_inst),
+        //                   buffer_trees_[i]->upstreamBufferRequired(psn_inst)
+        //                   +
+        //                       buffer_trees_[i]->wireDelay());
         // }
         for (size_t i = 0; i < buffer_trees_.size(); i++)
         {
             index = i + 1;
             for (size_t j = i + 1; j < buffer_trees_.size(); j++)
             {
-                if (buffer_trees_[j]->totalCapacitance() <=
+                if (buffer_trees_[j]->totalCapacitance() <
                         buffer_trees_[i]->totalCapacitance() &&
+                    !(std::abs(buffer_trees_[j]->totalCapacitance() -
+                               buffer_trees_[i]->totalCapacitance()) <
+                      prune_threshold *
+                          std::max(
+                              std::abs(buffer_trees_[j]->totalCapacitance()),
+                              std::abs(
+                                  buffer_trees_[i]->totalCapacitance()))) &&
                     buffer_trees_[i]->cost() <= buffer_trees_[j]->cost())
                 {
                     buffer_trees_[index++] = buffer_trees_[j];
@@ -481,17 +508,19 @@ public:
             }
             buffer_trees_.resize(index);
         }
+        // PSN_LOG_INFO("After prune {}", buffer_trees_.size());
         // PSN_LOG_DEBUG("After prune {}", buffer_trees_.size());
         // for (size_t i = 0; i < buffer_trees_.size(); i++)
         // {
-        //     PSN_LOG_DEBUG("i {} Cap ({}) + RC: {}, Req {}, UREQ {} ( + RC:
-        //     {})",
-        //                  i, buffer_trees_[i]->capacitance(),
-        //                  buffer_trees_[i]->totalCapacitance(),
-        //                  buffer_trees_[i]->required(),
-        //                  buffer_trees_[i]->upstreamBufferRequired(psn_inst),
-        //                  buffer_trees_[i]->upstreamBufferRequired(psn_inst) +
-        //                      buffer_trees_[i]->wireDelay());
+        //     PSN_LOG_DEBUG("i {} Cap ({}) + RC: {}, Req {}, UREQ {} ( +
+        //     RC:{})",
+        //                   i, buffer_trees_[i]->capacitance(),
+        //                   buffer_trees_[i]->totalCapacitance(),
+        //                   buffer_trees_[i]->required(),
+        //                   buffer_trees_[i]->upstreamBufferRequired(psn_inst),
+        //                   buffer_trees_[i]->upstreamBufferRequired(psn_inst)
+        //                   +
+        //                       buffer_trees_[i]->wireDelay());
         // }
     }
 };

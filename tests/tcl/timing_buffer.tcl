@@ -3,8 +3,8 @@ import_lef ../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
 import_def ../tests/data/designs/timing_buffer/ibex_resized.def
 # import_db ibex.db
 sta read_sdc ../tests/data/designs/timing_buffer/ibex.sdc
-sta report_checks
-set_log_level debug
+
+# sta report_checks
 
 set_wire_rc metal2
 set num_buffers [transform timing_buffer -buffers BUF_X4]

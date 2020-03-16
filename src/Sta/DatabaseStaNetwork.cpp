@@ -365,7 +365,7 @@ DbNetTermIterator::next()
 ////////////////////////////////////////////////////////////////
 
 Network*
-makeDatabaseStaNetwork()
+makedbNetwork()
 {
     return new DatabaseStaNetwork;
 }
@@ -964,6 +964,7 @@ DatabaseStaNetwork::deleteInstance(Instance* inst)
 Pin*
 DatabaseStaNetwork::connect(Instance* inst, Port* port, Net* net)
 {
+    Pin*   pin  = nullptr;
     dbNet* dnet = staToDb(net);
     if (inst == top_instance_)
     {
@@ -979,15 +980,22 @@ DatabaseStaNetwork::connect(Instance* inst, Port* port, Net* net)
         staToDb(dir, sig_type, io_type);
         bterm->setSigType(sig_type);
         bterm->setIoType(io_type);
-        return dbToSta(bterm);
+        pin = dbToSta(bterm);
     }
     else
     {
         dbInst*  dinst = staToDb(inst);
         dbMTerm* dterm = staToDb(port);
         dbITerm* iterm = dbITerm::connect(dinst, dnet, dterm);
-        return dbToSta(iterm);
+        pin            = dbToSta(iterm);
     }
+    if (isDriver(pin))
+    {
+        PinSet* drvrs = net_drvr_pin_map_.findKey(net);
+        if (drvrs)
+            drvrs->insert(pin);
+    }
+    return pin;
 }
 
 Pin*
@@ -995,6 +1003,7 @@ DatabaseStaNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
 {
     dbNet*      dnet      = staToDb(net);
     const char* port_name = port->name();
+    Pin*        pin       = nullptr;
     if (inst == top_instance_)
     {
         dbBTerm* bterm = block_->findBTerm(port_name);
@@ -1008,7 +1017,7 @@ DatabaseStaNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
         staToDb(dir, sig_type, io_type);
         bterm->setSigType(sig_type);
         bterm->setIoType(io_type);
-        return dbToSta(bterm);
+        pin = dbToSta(bterm);
     }
     else
     {
@@ -1016,13 +1025,29 @@ DatabaseStaNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
         dbMaster* master = dinst->getMaster();
         dbMTerm*  dterm  = master->findMTerm(port_name);
         dbITerm*  iterm  = dbITerm::connect(dinst, dnet, dterm);
-        return dbToSta(iterm);
+        pin              = dbToSta(iterm);
     }
+
+    if (isDriver(pin))
+    {
+        PinSet* drvrs = net_drvr_pin_map_.findKey(net);
+        if (drvrs)
+            drvrs->insert(pin);
+    }
+    return pin;
 }
 
 void
 DatabaseStaNetwork::disconnectPin(Pin* pin)
 {
+    Net* net = this->net(pin);
+    if (net && isDriver(pin))
+    {
+        PinSet* drvrs = net_drvr_pin_map_.findKey(net);
+        if (drvrs)
+            drvrs->erase(pin);
+    }
+
     dbITerm* iterm;
     dbBTerm* bterm;
     staToDb(pin, iterm, bterm);

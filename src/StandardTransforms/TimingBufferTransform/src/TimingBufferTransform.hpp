@@ -69,10 +69,16 @@ private:
                      std::unordered_set<std::string> inverter_lib_names =
                          std::unordered_set<std::string>(),
                      bool resize_gates = false, bool use_inverter_pair = false);
-    int fixViolations(Psn* psn_inst, bool fix_cap, bool fix_slew,
-                      std::unordered_set<LibraryCell*>& buffer_lib,
-                      std::unordered_set<LibraryCell*>& inverter_lib,
-                      bool                              resize_gates = false);
+    int fixCapacitanceViolations(Psn*                              psn_inst,
+                                 std::vector<InstanceTerm*>        driver_pins,
+                                 std::unordered_set<LibraryCell*>& buffer_lib,
+                                 std::unordered_set<LibraryCell*>& inverter_lib,
+                                 bool resize_gates);
+    int fixTransitionViolations(Psn*                              psn_inst,
+                                std::vector<InstanceTerm*>        driver_pins,
+                                std::unordered_set<LibraryCell*>& buffer_lib,
+                                std::unordered_set<LibraryCell*>& inverter_lib,
+                                bool                              resize_gates);
 
 public:
     TimingBufferTransform();
