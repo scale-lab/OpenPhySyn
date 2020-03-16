@@ -39,7 +39,7 @@ To build a new transform, refer to the transform [template](https://github.com/s
 
 ### List available commands:
 
-```bash
+```
 > ./Psn
 > help
 design_area		Report design total cell area
