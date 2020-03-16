@@ -42,39 +42,39 @@ To build a new transform, refer to the transform [template](https://github.com/s
 ```bash
 > ./Psn
 > help
-design_area				Report design total cell area
-export_db				Export OpenDB database file
-export_def				Export design DEF file
-get_database			Return OpenDB database object
+design_area		Report design total cell area
+export_db		Export OpenDB database file
+export_def		Export design DEF file
+get_database		Return OpenDB database object
 get_database_handler	Return OpenPhySyn database handler
-get_handler				Alias for get_database_handler
-get_liberty				Return first loaded liberty file
-has_transform			Check if the specified transform is loaded
-help					Print this help
-import_db				Import OpenDB database file
-import_def				Import design DEF file
-import_lef				Import technology LEF file
-import_lib				Alias for import_liberty
-import_liberty			Import liberty file
-link					Alias for link_design
-link_design				Link design top module
-make_steiner_tree		Create steiner tree around net
-optimize_design			Perform timing optimization
-optimize_fanout			Perform maximum-fanout based buffering
-optimize_logic			Perform logic optimization
-optimize_power			Perform power optimization
-print_liberty_cells		Print liberty cells available in the loaded library
-print_license			Print license information
-print_transforms		Print loaded transforms
-print_usage				Print usage instructions
-print_version			Print tool version
-set_log					Alias for set_log_level
-set_log_level			Set log level [trace, debug, info, warn, error, critical, off]
-set_log_pattern			Set log printing pattern, refer to spdlog logger for pattern formats
-set_max_area			Set maximum design area
-set_wire_rc				Set wire resistance/capacitance per micron, you can also specify technology layer
-transform				Run loaded transform
-version					Alias for print_version
+get_handler		Alias for get_database_handler
+get_liberty		Return first loaded liberty file
+has_transform		Check if the specified transform is loaded
+help			Print this help
+import_db		Import OpenDB database file
+import_def		Import design DEF file
+import_lef		Import technology LEF file
+import_lib		Alias for import_liberty
+import_liberty		Import liberty file
+link			Alias for link_design
+link_design		Link design top module
+make_steiner_tree	Create steiner tree around net
+optimize_design		Perform timing optimization
+optimize_fanout		Perform maximum-fanout based buffering
+optimize_logic		Perform logic optimization
+optimize_power		Perform power optimization
+print_liberty_cells	Print liberty cells available in the loaded library
+print_license		Print license information
+print_transforms	Print loaded transforms
+print_usage		Print usage instructions
+print_version		Print tool version
+set_log			Alias for set_log_level
+set_log_level		Set log level [trace, debug, info, warn, error, critical, off]
+set_log_pattern	Set log printing pattern, refer to spdlog logger for pattern formats
+set_max_area		Set maximum design area
+set_wire_rc		Set wire resistance/capacitance per micron, you can also specify technology layer
+transform		Run loaded transform
+version			Alias for print_version
 ```
 
 ### List loaded transforms:
