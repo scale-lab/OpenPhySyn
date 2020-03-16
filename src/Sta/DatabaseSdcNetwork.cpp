@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-
 #include "DatabaseSdcNetwork.hpp"
 #include "Machine.hh"
 #include "ParseBus.hh"
@@ -241,5 +239,3 @@ escapeDividers(const char* token, const Network* network)
 }
 
 } // namespace sta
-
-#endif

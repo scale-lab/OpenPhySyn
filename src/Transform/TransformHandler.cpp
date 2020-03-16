@@ -28,13 +28,13 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "TransformHandler.hpp"
+#include <OpenPhySyn/Transform/TransformHandler.hpp>
 #include "PsnException/LoadTransformException.hpp"
 namespace psn
 {
 TransformHandler::TransformHandler(std::string name)
 {
-    handle_ = dlopen(name.c_str(), RTLD_LAZY);
+    handle_ = dlopen(name.c_str(), RTLD_LAZY | RTLD_NODELETE);
     if (!handle_)
     {
         throw LoadTransformException();
@@ -50,6 +50,12 @@ TransformHandler::TransformHandler(std::string name)
     {
         throw LoadTransformException();
     }
+}
+
+void*
+TransformHandler::handle()
+{
+    return handle_;
 }
 
 std::string

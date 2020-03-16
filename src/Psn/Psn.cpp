@@ -51,7 +51,6 @@
 #include "PsnException/NoTechException.hpp"
 #include "PsnException/ParseLibertyException.hpp"
 #include "PsnException/TransformNotFoundException.hpp"
-#include "Transform/TransformHandler.hpp"
 #include "Utils/FileUtils.hpp"
 #include "Utils/StringUtils.hpp"
 
@@ -74,7 +73,6 @@ using sta::tcl_inits;
 Psn* Psn::psn_instance_;
 bool Psn::is_initialized_ = false;
 
-#ifndef OPENROAD_BUILD
 Psn::Psn(Database* db) : db_(db), interp_(nullptr)
 {
     if (db_ == nullptr)
@@ -84,7 +82,7 @@ Psn::Psn(Database* db) : db_(db), interp_(nullptr)
     exec_path_ = FileUtils::executablePath();
     settings_  = new DesignSettings();
     initializeSta();
-    db_handler_ = new DatabaseHandler(sta_);
+    db_handler_ = new DatabaseHandler(this, sta_);
 }
 void
 Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp,
@@ -105,7 +103,6 @@ Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp,
     }
     is_initialized_ = true;
 }
-#endif
 
 Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
 {
@@ -117,7 +114,7 @@ Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
     exec_path_  = FileUtils::executablePath();
     db_         = sta_->db();
     settings_   = new DesignSettings();
-    db_handler_ = new DatabaseHandler(sta_);
+    db_handler_ = new DatabaseHandler(this, sta_);
 }
 
 void
@@ -146,13 +143,11 @@ Psn::~Psn()
 {
     delete settings_;
     delete db_handler_;
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
     delete sta_;
     if (db_ != nullptr)
     {
         Database::destroy(db_);
     }
-#endif
 }
 
 int
@@ -263,6 +258,32 @@ Psn::writeDef(const char* path)
     }
 }
 
+int
+Psn::readDatabase(const char* path)
+{
+    FILE* stream = fopen(path, "r");
+    if (stream)
+    {
+        db_->read(stream);
+        sta_->readDbAfter();
+        fclose(stream);
+        return 1;
+    }
+    return 0;
+}
+int
+Psn::writeDatabase(const char* path)
+{
+    FILE* stream = fopen(path, "w");
+    if (stream)
+    {
+        db_->write(stream);
+        fclose(stream);
+        return 1;
+    }
+    return 0;
+}
+
 Database*
 Psn::database() const
 {
@@ -310,21 +331,17 @@ Psn::instance()
 Psn*
 Psn::instancePtr()
 {
-#ifndef OPENROAD_BUILD
     if (!is_initialized_)
     {
         PSN_LOG_CRITICAL("OpenPhySyn is not initialized!");
     }
-#endif
     return psn_instance_;
 }
 
 int
 Psn::loadTransforms()
 {
-
-    std::vector<psn::TransformHandler> handlers;
-    std::string                        transforms_paths(
+    std::string transforms_paths(
         FileUtils::joinPath(FileUtils::homePath(), ".OpenPhySyn/transforms") +
         ":" + FileUtils::joinPath(exec_path_, "./transforms"));
     const char* env_path   = std::getenv("PSN_TRANSFORM_PATH");
@@ -353,14 +370,14 @@ Psn::loadTransforms()
         for (auto& path : transforms_paths)
         {
             PSN_LOG_DEBUG("Loading transform {}", path);
-            handlers.push_back(psn::TransformHandler(path));
+            handlers_.push_back(psn::TransformHandler(path));
         }
 
         PSN_LOG_DEBUG("Found {} transforms under {}.", transforms_paths.size(),
                       transform_parent_path);
     }
 
-    for (auto tr : handlers)
+    for (auto tr : handlers_)
     {
         std::string tr_name(tr.name());
         if (!transforms_.count(tr_name))
@@ -378,9 +395,7 @@ Psn::loadTransforms()
                 tr_name);
         }
     }
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
     PSN_LOG_INFO("Loaded {} transforms.", load_count);
-#endif
     return load_count;
 }
 
@@ -452,14 +467,12 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
     }
     if (setup_sta)
     {
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
         sta_->setTclInterp(interp_);
         if (Sta_Init(interp) == TCL_ERROR)
         {
             return TCL_ERROR;
         }
         evalTclInit(interp, tcl_inits);
-#endif
         const char* tcl_psn_setup =
 #include "Tcl/SetupPsnSta.tcl"
             ;
@@ -616,42 +629,53 @@ Psn::printCommands(bool raw_str)
     PSN_LOG_RAW("");
     std::string commands_str;
     commands_str +=
-        "print_version                         Print version\n"
-        "version                               Print version\n"
-        "help                                  Print help\n"
-        "print_usage                           Print help\n"
-        "print_license                         Print license information\n"
-        "print_transforms                      List loaded transforms\n"
-        "import_lef <file path>                Load LEF file\n"
-        "import_def <file path>                Load DEF file\n"
-        "import_lib <file path>                Load a liberty file\n"
-        "import_liberty <file path>            Load a liberty file\n"
-        "export_def <output file>              Write DEF file\n"
-        "set_wire_rc <res> <cap>               Set resistance & capacitance "
-        "per micron\n"
-        "set_max_area <area>                   Set maximum design area\n"
-        "optimize_design [<options>]           Perform timing optimization on "
-        "the design\n"
-        "optimize_fanout <options>             Buffer high-fanout nets\n"
-        "optimize_power [<options>]            Perform power optimization on "
-        "the design\n"
-        "transform <transform name> <args>     Run transform on the loaded "
-        "design\n"
-        "has_transform <transform name>        Checks if a specific transform "
-        "is loaded\n"
-        "design_area                           Returns total design cell area\n"
-        "link <design name>                    Link design top module\n"
-        "link_design <design name>             Link design top module\n"
-        "sta <OpenSTA commands>                Run OpenSTA commands\n"
-        "make_steiner_tree <net>               Construct steiner tree for the "
-        "provided net\n"
-        "set_log <log level>                   Set log level [trace, debug, "
-        "info, "
+        "design_area			Report design total cell area\n"
+        "export_db			Export OpenDB database file\n"
+        "export_def			Export design DEF file\n"
+        "get_database			Return OpenDB database object\n"
+        "get_database_handler		Return OpenPhySyn database "
+        "handler\n"
+        "get_handler			Alias for "
+        "get_database_handler\n"
+        "get_liberty			Return first loaded liberty "
+        "file\n"
+        "has_transform			Check if the specified transform is "
+        "loaded\n"
+        "help				Print this help\n"
+        "import_db			Import OpenDB database file\n"
+        "import_def			Import design DEF file\n"
+        "import_lef			Import technology LEF file\n"
+        "import_lib			Alias for import_liberty\n"
+        "import_liberty			Import liberty file\n"
+        "link				Alias for link_design\n"
+        "link_design			Link design top module\n"
+        "make_steiner_tree		Create steiner tree around "
+        "net\n"
+        "optimize_design			Perform timing optimization\n"
+        "optimize_fanout			Perform maximum-fanout based "
+        "buffering\n"
+        "optimize_logic			Perform logic optimization\n"
+        "optimize_power			Perform power optimization\n"
+        "print_liberty_cells		Print liberty cells available "
+        "in the "
+        "loaded library\n"
+        "print_license			Print license information\n"
+        "print_transforms		Print loaded transforms\n"
+        "print_usage			Print usage instructions\n"
+        "print_version			Print tool version\n"
+        "set_log				Alias for "
+        "set_log_level\n"
+        "set_log_level			Set log level [trace, debug, info, "
         "warn, error, critical, off]\n"
-        "set_log_level <log level>             Set log level [trace, debug, "
-        "info, warn, error, critical, off]\n"
-        "set_log_pattern <pattern>             Set log printing pattern, refer "
-        "to spdlog logger for pattern formats";
+        "set_log_pattern			Set log printing pattern, "
+        "refer to spdlog logger for pattern formats\n"
+        "set_max_area			Set maximum design area\n"
+        "set_wire_rc			Set wire "
+        "resistance/capacitance per micron, you can also specify technology "
+        "layer\n"
+        "transform			Run loaded transform\n"
+        "version				Alias for "
+        "print_version\n";
     PSN_LOG_RAW("{}", commands_str);
 }
 void
@@ -814,10 +838,41 @@ Psn::sourceTclScript(const char* script_path)
 void
 Psn::setWireRC(float res_per_micon, float cap_per_micron)
 {
-    handler()->resetDelays();
+    if (!database() || database()->getChip() == nullptr)
+    {
+        PSN_LOG_ERROR("Could not find any loaded design.");
+        return;
+    }
     settings()
         ->setResistancePerMicron(res_per_micon)
         ->setCapacitancePerMicron(cap_per_micron);
+    handler()->setWireRC(res_per_micon, cap_per_micron);
+}
+int
+Psn::setWireRC(const char* layer_name)
+{
+    auto tech = db_->getTech();
+
+    if (!tech)
+    {
+        PSN_LOG_ERROR("Could not find any loaded technology file.");
+        return -1;
+    }
+
+    auto layer = tech->findLayer(layer_name);
+    if (!layer)
+    {
+        PSN_LOG_ERROR("Could not find layer with the name {}.", layer_name);
+        return -1;
+    }
+    auto  width         = handler()->dbuToMicrons(layer->getWidth());
+    float res_per_micon = (layer->getResistance() / width) * 1E6;
+    float cap_per_micron =
+        (handler()->dbuToMicrons(1) * width * layer->getCapacitance() +
+         layer->getEdgeCapacitance() * 2.0) *
+        1E-12 * 1E6;
+    setWireRC(res_per_micon, cap_per_micron);
+    return 1;
 }
 int
 Psn::linkDesign(const char* design_name)
@@ -840,13 +895,10 @@ Psn::initializeDatabase()
 int
 Psn::initializeSta(Tcl_Interp* interp)
 {
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-    PSN_UNUSED(interp);
-    sta::initSta();
-    sta_ = new sta::DatabaseSta(db_);
-    sta::Sta::setSta(sta_);
-    sta_->makeComponents();
-#else
+    // sta::initSta();
+    // sta_ = new sta::DatabaseSta(db_);
+    // sta::Sta::setSta(sta_);
+    // sta_->makeComponents();
     if (interp == nullptr)
     {
         // This is a very bad solution! but temporarily until
@@ -856,7 +908,7 @@ Psn::initializeSta(Tcl_Interp* interp)
     }
     sta_ = new sta::DatabaseSta;
     sta_->init(interp, db_);
-#endif
+
     return 0;
 }
 
@@ -867,60 +919,9 @@ Psn::clearDatabase()
 }
 
 int
-Psn::initializeFlute(const char* flue_init_dir)
+Psn::initializeFlute()
 {
-    bool        lut_found = false;
-    std::string flute_dir, powv_file_path, post_file_path;
-    if (flue_init_dir)
-    {
-        flute_dir      = std::string(flute_dir);
-        powv_file_path = FileUtils::joinPath(flute_dir, "POWV9.dat");
-        post_file_path = FileUtils::joinPath(flute_dir, "POST9.dat");
-        if (FileUtils::isDirectory(flute_dir) &&
-            FileUtils::pathExists(powv_file_path) &&
-            FileUtils::pathExists(post_file_path))
-        {
-            lut_found = true;
-        }
-    }
-    else
-    {
-        for (auto& s : std::vector<std::string>({
-                 FileUtils::joinPath(exec_path_, "../external/flute/etc"),
-                 FileUtils::joinPath(exec_path_, "../etc"),
-                 FileUtils::joinPath(exec_path_, "../../external/flute/etc"),
-                 FileUtils::joinPath(exec_path_, "../../etc"),
-                 FileUtils::joinPath(exec_path_, "../../../etc"),
-                 exec_path_,
-                 FileUtils::joinPath(exec_path_, ".."),
-                 FileUtils::joinPath(exec_path_, "../.."),
-                 FileUtils::joinPath(exec_path_, "../../.."),
-             }))
-        {
-
-            flute_dir      = s;
-            powv_file_path = FileUtils::joinPath(flute_dir, "POWV9.dat");
-            post_file_path = FileUtils::joinPath(flute_dir, "POST9.dat");
-            if (FileUtils::isDirectory(flute_dir) &&
-                FileUtils::pathExists(powv_file_path) &&
-                FileUtils::pathExists(post_file_path))
-            {
-                lut_found = true;
-                break;
-            }
-        }
-    }
-    if (!lut_found)
-    {
-        PSN_LOG_ERROR("Flute initialization failed");
-        throw FluteInitException();
-    }
-
-    char* cwd = getcwd(NULL, 0);
-    chdir(flute_dir.c_str());
     Flute::readLUT();
-    chdir(cwd);
-    free(cwd);
     return 1;
 }
 } // namespace psn

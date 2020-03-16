@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.1...3.15)
 
-project(OpenPhySyn VERSION 1.2.4 LANGUAGES CXX)
+project(OpenPhySyn VERSION 1.4.0 LANGUAGES CXX)
 
 
 option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add flags and defines.
@@ -13,8 +13,11 @@ option(OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED "Build demo hello transform"
 option(OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED "Build Buffer Fan-Out transform" ON)
 option(OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED "Build Gate Clone transform" ON)
 option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
+option(OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED "Build Constant Propagation transform" ON)
+option(OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED "Build Buffer Resize transform" ON)
+option(OPENPHYSYN_READLINE_ENABLED "Enable Tcl Readline" ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-error")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-error -Wno-deprecated-copy")
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -Wl,-export_dynamic -Wno-unused-command-line-argument")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -22,6 +25,9 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+if(${OPENPHYSYN_READLINE_ENABLED})
+add_definitions(-DOPENPHYSYN_READLINE_ENABLED)
+endif()
 
 # Tool build configuration
 option(OPENROAD_BUILD "Indicates if the tool is being built as a module in the top level application" OFF)
@@ -34,16 +40,10 @@ else()
 add_definitions(-DUSE_OPENSTA_DB_HANDLER)
 endif()
 
-if (${OPENROAD_BUILD})
-add_definitions(-DOPENROAD_BUILD)
-endif()
 
 set(SWIG_FLAGS "-w467,72,503,509")
 set(SWIG_PSN_LIB_FLAGS "")
-if (OPENROAD_BUILD)
-set(SWIG_FLAGS "-DOPENROAD_BUILD -DSWIG_DIRECTOR_STATIC ${SWIG_FLAGS}")
-set(SWIG_PSN_LIB_FLAGS "-DOPENROAD_OPENPHYSYN_LIBRARY_BUILD")
-endif()
+
 
 
 set(PSN_HOME
@@ -89,55 +89,39 @@ INCLUDE(${SWIG_USE_FILE})
 
 
 # Build OpenDB
-if(NOT DEFINED OPENDB_HOME)
 set(OPENDB_HOME
 ${PROJECT_SOURCE_DIR}/external/OpenDB
 )
 set(BUILD_PYTHON OFF)
-endif()
 
 # Build OpenSTA
-if(NOT DEFINED OPENSTA_HOME)
 set(OPENSTA_HOME
 ${PROJECT_SOURCE_DIR}/external/OpenSTA
 )
-endif()
 
 # Build Flute
-if(NOT DEFINED FLUTE_HOME)
 set(FLUTE_HOME
 ${PROJECT_SOURCE_DIR}/external/flute
 )
-endif()
 
 # Build spdlok
-if(NOT DEFINED SPD_LOG_HOME)
 set(SPD_LOG_HOME
   ${PROJECT_SOURCE_DIR}/external/spdlog
 )
-endif()
 
 # Build cxxopts
-if(NOT DEFINED CXXOPTS_HOME)
 set(CXXOPTS_HOME
   ${PROJECT_SOURCE_DIR}/external/cxxopts
 )
-endif()
 
 # Add Flute
-if (NOT ${OPENROAD_BUILD})
 add_subdirectory(external/flute)
-endif()
 
 # Add OpenDB
-if (NOT ${OPENROAD_BUILD})
 add_subdirectory(external/OpenDB)
-endif()
 
 # Add OpenSTA
-if (NOT ${OPENROAD_BUILD})
 add_subdirectory(external/OpenSTA)
-endif()
 
 # Add spdlog
 add_subdirectory(external/spdlog)
@@ -182,8 +166,8 @@ message(STATUS "OpenPhySyn Git SHA: ${OPENPHYSYN_GIT_SHA1}")
 
 
 
-set(PSN_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap.cc)
-set(PSN_LIBRARY_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_lib_wrap.cc)
+set(PSN_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap.cpp)
+set(PSN_LIBRARY_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_lib_wrap.cpp)
 set(SWIG_SOURCE_COMPILE_FLAGS "-Wno-cast-qual -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-parameter -Wno-deprecated-copy")
 set_source_files_properties(${PSN_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
 set_source_files_properties(${PSN_LIBRARY_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
@@ -225,12 +209,6 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Sta/DatabaseStaNetwork.cpp
 )
 
-set(PSN_OPENROAD_LIBRARY_FILE "")
-if (${OPENROAD_BUILD})
-set(PSN_OPENROAD_LIBRARY_FILE
-  ${PSN_HOME}/src/OpenROAD/MakeOpenPhySyn.cpp
-)
-endif()
 
 
 
@@ -279,20 +257,19 @@ set(PSN_TESTFILES
 )
 endif()
 
-if (${OPENROAD_BUILD})
-
-set(PSN_SOURCES
-    ${PSN_SOURCES}
-    ${DBSTA_TCL_INIT}
-)
-
+if (${OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED})
 set(PSN_TESTFILES
-    ${PSN_TESTFILES}
-    ${DBSTA_TCL_INIT}
-)
-add_custom_target(
-  opensta-tcl-init
-  DEPENDS ${DBSTA_TCL_INIT}
+  ${PSN_TESTFILES}
+  ${PROJECT_SOURCE_DIR}/tests/SimpleConstantPropagation.cpp
+  ${PROJECT_SOURCE_DIR}/tests/SimpleConstantPropagationInversion.cpp
+  ${PROJECT_SOURCE_DIR}/tests/ComplexConstantPropagation.cpp
+  )
+  endif()
+
+if (${OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED})
+  set(PSN_TESTFILES
+  ${PSN_TESTFILES}
+  ${PROJECT_SOURCE_DIR}/tests/TimingBuffer.cpp
 )
 endif()
 
@@ -367,39 +344,6 @@ set(PUBLIC_LIBRARIES
 endif()
 
 
-if (${OPENROAD_BUILD})
-
-set(PRIVATE_INCLUDE_DIRS
-  ${PRIVATE_INCLUDE_DIRS}
-  ${OPENROAD_HOME}/include
-  ${OPENROAD_HOME}/src
-  ${OPENROAD_HOME}/src/flute3
-  ${OPENDB_HOME}/include
-  ${OPENSTA_HOME}/app
-  ${OPENSTA_HOME}/dcalc
-  ${OPENSTA_HOME}/graph
-  ${OPENSTA_HOME}/liberty
-  ${OPENSTA_HOME}/network
-  ${OPENSTA_HOME}/parasitics
-  ${OPENSTA_HOME}/sdc
-  ${OPENSTA_HOME}/sdf
-  ${OPENSTA_HOME}/search
-  ${OPENSTA_HOME}/util
-  ${OPENSTA_HOME}/verilog
-  ${OPENSTA_HOME}/${CUDD_INCLUDE}
-  flute3
-)
-
-set(PUBLIC_EXEC_LIBRARIES
-opendb
-dbSta
-OpenSTA
-# sta_swig
-flute
-)
-
-else()
-
 set(PRIVATE_INCLUDE_DIRS
   ${PRIVATE_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/external
@@ -408,16 +352,14 @@ set(PRIVATE_INCLUDE_DIRS
 set(PUBLIC_LIBRARIES
 opendb
 OpenSTA
-# sta_swig
+sta_swig
 flute
 ${PUBLIC_LIBRARIES}
 )
 
-install(FILES ./external/flute/etc/POST9.dat ./external/flute/etc/POWV9.dat DESTINATION etc)
 
-endif()
 # Compile all sources into a library.
-add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_LIBRARY_WRAP} ${PSN_OPENROAD_LIBRARY_FILE})
+add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_LIBRARY_WRAP})
 add_executable(Psn ${PSN_SOURCES})  # Name of exec. and location of file.
 
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
@@ -434,7 +376,6 @@ include_directories (
   ${PRIVATE_INCLUDE_DIRS}
 )
 
-if (NOT ${OPENROAD_BUILD})
 set_target_properties(
     ${LIBRARY_NAME} Psn
       PROPERTIES 
@@ -442,9 +383,6 @@ set_target_properties(
         CXX_STANDARD_REQUIRED YES 
         CXX_EXTENSIONS NO
 )
-else()
-target_compile_definitions(${LIBRARY_NAME} PRIVATE -DOPENROAD_OPENPHYSYN_LIBRARY_BUILD)
-endif()
 
 set_property(TARGET ${LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET Psn PROPERTY POSITION_INDEPENDENT_CODE ON)

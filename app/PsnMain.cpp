@@ -77,5 +77,12 @@ psnTclAppInit(Tcl_Interp* interp)
     };
     psn::Psn::instance().processStartupProgramOptions();
 
+#ifdef OPENPHYSYN_READLINE_ENABLED
+    const char* init_tcl_readline =
+#include "Tcl/Readline.tcl"
+        ;
+    Tcl_Eval(interp, init_tcl_readline);
+#endif
+
     return TCL_OK;
 }

@@ -67,10 +67,14 @@ public:
 
     SteinerPoint right(SteinerPoint pt) const;
 
+    bool isLeaf(SteinerPoint pt) const;
+
     SteinerPoint top() const; // First point after the driver
 
     float totalLoad(float cap_per_micron) const;
     float subtreeLoad(float cap_per_micron, SteinerPoint pt) const;
+
+    InstanceTerm* alias(SteinerPoint pt);
 
     ~SteinerTree();
 

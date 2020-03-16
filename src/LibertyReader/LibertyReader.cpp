@@ -55,7 +55,7 @@ LibertyReader::read(const char* path, bool infer_latches)
             path, sta_->cmdCorner(), sta::MinMaxAll::all(), infer_latches);
         return liberty;
     }
-    catch (sta::StaException& e)
+    catch (sta::Exception& e)
     {
         throw ParseLibertyException(e.what());
     }

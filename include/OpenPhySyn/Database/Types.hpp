@@ -79,6 +79,7 @@ typedef odb::dbIoType::Value                          PinDirection;
 typedef odb::adsPoint                                 Point;
 typedef OpenDBHandler                                 DatabaseHandler;
 typedef std::tuple<InstanceTerm*, bool, float, float> PathPoint;
+typedef odb::dbBTerm                                  Term;
 #else
 // Default is OpenSTA handler
 typedef odb::dbDatabase     Database;
@@ -102,6 +103,7 @@ typedef sta::NetSet         NetSet;
 typedef sta::PinSet         BlockTermSet;
 typedef sta::PinSet         InstanceTermSet;
 typedef sta::PortDirection  PinDirection;
+typedef sta::Term           Term;
 typedef odb::adsPoint       Point;
 typedef OpenStaHandler      DatabaseHandler;
 

@@ -85,7 +85,9 @@
     "*.cuh": "cpp",
     "*.in": "cpp",
     "*.ipp": "c",
-    "valarray": "cpp"
+    "valarray": "cpp",
+    "hash_map": "cpp",
+    "forward_list": "cpp"
   },
   "files.watcherExclude": {
     "**/.git/objects/**": true,
@@ -96,5 +98,6 @@
     "external/doctest/*/**": true,
     "external/flue/*/**": true
   },
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "cmake.configureOnOpen": true
 }

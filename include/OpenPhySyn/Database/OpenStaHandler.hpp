@@ -35,6 +35,7 @@
 #include <OpenPhySyn/Database/Types.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
+#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
 #include <OpenPhySyn/Utils/PsnGlobal.hpp>
 #include <PsnLogger/PsnLogger.hpp>
 #include <unordered_map>
@@ -45,7 +46,7 @@ class PathPoint;
 class OpenStaHandler
 {
 public:
-    OpenStaHandler(sta::DatabaseSta* sta);
+    OpenStaHandler(Psn* psn_inst, sta::DatabaseSta* sta);
 
 #include <OpenPhySyn/Database/DatabaseHandler.in>
 
@@ -53,17 +54,17 @@ public:
     sta::DatabaseSta*        sta() const;
     virtual ~OpenStaHandler();
 
-    int evaluateFunctionExpression(
+    virtual int evaluateFunctionExpression(
         InstanceTerm*                          term,
         std::unordered_map<LibraryTerm*, int>& inputs) const;
-    int evaluateFunctionExpression(
+    virtual int evaluateFunctionExpression(
         LibraryTerm* term, std::unordered_map<LibraryTerm*, int>& inputs) const;
-    int evaluateFunctionExpression(
+    virtual int evaluateFunctionExpression(
         sta::FuncExpr*                         func,
         std::unordered_map<LibraryTerm*, int>& inputs) const;
     void resetCache(); // Reset equivalent cells and target loads
+
 private:
-    void                   makeEquivalentCells();
     sta::LibertyLibrarySeq allLibs() const;
     sta::DatabaseSta*      sta_;
     Database*              db_;
@@ -71,10 +72,12 @@ private:
     const sta::MinMax* min_max_;
     bool               has_equiv_cells_;
     bool               has_target_loads_;
+    float              res_per_micron_;
+    float              cap_per_micron_;
+    bool               has_wire_rc_;
+    Psn*               psn_;
 
     std::unordered_map<LibraryCell*, float> target_load_map_;
-
-    void findTargetLoads();
 
     sta::Vertex* vertex(InstanceTerm* term) const;
 
@@ -84,6 +87,19 @@ private:
     const sta::Pvt*                 pvt_;
     const sta::ParasiticAnalysisPt* parasitics_ap_;
     sta::Slew                       target_slews_[sta::RiseFall::index_count];
+    float pinTableAverage(LibraryTerm* from, LibraryTerm* to,
+                          bool is_delay = true, bool is_rise = true) const;
+    float pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,
+                         float cap, bool is_delay = true,
+                         bool is_rise = true) const;
+    std::vector<std::vector<PathPoint>> getPaths(bool get_max,
+                                                 int  path_count = 1) const;
+    std::vector<PathPoint>              expandPath(sta::PathEnd* path_end,
+                                                   bool          enumed = false) const;
+    std::vector<PathPoint>              expandPath(sta::Path* path,
+                                                   bool       enumed = false) const;
+    void                                findTargetLoads();
+    void                                makeEquivalentCells();
 
     void      findTargetLoads(sta::LibertyLibrarySeq* resize_libs);
     void      findTargetLoads(Liberty* library, sta::Slew slews[]);
@@ -94,17 +110,13 @@ private:
     void      findBufferTargetSlews(sta::LibertyLibrarySeq* resize_libs);
     void      findBufferTargetSlews(Liberty* library, sta::Slew slews[],
                                     int counts[]);
-    float     pinTableAverage(LibraryTerm* from, LibraryTerm* to,
-                              bool is_delay = true, bool is_rise = true) const;
-    float     pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,
-                             float cap, bool is_delay = true,
-                             bool is_rise = true) const;
-    std::vector<std::vector<PathPoint>> getPaths(bool get_max,
-                                                 int  path_count = 1) const;
-    std::vector<PathPoint>              expandPath(sta::PathEnd* path_end,
-                                                   bool          enumed = false) const;
-    std::vector<PathPoint>              expandPath(sta::Path* path,
-                                                   bool       enumed = false) const;
+    void      slewLimit(InstanceTerm* pin, sta::MinMax* min_max, float& limit,
+                        bool& exists) const;
+    sta::ParasiticNode* findParasiticNode(std::unique_ptr<SteinerTree>& tree,
+                                          sta::Parasitic*     parasitic,
+                                          const Net*          net,
+                                          const InstanceTerm* pin,
+                                          SteinerPoint        pt);
 };
 
 } // namespace psn

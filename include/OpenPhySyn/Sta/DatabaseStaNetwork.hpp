@@ -17,8 +17,6 @@
 #ifndef __PSN_STA_DB_NETWORK_H__
 #define __PSN_STA_DB_NETWORK_H__
 
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-
 #include "ConcreteNetwork.hh"
 #include "opendb/db.h"
 
@@ -47,6 +45,7 @@ public:
     DatabaseStaNetwork();
     virtual ~DatabaseStaNetwork();
     void         setDb(dbDatabase* db);
+    void         setBlock(dbBlock* block);
     virtual void clear();
 
     void readLefAfter(dbLib* lib);
@@ -181,16 +180,7 @@ protected:
     dbBlock*    block_;
     Instance*   top_instance_;
     Cell*       top_cell_;
-    const char* zero_net_name_;
-    const char* one_net_name_;
 };
 
 } // namespace sta
-#else
-#include "db_sta/dbNetwork.hh"
-namespace sta
-{
-typedef dbNetwork DatabaseStaNetwork;
-} // namespace sta
-#endif
 #endif

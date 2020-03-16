@@ -37,7 +37,6 @@
 namespace psn
 {
 
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
 int
 import_def(const char* def_path)
 {
@@ -64,6 +63,16 @@ export_def(const char* lib_path)
     return Psn::instance().writeDef(lib_path);
 }
 int
+import_db(const char* db_path)
+{
+    return Psn::instance().readDatabase(db_path);
+}
+int
+export_db(const char* db_path)
+{
+    return Psn::instance().writeDatabase(db_path);
+}
+int
 print_liberty_cells()
 {
     Liberty* liberty = Psn::instance().liberty();
@@ -81,7 +90,7 @@ print_liberty_cells()
     }
     return 1;
 }
-#endif
+
 bool
 has_transform(const char* transform_name)
 {
@@ -98,6 +107,12 @@ set_wire_rc(float res_per_micon, float cap_per_micron)
     Psn::instance().setWireRC(res_per_micon, cap_per_micron);
 
     return 1;
+}
+
+int
+set_wire_rc(const char* layer_name)
+{
+    return Psn::instance().setWireRC(layer_name);
 }
 int
 set_max_area(float area)
