@@ -140,16 +140,15 @@ virtual void createClock(const char* clock_name, std::vector<std::string> ports,
                          float period);
 virtual Net* createNet(const char* net_name);
 virtual void connect(Net* net, InstanceTerm* term) const;
-virtual InstanceTerm* connect(Net* net, Instance* inst,
-                              LibraryTerm* port) const;
-virtual void          disconnect(InstanceTerm* term) const;
-virtual int           disconnectAll(Net* net) const;
-virtual void          swapPins(InstanceTerm* first, InstanceTerm* second);
-virtual void          del(Net* net) const;
-virtual void          del(Instance* inst) const;
-virtual void          clear();
-virtual unsigned int  fanoutCount(Net* net,
-                                  bool include_top_level = false) const;
+virtual void connect(Net* net, Instance* inst, LibraryTerm* port) const;
+virtual void disconnect(InstanceTerm* term) const;
+virtual int  disconnectAll(Net* net) const;
+virtual void swapPins(InstanceTerm* first, InstanceTerm* second);
+virtual void del(Net* net) const;
+virtual void del(Instance* inst) const;
+virtual void clear();
+virtual unsigned int           fanoutCount(Net* net,
+                                           bool include_top_level = false) const;
 virtual std::vector<PathPoint> criticalPath(int path_count = 1) const;
 virtual std::vector<std::vector<PathPoint>> bestPath(int path_count = 1) const;
 virtual std::vector<PathPoint> worstSlackPath(InstanceTerm* term) const;

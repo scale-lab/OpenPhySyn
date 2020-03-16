@@ -208,6 +208,8 @@ GateCloningTransform::cloneInstance(Psn*                          psn_inst,
     auto        output_port    = handler.libraryPin(output_pin);
 
     topDownConnect(psn_inst, tree, k, clone_net);
+    std::vector<Net*> para_nets;
+    para_nets.push_back(clone_net);
 
     int fanout_count = handler.fanoutPins(handler.net(output_pin)).size();
     if (fanout_count == 0)
@@ -234,8 +236,13 @@ GateCloningTransform::cloneInstance(Psn*                          psn_inst,
                 Net* target_net  = handler.net(p);
                 auto target_port = handler.libraryPin(p);
                 handler.connect(target_net, cloned_inst, target_port);
+                para_nets.push_back(target_net);
             }
         }
+    }
+    for (auto& net : para_nets)
+    {
+        handler.calculateParasitics(net);
     }
 }
 
