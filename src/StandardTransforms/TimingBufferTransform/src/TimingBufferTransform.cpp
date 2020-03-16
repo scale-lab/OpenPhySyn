@@ -205,8 +205,10 @@ TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
         PSN_LOG_DEBUG("{}: adding buffer at ({}, {})..", handler.name(net),
                       tree->location().getX(), tree->location().getY());
         auto buf_inst = handler.createInstance(
-            generateBufferName(psn_inst).c_str(), tree->bufferCell());
-        auto buf_net = handler.createNet(generateNetName(psn_inst).c_str());
+            handler.generateInstanceName("buff_", net_index_).c_str(),
+            tree->bufferCell());
+        auto buf_net =
+            handler.createNet(handler.generateNetName(buff_index_).c_str());
         auto buff_in_port  = handler.bufferInputPin(tree->bufferCell());
         auto buff_out_port = handler.bufferOutputPin(tree->bufferCell());
         handler.connect(net, buf_inst, buff_in_port);
@@ -224,28 +226,6 @@ TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
         PSN_LOG_DEBUG("{}: Buffering right..", handler.name(net));
         topDown(psn_inst, net, tree->right());
     }
-}
-
-std::string
-TimingBufferTransform::generateNetName(Psn* psn_inst)
-{
-    DatabaseHandler& handler = *(psn_inst->handler());
-    std::string      name;
-    do
-        name = std::string("net_") + std::to_string(net_index_++);
-    while (handler.net(name.c_str()));
-    return name;
-}
-std::string
-TimingBufferTransform::generateBufferName(Psn* psn_inst)
-{
-    DatabaseHandler& handler = *(psn_inst->handler());
-
-    std::string name;
-    do
-        name = std::string("buff_") + std::to_string(buff_index_++);
-    while (handler.instance(name.c_str()));
-    return name;
 }
 
 int

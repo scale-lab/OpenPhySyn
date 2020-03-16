@@ -1210,6 +1210,26 @@ OpenStaHandler::topName() const
     return std::string(network()->name(network()->topInstance()));
 }
 std::string
+OpenStaHandler::generateNetName(int& start_index)
+{
+    std::string name;
+    do
+        name = std::string("net_") + std::to_string(start_index++);
+    while (net(name.c_str()));
+    return name;
+}
+std::string
+OpenStaHandler::generateInstanceName(const std::string& prefix,
+                                     int&               start_index)
+{
+    std::string name;
+    do
+        name = prefix + std::to_string(start_index++);
+    while (instance(name.c_str()));
+    return name;
+}
+
+std::string
 OpenStaHandler::name(Block* object) const
 {
     return std::string(object->getConstName());

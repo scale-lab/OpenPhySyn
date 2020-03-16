@@ -180,6 +180,9 @@ virtual std::string            name(Library* object) const;
 virtual std::string            name(LibraryCell* object) const;
 virtual std::string            name(LibraryTerm* object) const;
 virtual std::string            topName() const;
+virtual std::string            generateNetName(int& start_index);
+virtual std::string            generateInstanceName(const std::string& prefix,
+                                                    int&               start_index);
 virtual void        setWireRC(float res_per_micon, float cap_per_micron);
 virtual bool        hasWireRC();
 virtual HandlerType handlerType() const;

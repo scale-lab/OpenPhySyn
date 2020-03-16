@@ -203,7 +203,7 @@ GateCloningTransform::cloneInstance(Psn*                          psn_inst,
     auto         inst       = handler.instance(output_pin);
     Net*         output_net = handler.net(output_pin);
 
-    std::string clone_net_name = generateNetName(psn_inst);
+    std::string clone_net_name = handler.generateNetName(net_index_);
     Net*        clone_net      = handler.createNet(clone_net_name.c_str());
     auto        output_port    = handler.libraryPin(output_pin);
 
@@ -217,8 +217,9 @@ GateCloningTransform::cloneInstance(Psn*                          psn_inst,
     }
     else
     {
-        std::string instance_name = generateCloneName(psn_inst);
-        auto        cell          = handler.libraryCell(inst);
+        std::string instance_name =
+            handler.generateInstanceName("clone_", clone_index_);
+        auto cell = handler.libraryCell(inst);
 
         Instance* cloned_inst =
             handler.createInstance(instance_name.c_str(), cell);
@@ -236,28 +237,6 @@ GateCloningTransform::cloneInstance(Psn*                          psn_inst,
             }
         }
     }
-}
-std::string
-GateCloningTransform::generateNetName(Psn* psn_inst)
-{
-    DatabaseHandler& handler = *(psn_inst->handler());
-
-    std::string name;
-    do
-        name = std::string("net_") + std::to_string(net_index_++);
-    while (handler.net(name.c_str()));
-    return name;
-}
-std::string
-GateCloningTransform::generateCloneName(Psn* psn_inst)
-{
-    DatabaseHandler& handler = *(psn_inst->handler());
-
-    std::string name;
-    do
-        name = std::string("cloned_gate_") + std::to_string(clone_index_++);
-    while (handler.instance(name.c_str()));
-    return name;
 }
 
 int

@@ -60,8 +60,6 @@ private:
     void topDown(Psn* psn_inst, InstanceTerm* pin,
                  std::shared_ptr<BufferTree> tree);
     void topDown(Psn* psn_inst, Net* net, std::shared_ptr<BufferTree> tree);
-    std::string generateBufferName(Psn* psn_inst);
-    std::string generateNetName(Psn* psn_inst);
 
     int timingBuffer(Psn* psn_inst, bool fix_cap = true, bool fix_slew = true,
                      std::unordered_set<std::string> buffer_lib_names =
