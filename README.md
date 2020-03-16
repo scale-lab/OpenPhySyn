@@ -42,32 +42,39 @@ To build a new transform, refer to the transform [template](https://github.com/s
 ```bash
 > ./Psn
 > help
-print_version                         Print version
-version                               Print version
-help                                  Print help
-print_usage                           Print help
-print_transforms                      List loaded transforms
-import_lef <file path>                Load LEF file
-import_lef <file path>                Load LEF file
-import_def <file path>                Load DEF file
-import_lib <file path>                Load a liberty file
-import_liberty <file path>            Load a liberty file
-export_def <output file>              Write DEF file
-set_wire_rc <res> <cap>               Set resistance & capacitance per micron
-set_max_area <area>                   Set maximum design area
-optimize_design [<options>]           Perform timing optimization on the design
-optimize_power [<options>]            Perform power optimization on the design
-optimize_fanout <options>             Buffer high-fanout nets
-transform <transform name> <args>     Run transform on the loaded design
-has_transform <transform name>        Checks if a specific transform is loaded
-design_area                           Returns total design cell area
-link <design name>                    Link design top module
-link_design <design name>             Link design top module
-sta <OpenSTA commands>                Run OpenSTA commands
-make_steiner_tree <net>               Construct steiner tree for the provided net
-set_log <log level>                   Set log level [trace, debug, info, warn, error, critical, off]
-set_log_level <log level>             Set log level [trace, debug, info, warn, error, critical, off]
-set_log_pattern <pattern>             Set log printing pattern, refer to spdlog logger for pattern formats
+design_area				Report design total cell area
+export_db				Export OpenDB database file
+export_def				Export design DEF file
+get_database			Return OpenDB database object
+get_database_handler	Return OpenPhySyn database handler
+get_handler				Alias for get_database_handler
+get_liberty				Return first loaded liberty file
+has_transform			Check if the specified transform is loaded
+help					Print this help
+import_db				Import OpenDB database file
+import_def				Import design DEF file
+import_lef				Import technology LEF file
+import_lib				Alias for import_liberty
+import_liberty			Import liberty file
+link					Alias for link_design
+link_design				Link design top module
+make_steiner_tree		Create steiner tree around net
+optimize_design			Perform timing optimization
+optimize_fanout			Perform maximum-fanout based buffering
+optimize_logic			Perform logic optimization
+optimize_power			Perform power optimization
+print_liberty_cells		Print liberty cells available in the loaded library
+print_license			Print license information
+print_transforms		Print loaded transforms
+print_usage				Print usage instructions
+print_version			Print tool version
+set_log					Alias for set_log_level
+set_log_level			Set log level [trace, debug, info, warn, error, critical, off]
+set_log_pattern			Set log printing pattern, refer to spdlog logger for pattern formats
+set_max_area			Set maximum design area
+set_wire_rc				Set wire resistance/capacitance per micron, you can also specify technology layer
+transform				Run loaded transform
+version					Alias for print_version
 ```
 
 ### List loaded transforms:
@@ -102,7 +109,8 @@ By default, the following transforms are built with OpenPhySyn:
 -   `buffer_fanout`: adds buffers to high fan-out nets.
 -   `gate_clone`: performs load driven gate cloning.
 -   `pin_swap`: performs timing-driven/power-driven commutative pin-swapping optimization.
--   `constant propagation`: Perform constant propagation optimization across the design hierarchy.
+-   `constant_propagation`: Perform constant propagation optimization across the design hierarchy.
+-   `timing_buffer`: Perform van Ginneken based buffer tree insertion to fix capacitance and transition violations.
 
 ## Optimization Commands
 
@@ -142,17 +150,5 @@ Please open a GitHub [issue](https://github.com/scale-lab/OpenPhySyn/issues/new)
 
 ## To-Do
 
--   [x] Integrate Steiner Tree
--   [x] Integrate Liberty Parser
--   [x] Integrate OpenSTA
--   [x] Support reading scripts from a file
--   [x] Add unit tests
--   [x] Add Gate Cloning Transform
--   [x] Fix issues with OpenSTA commands integration
--   [x] Support command-line options for Tcl functions instead of just positional arguments
--   [x] Support passing parsed options to the transform body
--   [ ] Fix inconsistencies in the DB handlers between `const char *` and `std::string`
--   [ ] Expose lower-level APIs through Tcl/Python interface
--   [ ] Add profiling tool (i.e., Valgrind).
 -   [ ] Add API documentation
 -   [ ] Add Coding Guideline and Contribution Guide
