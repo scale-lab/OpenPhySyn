@@ -42,6 +42,7 @@
 #include <OpenSTA/dcalc/DcalcAnalysisPt.hh>
 #include <OpenSTA/dcalc/GraphDelayCalc.hh>
 #include <OpenSTA/graph/Graph.hh>
+#include <OpenSTA/graph/GraphClass.hh>
 #include <OpenSTA/liberty/FuncExpr.hh>
 #include <OpenSTA/liberty/TableModel.hh>
 #include <OpenSTA/liberty/TimingArc.hh>
@@ -53,6 +54,7 @@
 #include <OpenSTA/network/PortDirection.hh>
 #include <OpenSTA/parasitics/Parasitics.hh>
 #include <OpenSTA/sdc/Sdc.hh>
+#include <OpenSTA/search/Bfs.hh>
 #include <OpenSTA/search/Corner.hh>
 #include <OpenSTA/search/PathEnd.hh>
 #include <OpenSTA/search/PathExpanded.hh>
@@ -415,8 +417,8 @@ OpenStaHandler::arrival(InstanceTerm* term, int ap_index, bool is_rise) const
 float
 OpenStaHandler::required(InstanceTerm* term, bool worst) const
 {
-    auto req =
-        sta_->vertexRequired(network()->graph()->pinLoadVertex(term), min_max_);
+    auto vert = network()->graph()->pinLoadVertex(term);
+    auto req  = sta_->vertexRequired(vert, min_max_);
     //  worst ? sta::MinMax::min() : sta::MinMax::max());
     if (sta::fuzzyInf(req))
     {
@@ -558,7 +560,10 @@ OpenStaHandler::levelDriverPins() const
     sta_->ensureGraph();
     sta_->ensureLevelized();
 
-    auto                       handler_network = network();
+    auto handler_network = network();
+
+    handler_network->graphDelayCalc()->delaysInvalid();
+    handler_network->search()->arrivalsInvalid();
     std::vector<InstanceTerm*> terms;
     std::vector<sta::Vertex*>  vertices;
     sta::VertexIterator        itr(handler_network->graph());
@@ -1088,12 +1093,12 @@ OpenStaHandler::isTopLevel(InstanceTerm* term) const
 void
 OpenStaHandler::del(Net* net) const
 {
-    network()->deleteNet(net);
+    sta_->deleteNet(net);
 }
 void
 OpenStaHandler::del(Instance* inst) const
 {
-    network()->deleteInstance(inst);
+    sta_->deleteInstance(inst);
 }
 int
 OpenStaHandler::disconnectAll(Net* net) const
@@ -1101,7 +1106,7 @@ OpenStaHandler::disconnectAll(Net* net) const
     int count = 0;
     for (auto& pin : pins(net))
     {
-        network()->disconnectPin(pin);
+        sta_->disconnectPin(pin);
         count++;
     }
 
@@ -1113,13 +1118,13 @@ OpenStaHandler::connect(Net* net, InstanceTerm* term) const
 {
     auto inst      = network()->instance(term);
     auto term_port = network()->port(term);
-    network()->connect(inst, term_port, net);
+    sta_->connectPin(inst, term_port, net);
 }
 
 void
 OpenStaHandler::disconnect(InstanceTerm* term) const
 {
-    network()->disconnectPin(term);
+    sta_->disconnectPin(term);
 }
 
 void
@@ -1180,10 +1185,10 @@ OpenStaHandler::createNet(const char* net_name)
     return net;
 }
 
-InstanceTerm*
+void
 OpenStaHandler::connect(Net* net, Instance* inst, LibraryTerm* port) const
 {
-    return network()->connect(inst, port, net);
+    sta_->connectPin(inst, port, net);
 }
 
 std::vector<Net*>
@@ -1209,6 +1214,26 @@ OpenStaHandler::topName() const
 {
     return std::string(network()->name(network()->topInstance()));
 }
+std::string
+OpenStaHandler::generateNetName(int& start_index)
+{
+    std::string name;
+    do
+        name = std::string("net_") + std::to_string(start_index++);
+    while (net(name.c_str()));
+    return name;
+}
+std::string
+OpenStaHandler::generateInstanceName(const std::string& prefix,
+                                     int&               start_index)
+{
+    std::string name;
+    do
+        name = prefix + std::to_string(start_index++);
+    while (instance(name.c_str()));
+    return name;
+}
+
 std::string
 OpenStaHandler::name(Block* object) const
 {
@@ -1483,8 +1508,7 @@ OpenStaHandler::violatesMaximumTransition(InstanceTerm* term) const
     sta_->graph()->pinVertices(term, vert, bi);
     if (!vert)
     {
-        sta_->graph()->makePinVertices(term);
-        sta_->graph()->pinVertices(term, vert, bi);
+        sta_->graph()->makePinVertices(term, vert, bi);
     }
     float limit;
     bool  exists;

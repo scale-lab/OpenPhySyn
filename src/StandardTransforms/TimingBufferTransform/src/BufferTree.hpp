@@ -306,6 +306,37 @@ public:
         return (required_ - wire_delay_) >=
                (other.required_ - other.wire_delay_);
     }
+    int
+    count() const
+    {
+        return (buffer_cell_ != nullptr) + (left_ ? left_->count() : 0) +
+               (right_ ? right_->count() : 0);
+    }
+    int
+    branchCount() const
+    {
+        return (left_ ? (1 + left_->branchCount()) : 0) +
+               (right_ ? (1 + right_->branchCount()) : 0);
+    }
+    void
+    logInfo() const
+    {
+        PSN_LOG_INFO("Buffers {} Cap. {} (+W {}) Req. {} (+W {}) Cost {} Left? "
+                     "{} Right? {} Branches {}",
+                     count(), capacitance(), totalCapacitance(), required(),
+                     totalRequired(), cost(), left_ != nullptr,
+                     right_ != nullptr, branchCount());
+    }
+    void
+    logDebug() const
+    {
+        PSN_LOG_DEBUG(
+            "Buffers {} Cap. {} (+W {}) Req. {} (+W {}) Cost {} Left? "
+            "{} Right? {} Branches {}",
+            count(), capacitance(), totalCapacitance(), required(),
+            totalRequired(), cost(), left_ != nullptr, right_ != nullptr,
+            branchCount());
+    }
 };
 
 class BufferSolution
@@ -315,14 +346,16 @@ class BufferSolution
 public:
     BufferSolution(){};
     BufferSolution(Psn* psn_inst, std::shared_ptr<BufferSolution>& left,
-                   std::shared_ptr<BufferSolution>& right, Point location)
+                   std::shared_ptr<BufferSolution>& right, Point location,
+                   LibraryCell* upstream_res_cell)
 
     {
-        mergeBranches(psn_inst, left, right, location);
+        mergeBranches(psn_inst, left, right, location, upstream_res_cell);
     }
     void
     mergeBranches(Psn* psn_inst, std::shared_ptr<BufferSolution>& left,
-                  std::shared_ptr<BufferSolution>& right, Point location)
+                  std::shared_ptr<BufferSolution>& right, Point location,
+                  LibraryCell* upstream_res_cell)
     {
         buffer_trees_.resize(left->bufferTrees().size() *
                                  right->bufferTrees().size(),
@@ -336,7 +369,7 @@ public:
                     psn_inst, left_branch, right_branch, location);
             }
         }
-        prune(psn_inst);
+        prune(psn_inst, upstream_res_cell);
     }
     void
     addTree(std::shared_ptr<BufferTree>& tree)
@@ -359,9 +392,8 @@ public:
     }
 
     void
-    addLeafTrees(Psn* psn_inst, Point pt,
-                 std::unordered_set<LibraryCell*>& buffer_lib,
-                 std::unordered_set<LibraryCell*>&)
+    addLeafTrees(Psn* psn_inst, Point pt, std::vector<LibraryCell*>& buffer_lib,
+                 std::vector<LibraryCell*>&)
     {
         if (!buffer_trees_.size())
         {
@@ -380,9 +412,8 @@ public:
                     buff_required = req;
                 }
             }
-            // Disable cost for now..
-            // auto buffer_cost = psn_inst->area(buff);
-            auto buffer_cost = 0.0;
+            // auto buffer_cost = 0;
+            auto buffer_cost = psn_inst->handler()->area(buff);
             auto buffer_cap = psn_inst->handler()->bufferInputCapacitance(buff);
             auto buffer_opt = std::make_shared<BufferTree>(
                 buffer_cap, buff_required, buffer_cost, pt, nullptr, buff);
@@ -459,69 +490,60 @@ public:
         return max_tree;
     }
 
+    bool
+    isLess(float first, float second, float threshold) const
+    {
+        return first < second &&
+               !(std::abs(first - second) <
+                 threshold * std::max(std::abs(first), std::abs(second)));
+    }
+    bool
+    isLessOrEqual(float first, float second, float threshold) const
+    {
+        return first < second ||
+               (std::abs(first - second) <
+                threshold * std::max(std::abs(first), std::abs(second)));
+    }
+
     void
-    prune(Psn* psn_inst, const float prune_threshold = 1E-6F)
+    prune(Psn* psn_inst, LibraryCell* upstream_res_cell,
+          const float cap_prune_threshold  = 1E-6F,
+          const float cost_prune_threshold = 1E-6F)
     {
         // TODO Add squeeze pruning
+        if (!upstream_res_cell)
+        {
+            PSN_LOG_WARN("Pruning without upstream resistance");
+            return;
+        }
 
         std::sort(buffer_trees_.begin(), buffer_trees_.end(),
                   [=](const std::shared_ptr<BufferTree>& a,
                       const std::shared_ptr<BufferTree>& b) -> bool {
-                      float left_req  = a->upstreamBufferRequired(psn_inst);
-                      float right_req = b->upstreamBufferRequired(psn_inst);
+                      float left_req =
+                          a->bufferRequired(psn_inst, upstream_res_cell);
+                      float right_req =
+                          b->bufferRequired(psn_inst, upstream_res_cell);
                       return left_req > right_req;
                   });
 
         size_t index = 0;
-        // PSN_LOG_INFO("Before prune {}", buffer_trees_.size());
-        // PSN_LOG_DEBUG("Before prune {}", buffer_trees_.size());
-        // for (size_t i = 0; i < buffer_trees_.size(); i++)
-        // {
-        //     PSN_LOG_DEBUG("i {} Cap ({}) + RC: {}, Req {}, UREQ {} ( + RC:
-        //     {})",
-        //                   i, buffer_trees_[i]->capacitance(),
-        //                   buffer_trees_[i]->totalCapacitance(),
-        //                   buffer_trees_[i]->required(),
-        //                   buffer_trees_[i]->upstreamBufferRequired(psn_inst),
-        //                   buffer_trees_[i]->upstreamBufferRequired(psn_inst)
-        //                   +
-        //                       buffer_trees_[i]->wireDelay());
-        // }
         for (size_t i = 0; i < buffer_trees_.size(); i++)
         {
             index = i + 1;
             for (size_t j = i + 1; j < buffer_trees_.size(); j++)
             {
-                if (buffer_trees_[j]->totalCapacitance() <
-                        buffer_trees_[i]->totalCapacitance() &&
-                    !(std::abs(buffer_trees_[j]->totalCapacitance() -
-                               buffer_trees_[i]->totalCapacitance()) <
-                      prune_threshold *
-                          std::max(
-                              std::abs(buffer_trees_[j]->totalCapacitance()),
-                              std::abs(
-                                  buffer_trees_[i]->totalCapacitance()))) &&
-                    buffer_trees_[i]->cost() <= buffer_trees_[j]->cost())
+                if (isLess(buffer_trees_[j]->totalCapacitance(),
+                           buffer_trees_[i]->totalCapacitance(),
+                           cap_prune_threshold) ||
+                    isLess(buffer_trees_[j]->cost(), buffer_trees_[i]->cost(),
+                           cost_prune_threshold))
                 {
                     buffer_trees_[index++] = buffer_trees_[j];
                 }
             }
             buffer_trees_.resize(index);
         }
-        // PSN_LOG_INFO("After prune {}", buffer_trees_.size());
-        // PSN_LOG_DEBUG("After prune {}", buffer_trees_.size());
-        // for (size_t i = 0; i < buffer_trees_.size(); i++)
-        // {
-        //     PSN_LOG_DEBUG("i {} Cap ({}) + RC: {}, Req {}, UREQ {} ( +
-        //     RC:{})",
-        //                   i, buffer_trees_[i]->capacitance(),
-        //                   buffer_trees_[i]->totalCapacitance(),
-        //                   buffer_trees_[i]->required(),
-        //                   buffer_trees_[i]->upstreamBufferRequired(psn_inst),
-        //                   buffer_trees_[i]->upstreamBufferRequired(psn_inst)
-        //                   +
-        //                       buffer_trees_[i]->wireDelay());
-        // }
     }
 };
 } // namespace psn

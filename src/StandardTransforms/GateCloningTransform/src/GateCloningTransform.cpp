@@ -203,11 +203,13 @@ GateCloningTransform::cloneInstance(Psn*                          psn_inst,
     auto         inst       = handler.instance(output_pin);
     Net*         output_net = handler.net(output_pin);
 
-    std::string clone_net_name = generateNetName(psn_inst);
+    std::string clone_net_name = handler.generateNetName(net_index_);
     Net*        clone_net      = handler.createNet(clone_net_name.c_str());
     auto        output_port    = handler.libraryPin(output_pin);
 
     topDownConnect(psn_inst, tree, k, clone_net);
+    std::vector<Net*> para_nets;
+    para_nets.push_back(clone_net);
 
     int fanout_count = handler.fanoutPins(handler.net(output_pin)).size();
     if (fanout_count == 0)
@@ -217,8 +219,9 @@ GateCloningTransform::cloneInstance(Psn*                          psn_inst,
     }
     else
     {
-        std::string instance_name = generateCloneName(psn_inst);
-        auto        cell          = handler.libraryCell(inst);
+        std::string instance_name =
+            handler.generateInstanceName("clone_", clone_index_);
+        auto cell = handler.libraryCell(inst);
 
         Instance* cloned_inst =
             handler.createInstance(instance_name.c_str(), cell);
@@ -233,31 +236,14 @@ GateCloningTransform::cloneInstance(Psn*                          psn_inst,
                 Net* target_net  = handler.net(p);
                 auto target_port = handler.libraryPin(p);
                 handler.connect(target_net, cloned_inst, target_port);
+                para_nets.push_back(target_net);
             }
         }
     }
-}
-std::string
-GateCloningTransform::generateNetName(Psn* psn_inst)
-{
-    DatabaseHandler& handler = *(psn_inst->handler());
-
-    std::string name;
-    do
-        name = std::string("net_") + std::to_string(net_index_++);
-    while (handler.net(name.c_str()));
-    return name;
-}
-std::string
-GateCloningTransform::generateCloneName(Psn* psn_inst)
-{
-    DatabaseHandler& handler = *(psn_inst->handler());
-
-    std::string name;
-    do
-        name = std::string("cloned_gate_") + std::to_string(clone_index_++);
-    while (handler.instance(name.c_str()));
-    return name;
+    for (auto& net : para_nets)
+    {
+        handler.calculateParasitics(net);
+    }
 }
 
 int

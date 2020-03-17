@@ -54,7 +54,7 @@ public:
 };
 
 DEFINE_TRANSFORM(
-    PinSwapTransform, "pin_swap", "1.0.0",
+    PinSwapTransform, "pin_swap", "1.0",
     "Performs timing-driven/power-driven commutative pin swapping optimization",
     "Usage: transform pin_swap [optimize_power] [max_num_optimize_power_paths]")
 

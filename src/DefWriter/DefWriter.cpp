@@ -36,7 +36,7 @@ namespace psn
 
 DefWriter::DefWriter(Database* db) : db_(db)
 {
-    setVersion(DefOut::DEF_5_6);
+    setVersion(DefOut::DEF_5_8);
 }
 void
 DefWriter::setVersion(DefOut::Version version)

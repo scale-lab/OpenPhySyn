@@ -49,36 +49,35 @@ private:
     int  net_index_;
     int  buff_index_;
     void bufferPin(Psn* psn_inst, InstanceTerm* pin,
-                   std::unordered_set<LibraryCell*>& buffer_lib,
-                   std::unordered_set<LibraryCell*>& inverter_lib,
-                   bool                              resize_gates = false);
+                   std::vector<LibraryCell*>& buffer_lib,
+                   std::vector<LibraryCell*>& inverter_lib, bool resize_gates,
+                   float min_gain);
     std::shared_ptr<BufferSolution>
          bottomUp(Psn* psn_inst, SteinerPoint pt, SteinerPoint prev,
-                  std::unordered_set<LibraryCell*>& buffer_lib,
-                  std::unordered_set<LibraryCell*>& inverter_lib,
+                  std::vector<LibraryCell*>&   buffer_lib,
+                  std::vector<LibraryCell*>&   inverter_lib,
                   std::shared_ptr<SteinerTree> st_tree, bool resize_gates = false);
+    void topDown(Psn* psn_inst, Net* net, std::shared_ptr<BufferTree> tree);
     void topDown(Psn* psn_inst, InstanceTerm* pin,
                  std::shared_ptr<BufferTree> tree);
-    void topDown(Psn* psn_inst, Net* net, std::shared_ptr<BufferTree> tree);
-    std::string generateBufferName(Psn* psn_inst);
-    std::string generateNetName(Psn* psn_inst);
 
     int timingBuffer(Psn* psn_inst, bool fix_cap = true, bool fix_slew = true,
                      std::unordered_set<std::string> buffer_lib_names =
                          std::unordered_set<std::string>(),
                      std::unordered_set<std::string> inverter_lib_names =
                          std::unordered_set<std::string>(),
-                     bool resize_gates = false, bool use_inverter_pair = false);
-    int fixCapacitanceViolations(Psn*                              psn_inst,
-                                 std::vector<InstanceTerm*>        driver_pins,
-                                 std::unordered_set<LibraryCell*>& buffer_lib,
-                                 std::unordered_set<LibraryCell*>& inverter_lib,
-                                 bool resize_gates);
-    int fixTransitionViolations(Psn*                              psn_inst,
-                                std::vector<InstanceTerm*>        driver_pins,
-                                std::unordered_set<LibraryCell*>& buffer_lib,
-                                std::unordered_set<LibraryCell*>& inverter_lib,
-                                bool                              resize_gates);
+                     bool resize_gates = false, bool use_inverter_pair = false,
+                     int max_iterations = 1, float min_gain = 0);
+    int fixCapacitanceViolations(Psn*                       psn_inst,
+                                 std::vector<InstanceTerm*> driver_pins,
+                                 std::vector<LibraryCell*>& buffer_lib,
+                                 std::vector<LibraryCell*>& inverter_lib,
+                                 bool resize_gates, float min_gain);
+    int fixTransitionViolations(Psn*                       psn_inst,
+                                std::vector<InstanceTerm*> driver_pins,
+                                std::vector<LibraryCell*>& buffer_lib,
+                                std::vector<LibraryCell*>& inverter_lib,
+                                bool resize_gates, float min_gain);
 
 public:
     TimingBufferTransform();
@@ -87,10 +86,12 @@ public:
 };
 
 DEFINE_TRANSFORM(
-    TimingBufferTransform, "timing_buffer", "1.0.0",
+    TimingBufferTransform, "timing_buffer", "1.1",
     "Performs several variations of buffering and resizing to fix timing "
     "violations",
-    "Usage: transform timing_buffer buffers -all|<set of buffers> [inverters "
-    "-all|<set of inverters>] [enable_gate_resize] [enable_inverter_pair]")
+    "Usage: transform timing_buffer buffers -all|<set of buffers> [-inverters "
+    "-all|<set of inverters>] [-iterations <# iterations=1>] [-min_gain "
+    "<gain=0ps>]"
+    "[-enable_gate_resize] [-enable_inverter_pair]")
 
 } // namespace psn

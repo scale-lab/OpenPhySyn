@@ -50,12 +50,9 @@ private:
                         SteinerPoint k, Net* net);
     void cloneInstance(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
                        SteinerPoint k);
-    std::string generateNetName(Psn* psn_inst);
-    std::string generateCloneName(Psn* psn_inst);
-
-    int net_index_;
-    int clone_index_;
-    int clone_count_;
+    int  net_index_;
+    int  clone_index_;
+    int  clone_count_;
 
 public:
     GateCloningTransform();
@@ -64,7 +61,7 @@ public:
     int run(Psn* psn_inst, std::vector<std::string> args) override;
 };
 
-DEFINE_TRANSFORM(GateCloningTransform, "gate_clone", "1.0.0",
+DEFINE_TRANSFORM(GateCloningTransform, "gate_clone", "1.0",
                  "Performs load-driven gate cloning",
                  "Usage: transform gate_clone "
                  "<float: max-cap-factor> <boolean: clone-gates-only>")
