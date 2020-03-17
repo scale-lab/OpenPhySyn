@@ -41,6 +41,9 @@ TEST_CASE("Should perform timing-driven pin swapping")
     try
     {
         psn_inst.clearDatabase();
+        auto& handler = *(psn_inst.handler());
+        handler.resetCache();
+        handler.resetDelays();
         psn_inst.readLib("../tests/data/libraries/Nangate45/"
                          "NangateOpenCellLibrary_typical.lib");
         psn_inst.readLef(
@@ -48,11 +51,10 @@ TEST_CASE("Should perform timing-driven pin swapping")
         psn_inst.readDef("../tests/data/designs/gcd/gcd.def");
         CHECK(psn_inst.database()->getChip() != nullptr);
         CHECK(psn_inst.hasTransform("pin_swap"));
-        auto& handler = *(psn_inst.handler());
-        handler.createClock("core_clock", {"clk"}, 10);
+        handler.createClock("core_clock", {"clk"}, 10E-09);
         auto result =
             psn_inst.runTransform("pin_swap", std::vector<std::string>({}));
-        CHECK(result == 3);
+        CHECK(result);
     }
     catch (PsnException& e)
     {

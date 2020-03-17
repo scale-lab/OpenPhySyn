@@ -71,7 +71,6 @@ TimingBufferTransform::bufferPin(Psn* psn_inst, InstanceTerm* pin,
                                  bool resize_gates, float min_gain)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
-    handler.sta()->findRequireds();
     if (handler.isTopLevel(pin))
     {
         PSN_LOG_WARN("Not handled yet!");

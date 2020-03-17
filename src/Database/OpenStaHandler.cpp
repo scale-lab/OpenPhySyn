@@ -37,7 +37,6 @@
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
-#include <OpenPhySyn/Sta/PathPoint.hpp>
 #include <OpenSTA/dcalc/ArcDelayCalc.hh>
 #include <OpenSTA/dcalc/DcalcAnalysisPt.hh>
 #include <OpenSTA/dcalc/GraphDelayCalc.hh>
@@ -136,11 +135,11 @@ OpenStaHandler::connectedPins(Net* net) const
     std::sort(terms.begin(), terms.end(), sta::PinPathNameLess(network()));
     return terms;
 }
-std::set<BlockTerm*>
+std::set<InstanceTerm*>
 OpenStaHandler::clockPins() const
 {
-    std::set<BlockTerm*> clock_pins;
-    auto                 clk_iter = new sta::ClockIterator(network()->sdc());
+    std::set<InstanceTerm*> clock_pins;
+    auto                    clk_iter = new sta::ClockIterator(network()->sdc());
     while (clk_iter->hasNext())
     {
         auto clk  = clk_iter->next();
@@ -1136,6 +1135,11 @@ OpenStaHandler::swapPins(InstanceTerm* first, InstanceTerm* second)
     disconnect(second);
     connect(first_net, second);
     connect(second_net, first);
+    if (hasWireRC())
+    {
+        calculateParasitics(first_net);
+        calculateParasitics(second_net);
+    }
     resetDelays(first);
     resetDelays(second);
 }
@@ -1144,7 +1148,7 @@ OpenStaHandler::createInstance(const char* inst_name, LibraryCell* cell)
 {
     return network()->makeInstance(cell, inst_name, network()->topInstance());
 }
-// namespace psn
+
 void
 OpenStaHandler::createClock(const char*             clock_name,
                             std::vector<BlockTerm*> ports, float period)
@@ -1380,7 +1384,7 @@ OpenStaHandler::isAnyOutput(InstanceTerm* term) const
     return network()->direction(term)->isAnyOutput();
 }
 bool
-OpenStaHandler::isBiDriect(InstanceTerm* term) const
+OpenStaHandler::isBiDirect(InstanceTerm* term) const
 {
     return network()->direction(term)->isBidirect();
 }
@@ -1471,7 +1475,7 @@ OpenStaHandler::isAnyOutput(LibraryTerm* term) const
     return term->direction()->isAnyOutput();
 }
 bool
-OpenStaHandler::isBiDriect(LibraryTerm* term) const
+OpenStaHandler::isBiDirect(LibraryTerm* term) const
 {
     return term->direction()->isBidirect();
 }
@@ -1662,8 +1666,13 @@ OpenStaHandler::evaluateFunctionExpression(
     default:
         return -1;
     }
-} // namespace psn
-
+}
+float
+OpenStaHandler::bufferChainDelayPenalty(LibraryCell* cell)
+{
+    // TODO
+    return 0.0;
+}
 /* The following is borrowed from James Cherry's Resizer Code */
 
 // Find a target slew for the libraries and then

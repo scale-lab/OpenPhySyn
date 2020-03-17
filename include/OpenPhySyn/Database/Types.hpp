@@ -71,15 +71,14 @@ typedef odb::defout         DefOut;
 typedef odb::lefin          LefParser;
 typedef sta::LibertyLibrary Liberty;
 
-typedef odb::dbSet<Library>                           LibrarySet;
-typedef odb::dbSet<Net>                               NetSet;
-typedef odb::dbSet<BlockTerm>                         BlockTermSet;
-typedef odb::dbSet<InstanceTerm>                      InstanceTermSet;
-typedef odb::dbIoType::Value                          PinDirection;
-typedef odb::adsPoint                                 Point;
-typedef OpenDBHandler                                 DatabaseHandler;
-typedef std::tuple<InstanceTerm*, bool, float, float> PathPoint;
-typedef odb::dbBTerm                                  Term;
+typedef odb::dbSet<Library>      LibrarySet;
+typedef odb::dbSet<Net>          NetSet;
+typedef odb::dbSet<BlockTerm>    BlockTermSet;
+typedef odb::dbSet<InstanceTerm> InstanceTermSet;
+typedef odb::dbIoType::Value     PinDirection;
+typedef odb::adsPoint            Point;
+typedef OpenDBHandler            DatabaseHandler;
+typedef odb::dbBTerm             Term;
 #else
 // Default is OpenSTA handler
 typedef odb::dbDatabase     Database;

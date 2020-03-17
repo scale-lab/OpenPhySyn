@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.8.2)
-
 set(TEST_MAIN unit_tests)   # Default name for test executable (change if you wish).
 set(TEST_RUNNER_PARAMS "")  # Any arguemnts to feed the test runner (change as needed).
 

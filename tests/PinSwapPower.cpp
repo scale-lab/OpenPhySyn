@@ -49,10 +49,10 @@ TEST_CASE("Should perform power-driven pin swapping")
         CHECK(psn_inst.database()->getChip() != nullptr);
         CHECK(psn_inst.hasTransform("pin_swap"));
         auto& handler = *(psn_inst.handler());
-        handler.createClock("core_clock", {"clk"}, 10);
+        handler.createClock("core_clock", {"clk"}, 10E-09);
         auto result = psn_inst.runTransform(
             "pin_swap", std::vector<std::string>({"true", "50"}));
-        CHECK(result == 10);
+        CHECK(result == 20);
     }
     catch (PsnException& e)
     {

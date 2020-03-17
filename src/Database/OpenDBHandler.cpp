@@ -81,19 +81,55 @@ OpenDBHandler::connectedPins(Net* net) const
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, connectedPins)
     return std::vector<InstanceTerm*>();
 }
-std::set<BlockTerm*>
+std::set<InstanceTerm*>
 OpenDBHandler::clockPins() const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, clockPins)
-    return std::set<BlockTerm*>();
+    return std::set<InstanceTerm*>();
 }
 
-std::vector<InstanceTerm*>
-OpenDBHandler::inputPins(Instance* inst, bool include_top_level) const
+void
+OpenDBHandler::setWireRC(float res_per_micon, float cap_per_micron)
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, clockPins)
+}
+bool
+OpenDBHandler::hasWireRC()
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, clockPins)
+    return false;
+}
+
+void
+OpenDBHandler::calculateParasitics()
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, clockPins)
+}
+
+void
+OpenDBHandler::calculateParasitics(Net* net){
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, clockPins)}
+
+std::vector<InstanceTerm*> OpenDBHandler::inputPins(
+    Instance* inst, bool include_top_level) const
 {
     auto         inst_pins = pins(inst);
     PinDirection dir       = PinDirection::INPUT;
     return filterPins(inst_pins, &dir, include_top_level);
+}
+int
+OpenDBHandler::evaluateFunctionExpression(
+    InstanceTerm* term, std::unordered_map<LibraryTerm*, int>& inputs) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, evaluateFunctionExpression);
+    return 0;
+}
+int
+OpenDBHandler::evaluateFunctionExpression(
+    LibraryTerm* term, std::unordered_map<LibraryTerm*, int>& inputs) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, evaluateFunctionExpression);
+    return 0;
 }
 
 std::vector<InstanceTerm*>
@@ -118,12 +154,7 @@ OpenDBHandler::tiehiCells() const
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, tiehiCells)
     return std::vector<LibraryCell*>();
 }
-std::vector<LibraryCell*>
-OpenDBHandler::tieloCells() const
-{
-    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, tieloCells)
-    return std::vector<LibraryCell*>();
-}
+
 std::vector<LibraryCell*>
 OpenDBHandler::inverterCells() const
 {
@@ -140,13 +171,13 @@ LibraryCell*
 OpenDBHandler::smallestInverterCell() const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, smallestInverterCell)
-    return std::vector<LibraryCell*>();
+    return nullptr;
 }
 LibraryCell*
 OpenDBHandler::smallestBufferCell() const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, smallestBufferCell)
-    return std::vector<LibraryCell*>();
+    return nullptr;
 }
 std::vector<LibraryCell*>
 OpenDBHandler::tieloCells() const
@@ -222,17 +253,17 @@ OpenDBHandler::fanoutCount(Net* net, bool include_top_level) const
 {
     return fanoutPins(net, include_top_level).size();
 }
-std::vector<std::vector<PathPoint>>
+std::vector<PathPoint>
 OpenDBHandler::criticalPath(int path_count) const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, criticalPath)
-    return std::vector<std::vector<PathPoint>>();
+    return std::vector<PathPoint>();
 }
-std::vector<PathPoint>
+std::vector<std::vector<PathPoint>>
 OpenDBHandler::bestPath(int path_count) const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bestPath)
-    return std::vector<PathPoint>();
+    return std::vector<std::vector<PathPoint>>();
 }
 std::vector<PathPoint>
 OpenDBHandler::worstSlackPath(InstanceTerm* term) const
@@ -496,25 +527,27 @@ OpenDBHandler::pinCapacitance(LibraryTerm* term) const
     return 0.0;
 }
 float
-OpenDBHandler::pinAverageRise(LibraryTerm* term) const
+OpenDBHandler::pinAverageRise(LibraryTerm* term, LibraryTerm* to) const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageRise)
     return 0.0;
 }
 float
-OpenDBHandler::pinAverageFall(LibraryTerm* term) const
+OpenDBHandler::pinAverageFall(LibraryTerm* term, LibraryTerm* to) const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageFall)
     return 0.0;
 }
 float
-OpenDBHandler::pinAverageRiseTransition(LibraryTerm* term) const
+OpenDBHandler::pinAverageRiseTransition(LibraryTerm* term,
+                                        LibraryTerm* to) const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageRiseTransition)
     return 0.0;
 }
 float
-OpenDBHandler::pinAverageFallTransition(LibraryTerm* term) const
+OpenDBHandler::pinAverageFallTransition(LibraryTerm* term,
+                                        LibraryTerm* to) const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinAverageFallTransition)
     return 0.0;
@@ -531,13 +564,7 @@ OpenDBHandler::targetLoad(LibraryCell* cell)
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, targetLoad)
     return 0.0;
 }
-float
-OpenDBHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
-                         LibraryTerm* from, int rise_fall)
-{
-    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, gateDelay);
-    return 0.0;
-}
+
 float
 OpenDBHandler::gateDelay(LibraryTerm* out_port, float load_cap)
 {
@@ -546,6 +573,39 @@ OpenDBHandler::gateDelay(LibraryTerm* out_port, float load_cap)
     return 0.0;
 }
 float
+OpenDBHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
+                         LibraryTerm* from, float* drvr_slew, int rise_fall)
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, gateDelay);
+    return 0.0;
+}
+float
+OpenDBHandler::gateDelay(InstanceTerm* out_port, float load_cap)
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, gateDelay);
+    return 0.0;
+}
+float
+OpenDBHandler::bufferChainDelayPenalty(LibraryCell* cell)
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bufferChainDelayPenalty);
+    return 0.0;
+}
+LibraryTerm*
+OpenDBHandler::bufferInputPin(LibraryCell* buffer_cell) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bufferInputPin);
+    return nullptr;
+}
+
+LibraryTerm*
+OpenDBHandler::bufferOutputPin(LibraryCell* buffer_cell) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bufferOutputPin);
+    return nullptr;
+}
+
+float
 OpenDBHandler::bufferDelay(psn::LibraryCell* buffer_cell, float load_cap)
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bufferDelay);
@@ -553,25 +613,43 @@ OpenDBHandler::bufferDelay(psn::LibraryCell* buffer_cell, float load_cap)
 }
 
 float
-OpenDBHandler::pinCapacitance(const InstanceTerm* term)
-{
-    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, pinCapacitance)
-}
-
-float
 OpenDBHandler::portCapacitance(const LibraryTerm* port, bool isMax)
 {
-    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, portCapacitance)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, portCapacitance);
+    return 0.0;
 }
 float
 OpenDBHandler::bufferInputCapacitance(LibraryCell* buffer_cell)
 {
-    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bufferInputCapacitance)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bufferInputCapacitance);
+    return 0.0;
 }
 float
 OpenDBHandler::bufferOutputCapacitance(LibraryCell* buffer_cell)
 {
-    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bufferOutputCapacitance)
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bufferOutputCapacitance);
+    return 0.0;
+}
+
+bool
+OpenDBHandler::isClock(Net* net) const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isClock);
+    return false;
+}
+
+std::string
+OpenDBHandler::generateNetName(int& start_index)
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, generateNetName);
+    return "";
+}
+
+std::string
+OpenDBHandler::generateInstanceName(const std::string& prefix, int& start_index)
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, generateInstanceName);
+    return "";
 }
 
 float
@@ -646,6 +724,7 @@ OpenDBHandler::isCombinational(LibraryCell* cell) const
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isCombinational)
     return false;
 }
+bool
 OpenDBHandler::isInput(BlockTerm* term) const
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, isInput)
@@ -897,10 +976,10 @@ OpenDBHandler::createNet(const char* net_name)
     return Net::create(top(), net_name);
 }
 
-InstanceTerm*
+void
 OpenDBHandler::connect(Net* net, Instance* inst, LibraryTerm* port) const
 {
-    return InstanceTerm::connect(inst, net, port);
+    InstanceTerm::connect(inst, net, port);
 }
 
 std::vector<Net*>
@@ -928,7 +1007,7 @@ OpenDBHandler::instances() const
     {
         return std::vector<Instance*>();
     }
-    auto inst_set = block_->getInsts();
+    auto inst_set = block->getInsts();
     for (auto itr = inst_set.begin(); itr != inst_set.end(); itr++)
     {
         insts.push_back(*itr);
@@ -965,6 +1044,11 @@ std::string
 OpenDBHandler::name(BlockTerm* object) const
 {
     return std::string(object->getConstName());
+}
+std::string
+OpenDBHandler::name(InstanceTerm* object) const
+{
+    return std::string(object->getObjName());
 }
 std::string
 OpenDBHandler::name(Library* object) const
@@ -1037,6 +1121,11 @@ OpenDBHandler::top() const
 
     Block* block = chip->getBlock();
     return block;
+}
+
+void
+OpenDBHandler::resetCache()
+{
 }
 
 void
