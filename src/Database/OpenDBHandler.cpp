@@ -87,6 +87,12 @@ OpenDBHandler::clockPins() const
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, clockPins)
     return std::set<InstanceTerm*>();
 }
+std::set<Net*>
+OpenDBHandler::clockNets() const
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, clockNets)
+    return std::set<Net*>();
+}
 
 void
 OpenDBHandler::setWireRC(float res_per_micon, float cap_per_micron)
@@ -616,6 +622,12 @@ float
 OpenDBHandler::portCapacitance(const LibraryTerm* port, bool isMax)
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, portCapacitance);
+    return 0.0;
+}
+float
+OpenDBHandler::inverterInputCapacitance(LibraryCell* buffer_cell)
+{
+    PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, inverterInputCapacitance);
     return 0.0;
 }
 float

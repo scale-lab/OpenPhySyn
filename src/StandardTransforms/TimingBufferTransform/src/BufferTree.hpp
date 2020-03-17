@@ -55,7 +55,7 @@ class BufferTree
 public:
     BufferTree(float cap = 0.0, float req = 0.0, float cost = 0.0,
                Point location = Point(0, 0), InstanceTerm* pin = nullptr,
-               LibraryCell* buffer_cell = nullptr)
+               LibraryCell* buffer_cell = nullptr, int polarity = 0)
         : capacitance_(cap),
           required_(req),
           wire_capacitance_(0.0),
@@ -67,7 +67,7 @@ public:
           buffer_cell_(buffer_cell),
           pin_(pin),
           upstream_buffer_cell_(buffer_cell),
-          polarity_(0)
+          polarity_(polarity)
 
     {
     }
@@ -365,10 +365,14 @@ public:
         {
             for (auto& right_branch : right->bufferTrees())
             {
-                buffer_trees_[index++] = std::make_shared<BufferTree>(
-                    psn_inst, left_branch, right_branch, location);
+                if (left_branch->polarity() == right_branch->polarity())
+                {
+                    buffer_trees_[index++] = std::make_shared<BufferTree>(
+                        psn_inst, left_branch, right_branch, location);
+                }
             }
         }
+        buffer_trees_.resize(index);
         prune(psn_inst, upstream_res_cell);
     }
     void
@@ -393,7 +397,7 @@ public:
 
     void
     addLeafTrees(Psn* psn_inst, Point pt, std::vector<LibraryCell*>& buffer_lib,
-                 std::vector<LibraryCell*>&)
+                 std::vector<LibraryCell*>& inverter_lib)
     {
         if (!buffer_trees_.size())
         {
@@ -412,11 +416,40 @@ public:
                     buff_required = req;
                 }
             }
-            // auto buffer_cost = 0;
             auto buffer_cost = psn_inst->handler()->area(buff);
             auto buffer_cap = psn_inst->handler()->bufferInputCapacitance(buff);
             auto buffer_opt = std::make_shared<BufferTree>(
                 buffer_cap, buff_required, buffer_cost, pt, nullptr, buff);
+
+            buffer_opt->setLeft(optimal_tree);
+            buffer_trees_.push_back(buffer_opt);
+        }
+        for (auto& inv : inverter_lib)
+        {
+            auto optimal_tree  = *(buffer_trees_.begin());
+            auto buff_required = optimal_tree->bufferRequired(psn_inst, inv);
+            for (auto& tree : buffer_trees_)
+            {
+                auto req = tree->bufferRequired(psn_inst, inv);
+                if (req > buff_required)
+                {
+                    optimal_tree  = tree;
+                    buff_required = req;
+                }
+            }
+            auto buffer_cost = psn_inst->handler()->area(inv);
+            auto buffer_cap =
+                psn_inst->handler()->inverterInputCapacitance(inv);
+            auto buffer_opt = std::make_shared<BufferTree>(
+                buffer_cap, buff_required, buffer_cost, pt, nullptr, inv);
+            if (optimal_tree->polarity() == 1)
+            {
+                buffer_opt->setPolarity(0);
+            }
+            else
+            {
+                buffer_opt->setPolarity(1);
+            }
 
             buffer_opt->setLeft(optimal_tree);
             buffer_trees_.push_back(buffer_opt);
@@ -477,6 +510,10 @@ public:
         std::shared_ptr<BufferTree> max_tree  = nullptr;
         for (auto& tree : buffer_trees_)
         {
+            if (tree->polarity())
+            {
+                continue;
+            }
             float delay = psn_inst->handler()->gateDelay(
                 driver_pin, tree->totalCapacitance());
             float slack = tree->totalRequired() - delay;

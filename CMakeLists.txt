@@ -270,6 +270,7 @@ if (${OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED})
   set(PSN_TESTFILES
   ${PSN_TESTFILES}
   ${PROJECT_SOURCE_DIR}/tests/TimingBuffer.cpp
+  ${PROJECT_SOURCE_DIR}/tests/TimingInvertingBuffer.cpp
 )
 endif()
 

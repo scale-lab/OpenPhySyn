@@ -86,12 +86,12 @@ public:
 };
 
 DEFINE_TRANSFORM(
-    TimingBufferTransform, "timing_buffer", "1.1",
+    TimingBufferTransform, "timing_buffer", "1.2",
     "Performs several variations of buffering and resizing to fix timing "
     "violations",
     "Usage: transform timing_buffer buffers -all|<set of buffers> [-inverters "
     "-all|<set of inverters>] [-iterations <# iterations=1>] [-min_gain "
     "<gain=0ps>]"
-    "[-enable_gate_resize] [-enable_inverter_pair]")
+    "[-enable_gate_resize]")
 
 } // namespace psn

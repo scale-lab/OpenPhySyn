@@ -35,7 +35,8 @@
 
 using namespace psn;
 
-TEST_CASE("Should add a signle net")
+TEST_CASE("Should perform buffer insertion to fix cap./trans. violations for "
+          "large buffer library")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -45,12 +46,19 @@ TEST_CASE("Should add a signle net")
                          "NangateOpenCellLibrary_typical.lib");
         psn_inst.readLef(
             "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
-        psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
+        psn_inst.readDef(
+            "../tests/data/designs/timing_buffer/ibex_resized.def");
+        psn_inst.setWireRC("metal2");
         CHECK(psn_inst.database()->getChip() != nullptr);
-        CHECK(psn_inst.hasTransform("hello_transform"));
-        auto result = psn_inst.runTransform("hello_transform",
-                                            std::vector<std::string>({"net1"}));
-        CHECK(result >= 1);
+        CHECK(psn_inst.hasTransform("timing_buffer"));
+        auto& handler = *(psn_inst.handler());
+        handler.createClock("core_clock", {"clk_i"}, 10E-09);
+        auto result = psn_inst.runTransform(
+            "timing_buffer", std::vector<std::string>(
+                                 {"-buffers", "CLKBUF_X1", "CLKBUF_X2",
+                                  "CLKBUF_X3", "BUF_X1", "BUF_X2", "BUF_X4",
+                                  "-inverters", "INV_X1", "INV_X2", "INV_X4"}));
+        CHECK(result == 429);
     }
     catch (PsnException& e)
     {

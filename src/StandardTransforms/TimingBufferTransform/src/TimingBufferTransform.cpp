@@ -48,7 +48,7 @@
 // Objectives:
 // * Standard Van Ginneken buffering (with pruning). [Done]
 // * Multiple buffer sizes. [Done]
-// * Inverter pair instead of buffer pairs. [TODO]
+// * Inverter pair instead of buffer pairs. [Done]
 // * Simultaneous buffering and gate sizing. [TODO]
 // * Squeeze pruning. [TODO]
 // * Preslack pruning. [TODO]
@@ -359,9 +359,6 @@ TimingBufferTransform::timingBuffer(
             buffer_lib.push_back(lib_cell);
         }
     }
-    auto buf_names_vec = std::vector<std::string>(buffer_lib_names.begin(),
-                                                  buffer_lib_names.end());
-    PSN_LOG_DEBUG("Buffer library: {}", StringUtils::join(buf_names_vec, ", "));
     if (use_inverter_pair)
     {
         if (!inverter_lib_names.size())
@@ -397,6 +394,14 @@ TimingBufferTransform::timingBuffer(
               [&](LibraryCell* a, LibraryCell* b) -> bool {
                   return handler.area(a) < handler.area(b);
               });
+
+    auto buf_names_vec = std::vector<std::string>(buffer_lib_names.begin(),
+                                                  buffer_lib_names.end());
+    PSN_LOG_DEBUG("Buffer library: {}", StringUtils::join(buf_names_vec, ", "));
+    auto inv_names_vec = std::vector<std::string>(inverter_lib_names.begin(),
+                                                  inverter_lib_names.end());
+    PSN_LOG_DEBUG("Inverter library: {}",
+                  StringUtils::join(inv_names_vec, ", "));
 
     for (int i = 0; i < max_iteration; i++)
     {
@@ -451,8 +456,7 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     std::unordered_set<std::string> inverter_lib_names;
     std::unordered_set<std::string> keywords(
         {"-buffers", "--buffers", "-inverters", "--inverters",
-         "-enable_gate_resize", "--enable_gate_resize", "-enable_inverter_pair",
-         "--enable_inverter_pair"});
+         "-enable_gate_resize", "--enable_gate_resize"});
     if (args.size() < 2)
     {
         PSN_LOG_ERROR(help());
@@ -569,11 +573,6 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         {
             resize_gates = true;
         }
-        else if (args[i] == "-enable_inverter_pair" ||
-                 args[i] == "--enable_inverter_pair")
-        {
-            use_inverter_pair = true;
-        }
         else
         {
             PSN_LOG_ERROR(help());
@@ -585,6 +584,10 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     {
         PSN_LOG_ERROR(help());
         return -1;
+    }
+    if (inverter_lib_names.size() || use_all_inverters)
+    {
+        use_inverter_pair = true;
     }
     if (use_inverter_pair)
     {

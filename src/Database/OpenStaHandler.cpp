@@ -1827,6 +1827,32 @@ OpenStaHandler::findTargetLoad(LibraryCell* cell, sta::TimingArc* arc,
     }
     return 0.0;
 }
+std::set<Net*>
+OpenStaHandler::clockNets() const
+{
+    std::set<Net*>            nets;
+    sta::ClkArrivalSearchPred srch_pred(network());
+    sta::BfsFwdIterator       bfs(sta::BfsIndex::other, &srch_pred, network());
+    sta::PinSet               clk_pins;
+    network()->search()->findClkVertexPins(clk_pins);
+    for (auto pin : clk_pins)
+    {
+        sta::Vertex *vert, *bi_vert;
+        network()->graph()->pinVertices(pin, vert, bi_vert);
+        bfs.enqueue(vert);
+        if (bi_vert)
+            bfs.enqueue(bi_vert);
+    }
+    while (bfs.hasNext())
+    {
+        auto vertex = bfs.next();
+        auto pin    = vertex->pin();
+        Net* net    = network()->net(pin);
+        nets.insert(net);
+        bfs.enqueueAdjacentVertices(vertex);
+    }
+    return nets;
+}
 void
 OpenStaHandler::slewLimit(InstanceTerm* pin, sta::MinMax* min_max,
                           // Return values.
@@ -1958,6 +1984,13 @@ OpenStaHandler::bufferOutputPin(LibraryCell* buffer_cell) const
     return output;
 }
 
+float
+OpenStaHandler::inverterInputCapacitance(LibraryCell* inv_cell)
+{
+    LibraryTerm *input, *output;
+    inv_cell->bufferPorts(input, output);
+    return portCapacitance(input);
+}
 float
 OpenStaHandler::bufferInputCapacitance(LibraryCell* buffer_cell)
 {

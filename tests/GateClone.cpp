@@ -41,6 +41,8 @@ TEST_CASE("Should perform load-driven gate cloning")
     try
     {
         psn_inst.clearDatabase();
+        psn_inst.readLib("../tests/data/libraries/Nangate45/"
+                         "NangateOpenCellLibrary_typical.lib");
         psn_inst.readLef(
             "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
         psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
