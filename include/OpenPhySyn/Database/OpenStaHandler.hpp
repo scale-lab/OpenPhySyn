@@ -35,6 +35,7 @@
 #include <OpenPhySyn/Database/Types.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
+#include <OpenPhySyn/Sta/PathPoint.hpp>
 #include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
 #include <OpenPhySyn/Utils/PsnGlobal.hpp>
 #include <PsnLogger/PsnLogger.hpp>
@@ -42,7 +43,6 @@
 #include <vector>
 namespace psn
 {
-class PathPoint;
 class OpenStaHandler
 {
 public:
@@ -55,14 +55,8 @@ public:
     virtual ~OpenStaHandler();
 
     virtual int evaluateFunctionExpression(
-        InstanceTerm*                          term,
-        std::unordered_map<LibraryTerm*, int>& inputs) const;
-    virtual int evaluateFunctionExpression(
-        LibraryTerm* term, std::unordered_map<LibraryTerm*, int>& inputs) const;
-    virtual int evaluateFunctionExpression(
         sta::FuncExpr*                         func,
         std::unordered_map<LibraryTerm*, int>& inputs) const;
-    void resetCache(); // Reset equivalent cells and target loads
 
 private:
     sta::LibertyLibrarySeq allLibs() const;

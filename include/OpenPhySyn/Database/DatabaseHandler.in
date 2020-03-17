@@ -49,7 +49,7 @@ virtual Net*                       net(InstanceTerm* term) const;
 virtual Term*                      term(InstanceTerm* term) const;
 virtual Net*                       net(Term* term) const;
 virtual std::vector<InstanceTerm*> connectedPins(Net* net) const;
-virtual std::set<BlockTerm*>       clockPins() const;
+virtual std::set<InstanceTerm*>    clockPins() const;
 virtual Point                      location(InstanceTerm* term);
 virtual Point                      location(Instance* inst);
 virtual float                      area(LibraryCell* cell) const;
@@ -117,13 +117,13 @@ virtual bool                      isInput(InstanceTerm* term) const;
 virtual bool                      isOutput(InstanceTerm* term) const;
 virtual bool                      isAnyInput(InstanceTerm* term) const;
 virtual bool                      isAnyOutput(InstanceTerm* term) const;
-virtual bool                      isBiDriect(InstanceTerm* term) const;
+virtual bool                      isBiDirect(InstanceTerm* term) const;
 virtual bool                      isTriState(InstanceTerm* term) const;
 virtual bool                      isInput(LibraryTerm* term) const;
 virtual bool                      isOutput(LibraryTerm* term) const;
 virtual bool                      isAnyInput(LibraryTerm* term) const;
 virtual bool                      isAnyOutput(LibraryTerm* term) const;
-virtual bool                      isBiDriect(LibraryTerm* term) const;
+virtual bool                      isBiDirect(LibraryTerm* term) const;
 virtual bool                      isTriState(LibraryTerm* term) const;
 virtual bool                      isCombinational(Instance* inst) const;
 virtual bool                      isCombinational(LibraryCell* cell) const;
@@ -183,8 +183,15 @@ virtual std::string            topName() const;
 virtual std::string            generateNetName(int& start_index);
 virtual std::string            generateInstanceName(const std::string& prefix,
                                                     int&               start_index);
+virtual int
+evaluateFunctionExpression(InstanceTerm*                          term,
+                           std::unordered_map<LibraryTerm*, int>& inputs) const;
+virtual int
+                    evaluateFunctionExpression(LibraryTerm*                           term,
+                                               std::unordered_map<LibraryTerm*, int>& inputs) const;
 virtual void        setWireRC(float res_per_micon, float cap_per_micron);
 virtual bool        hasWireRC();
 virtual HandlerType handlerType() const;
 virtual void        calculateParasitics();
 virtual void        calculateParasitics(Net* net);
+void                resetCache();

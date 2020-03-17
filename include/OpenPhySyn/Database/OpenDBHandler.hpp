@@ -34,9 +34,11 @@
 
 #include <OpenPhySyn/Database/Types.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
+#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
+#include <OpenPhySyn/Sta/PathPoint.hpp>
+#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
 #include <OpenPhySyn/Utils/PsnGlobal.hpp>
 #include <PsnLogger/PsnLogger.hpp>
-
 #include <vector>
 
 namespace psn
@@ -46,14 +48,17 @@ class OpenDBHandler
 public:
     OpenDBHandler(Psn* psn_inst, sta::DatabaseSta* sta);
 #include <OpenPhySyn/Database/DatabaseHandler.in>
-    Point        OpenStaHandler::location(BlockTerm* term);
-    bool         isPlaced(BlockTerm* term) const;
-    virtual bool isInput(BlockTerm* term) const;
-    virtual bool isOutput(BlockTerm* term) const;
-    virtual bool isAnyInput(BlockTerm* term) const;
-    virtual bool isAnyOutput(BlockTerm* term) const;
-    virtual bool isBiDirect(BlockTerm* term) const;
-    virtual bool isTriState(BlockTerm* term) const;
+    Point               location(BlockTerm* term);
+    bool                isPlaced(BlockTerm* term) const;
+    virtual bool        isInput(BlockTerm* term) const;
+    virtual bool        isOutput(BlockTerm* term) const;
+    virtual bool        isAnyInput(BlockTerm* term) const;
+    virtual bool        isAnyOutput(BlockTerm* term) const;
+    virtual bool        isBiDirect(BlockTerm* term) const;
+    virtual bool        isTriState(BlockTerm* term) const;
+    virtual std::string name(InstanceTerm* term) const;
+
+    virtual ~OpenDBHandler();
 
 private:
     sta::DatabaseSta* sta_;

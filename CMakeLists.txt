@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1...3.15)
 
-project(OpenPhySyn VERSION 1.4.0 LANGUAGES CXX)
+project(OpenPhySyn VERSION 1.4.1 LANGUAGES CXX)
 
 
 option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add flags and defines.
