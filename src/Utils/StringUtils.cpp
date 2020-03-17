@@ -29,7 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "StringUtils.hpp"
+#include <OpenPhySyn/Utils/StringUtils.hpp>
 #include <algorithm>
 #include <fstream>
 #include <libgen.h>
@@ -51,6 +51,20 @@ StringUtils::split(std::string str, const std::string& delimiter)
     }
     tokens.push_back(str);
     return tokens;
+}
+std::string
+StringUtils::join(std::vector<std::string>& parts, const std::string& delimiter)
+{
+    std::string joined;
+    for (size_t i = 0; i < parts.size(); i++)
+    {
+        joined += parts[i];
+        if (i != parts.size() - 1)
+        {
+            joined += delimiter;
+        }
+    }
+    return joined;
 }
 bool
 StringUtils::isNumber(const std::string& s)

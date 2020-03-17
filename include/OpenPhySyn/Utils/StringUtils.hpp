@@ -41,6 +41,8 @@ class StringUtils
 public:
     static std::vector<std::string> split(std::string        str,
                                           const std::string& delimiter);
+    static std::string              join(std::vector<std::string>& parts,
+                                         const std::string&        delimiter);
     static bool                     isNumber(const std::string& s);
     static bool                     isTruthy(std::string s);
     static bool                     isFalsy(std::string s);
