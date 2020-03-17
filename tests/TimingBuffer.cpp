@@ -51,7 +51,7 @@ TEST_CASE("Should perform buffer insertion to fix cap./trans. violations")
         CHECK(psn_inst.database()->getChip() != nullptr);
         CHECK(psn_inst.hasTransform("timing_buffer"));
         auto& handler = *(psn_inst.handler());
-        handler.createClock("core_clock", {"clk_i"}, 10);
+        handler.createClock("core_clock", {"clk_i"}, 10E-09);
         auto result = psn_inst.runTransform(
             "timing_buffer", std::vector<std::string>({"-buffers", "BUF_X4"}));
         CHECK(result == 35);

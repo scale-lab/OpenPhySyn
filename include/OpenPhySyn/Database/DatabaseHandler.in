@@ -88,6 +88,7 @@ virtual float gateDelay(Instance* inst, InstanceTerm* to, float in_slew = 0,
                         int rise_fall = -1);
 virtual float gateDelay(InstanceTerm* out_port, float load_cap);
 virtual float gateDelay(LibraryTerm* out_port, float load_cap);
+virtual float bufferChainDelayPenalty(LibraryCell* cell);
 virtual float bufferInputCapacitance(LibraryCell* buffer_cell);
 virtual float bufferOutputCapacitance(LibraryCell* buffer_cell);
 virtual float portCapacitance(const LibraryTerm* port, bool isMax = true);

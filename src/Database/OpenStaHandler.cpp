@@ -1136,6 +1136,11 @@ OpenStaHandler::swapPins(InstanceTerm* first, InstanceTerm* second)
     disconnect(second);
     connect(first_net, second);
     connect(second_net, first);
+    if (hasWireRC())
+    {
+        calculateParasitics(first_net);
+        calculateParasitics(second_net);
+    }
     resetDelays(first);
     resetDelays(second);
 }
@@ -1144,7 +1149,7 @@ OpenStaHandler::createInstance(const char* inst_name, LibraryCell* cell)
 {
     return network()->makeInstance(cell, inst_name, network()->topInstance());
 }
-// namespace psn
+
 void
 OpenStaHandler::createClock(const char*             clock_name,
                             std::vector<BlockTerm*> ports, float period)
@@ -1662,8 +1667,13 @@ OpenStaHandler::evaluateFunctionExpression(
     default:
         return -1;
     }
-} // namespace psn
-
+}
+float
+OpenStaHandler::bufferChainDelayPenalty(LibraryCell* cell)
+{
+    // TODO
+    return 0.0;
+}
 /* The following is borrowed from James Cherry's Resizer Code */
 
 // Find a target slew for the libraries and then
