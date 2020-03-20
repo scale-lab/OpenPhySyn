@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1...3.15)
 
-project(OpenPhySyn VERSION 1.4.1 LANGUAGES CXX)
+project(OpenPhySyn VERSION 1.4.2 LANGUAGES CXX)
 
 
 option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add flags and defines.
@@ -270,6 +270,7 @@ if (${OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED})
   set(PSN_TESTFILES
   ${PSN_TESTFILES}
   ${PROJECT_SOURCE_DIR}/tests/TimingBuffer.cpp
+  ${PROJECT_SOURCE_DIR}/tests/TimingBufferWithSizing.cpp
   ${PROJECT_SOURCE_DIR}/tests/TimingInvertingBuffer.cpp
 )
 endif()

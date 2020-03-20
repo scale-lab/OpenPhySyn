@@ -50,6 +50,7 @@ class BufferTree
     LibraryCell*                buffer_cell_;
     InstanceTerm*               pin_;
     LibraryCell*                upstream_buffer_cell_;
+    LibraryCell*                driver_cell_;
     int                         polarity_;
 
 public:
@@ -67,6 +68,7 @@ public:
           buffer_cell_(buffer_cell),
           pin_(pin),
           upstream_buffer_cell_(buffer_cell),
+          driver_cell_(nullptr),
           polarity_(polarity)
 
     {
@@ -84,6 +86,7 @@ public:
           buffer_cell_(nullptr),
           pin_(nullptr),
           upstream_buffer_cell_(nullptr),
+          driver_cell_(nullptr),
           polarity_(0)
 
     {
@@ -239,6 +242,12 @@ public:
     {
         return buffer_cell_ != nullptr;
     }
+    bool
+    hasDriverCell() const
+    {
+        return driver_cell_ != nullptr;
+    }
+
     LibraryCell*
     bufferCell() const
     {
@@ -248,6 +257,11 @@ public:
     upstreamBufferCell() const
     {
         return upstream_buffer_cell_;
+    }
+    LibraryCell*
+    driverCell() const
+    {
+        return driver_cell_;
     }
     void
     setBufferCell(LibraryCell* buffer_cell)
@@ -259,6 +273,11 @@ public:
     setUpstreamBufferCell(LibraryCell* buffer_cell)
     {
         upstream_buffer_cell_ = buffer_cell;
+    }
+    void
+    setDriverCell(LibraryCell* driver_cell)
+    {
+        driver_cell_ = driver_cell;
     }
 
     Point
@@ -479,6 +498,7 @@ public:
             }
         }
     }
+
     std::shared_ptr<BufferTree>
     optimalRequiredTree(Psn* psn_inst)
     {
@@ -500,7 +520,54 @@ public:
         return optimal_tree;
     }
     std::shared_ptr<BufferTree>
-    optimalDriverTree(Psn* psn_inst, InstanceTerm* driver_pin)
+    optimalDriverTree(Psn* psn_inst, InstanceTerm* driver_pin,
+                      std::vector<LibraryCell*> driver_types,
+                      float                     area_penalty)
+    {
+        if (!buffer_trees_.size())
+        {
+            return nullptr;
+        }
+        float max_slack;
+        auto  max_tree = optimalDriverTree(psn_inst, driver_pin, &max_slack);
+        auto  inst     = psn_inst->handler()->instance(driver_pin);
+        auto  original_lib = psn_inst->handler()->libraryCell(inst);
+        max_tree->setDriverCell(original_lib);
+        for (auto& drv_type : driver_types)
+        {
+            for (size_t i = 0; i < buffer_trees_.size(); i++)
+            {
+                auto& tree = buffer_trees_[i];
+                if (tree->polarity())
+                {
+                    continue;
+                }
+                auto drvr_pin =
+                    psn_inst->handler()->libraryOutputPins(drv_type)[0];
+                float max_cap =
+                    psn_inst->handler()->largestInputCapacitance(drv_type);
+
+                float penalty =
+                    psn_inst->handler()->bufferChainDelayPenalty(max_cap) +
+                    area_penalty * psn_inst->handler()->area(drv_type);
+
+                float delay = psn_inst->handler()->gateDelay(
+                    drvr_pin, tree->totalCapacitance());
+                float slack = tree->totalRequired() - delay - penalty;
+
+                if (slack > max_slack)
+                {
+                    max_slack = slack;
+                    max_tree  = tree;
+                    max_tree->setDriverCell(drv_type);
+                }
+            }
+        }
+        return max_tree;
+    }
+    std::shared_ptr<BufferTree>
+    optimalDriverTree(Psn* psn_inst, InstanceTerm* driver_pin,
+                      float* tree_slack = nullptr)
     {
         if (!buffer_trees_.size())
         {
@@ -522,11 +589,22 @@ public:
             {
                 max_slack = slack;
                 max_tree  = tree;
+                if (tree_slack)
+                {
+                    *tree_slack = max_slack;
+                }
             }
         }
         return max_tree;
     }
 
+    bool
+    isGreater(float first, float second, float threshold = 1E-6F) const
+    {
+        return first > second &&
+               !(std::abs(first - second) <
+                 threshold * std::max(std::abs(first), std::abs(second)));
+    }
     bool
     isLess(float first, float second, float threshold) const
     {

@@ -49,7 +49,7 @@
 // * Standard Van Ginneken buffering (with pruning). [Done]
 // * Multiple buffer sizes. [Done]
 // * Inverter pair instead of buffer pairs. [Done]
-// * Simultaneous buffering and gate sizing. [TODO]
+// * Simultaneous buffering and gate sizing. [Done]
 // * Squeeze pruning. [TODO]
 // * Preslack pruning. [TODO]
 // * Buffer library pruning. [TODO]
@@ -60,7 +60,7 @@
 using namespace psn;
 
 TimingBufferTransform::TimingBufferTransform()
-    : buffer_count_(0), net_index_(0), buff_index_(0)
+    : buffer_count_(0), resize_count_(0), net_index_(0), buff_index_(0)
 {
 }
 
@@ -68,7 +68,8 @@ void
 TimingBufferTransform::bufferPin(Psn* psn_inst, InstanceTerm* pin,
                                  std::vector<LibraryCell*>& buffer_lib,
                                  std::vector<LibraryCell*>& inverter_lib,
-                                 bool resize_gates, float min_gain)
+                                 bool resize_gates, float min_gain,
+                                 float area_penalty)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
     if (handler.isTopLevel(pin))
@@ -91,8 +92,33 @@ TimingBufferTransform::bufferPin(Psn* psn_inst, InstanceTerm* pin,
                              inverter_lib, std::move(st_tree), resize_gates);
     if (buff_sol->bufferTrees().size())
     {
-        auto buff_tree = buff_sol->optimalDriverTree(psn_inst, pin);
-        if (buff_tree)
+        std::shared_ptr<BufferTree> buff_tree   = nullptr;
+        auto                        driver_cell = handler.instance(pin);
+        auto driver_lib = handler.libraryCell(driver_cell);
+        if (resize_gates && driver_cell &&
+            handler.outputPins(driver_cell).size() == 1)
+        {
+            buff_tree = buff_sol->optimalDriverTree(psn_inst, pin);
+            auto driver_types =
+                handler.equivalentCells(handler.libraryCell(driver_cell));
+            if (driver_types.size() == 1)
+            {
+                buff_tree = buff_sol->optimalDriverTree(psn_inst, pin);
+            }
+            else
+            {
+                buff_tree = buff_sol->optimalDriverTree(
+                    psn_inst, pin, driver_types, area_penalty);
+            }
+        }
+        else
+        {
+            buff_tree = buff_sol->optimalDriverTree(psn_inst, pin);
+        }
+        auto replace_driver = (buff_tree->hasDriverCell() &&
+                               buff_tree->driverCell() != driver_lib)
+                                  ? buff_tree->driverCell()
+                                  : nullptr;
         {
             float old_delay = handler.gateDelay(
                 pin, buff_sol->bufferTrees()[0]->totalCapacitance());
@@ -110,6 +136,11 @@ TimingBufferTransform::bufferPin(Psn* psn_inst, InstanceTerm* pin,
                     -std::numeric_limits<float>::epsilon())
             {
                 topDown(psn_inst, pin, buff_tree);
+                if (replace_driver)
+                {
+                    handler.replaceInstance(driver_cell, replace_driver);
+                    resize_count_++;
+                }
             }
             else
             {
@@ -192,7 +223,16 @@ void
 TimingBufferTransform::topDown(Psn* psn_inst, InstanceTerm* pin,
                                std::shared_ptr<BufferTree> tree)
 {
-    topDown(psn_inst, psn_inst->handler()->net(pin), tree);
+    auto net = psn_inst->handler()->net(pin);
+    if (!net)
+    {
+        net = psn_inst->handler()->net(psn_inst->handler()->term(pin));
+    }
+    if (!net)
+    {
+        PSN_LOG_ERROR("No net for {} !", psn_inst->handler()->name(pin));
+    }
+    topDown(psn_inst, net, tree);
 }
 void
 TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
@@ -214,11 +254,24 @@ TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
                       tree->location().getX(), tree->location().getY());
         auto tree_pin = tree->pin();
         auto tree_net = handler.net(tree_pin);
+        if (!tree_net)
+        {
+            // Top-level pin
+            tree_net = handler.net(handler.term(tree_pin));
+        }
         if (tree_net != net)
         {
             auto inst = handler.instance(tree_pin);
             handler.disconnect(tree_pin);
-            handler.connect(net, inst, handler.libraryPin(tree_pin));
+            auto lib_pin = handler.libraryPin(tree_pin);
+            if (!lib_pin)
+            {
+                handler.connect(net, inst, handler.topPort(tree_pin));
+            }
+            else
+            {
+                handler.connect(net, inst, handler.libraryPin(tree_pin));
+            }
         }
     }
     else if (tree->isBuffered())
@@ -255,7 +308,8 @@ int
 TimingBufferTransform::fixCapacitanceViolations(
     Psn* psn_inst, std::vector<InstanceTerm*> driver_pins,
     std::vector<LibraryCell*>& buffer_lib,
-    std::vector<LibraryCell*>& inverter_lib, bool resize_gates, float min_gain)
+    std::vector<LibraryCell*>& inverter_lib, bool resize_gates, float min_gain,
+    float area_penalty)
 {
     PSN_LOG_DEBUG("Fixing capacitance violations");
     DatabaseHandler& handler = *(psn_inst->handler());
@@ -280,7 +334,7 @@ TimingBufferTransform::fixCapacitanceViolations(
                 PSN_LOG_DEBUG("Fixing cap. violations for pin {}",
                               handler.name(pin));
                 bufferPin(psn_inst, pin, buffer_lib, inverter_lib, resize_gates,
-                          min_gain);
+                          min_gain, area_penalty);
             }
         }
     }
@@ -290,7 +344,8 @@ int
 TimingBufferTransform::fixTransitionViolations(
     Psn* psn_inst, std::vector<InstanceTerm*> driver_pins,
     std::vector<LibraryCell*>& buffer_lib,
-    std::vector<LibraryCell*>& inverter_lib, bool resize_gates, float min_gain)
+    std::vector<LibraryCell*>& inverter_lib, bool resize_gates, float min_gain,
+    float area_penalty)
 {
     PSN_LOG_DEBUG("Fixing transition violations");
     DatabaseHandler& handler = *(psn_inst->handler());
@@ -317,7 +372,7 @@ TimingBufferTransform::fixTransitionViolations(
                 PSN_LOG_DEBUG("Fixing transition violations for pin {}",
                               handler.name(pin));
                 bufferPin(psn_inst, pin, buffer_lib, inverter_lib, resize_gates,
-                          min_gain);
+                          min_gain, area_penalty);
             }
         }
     }
@@ -329,7 +384,8 @@ TimingBufferTransform::timingBuffer(
     Psn* psn_inst, bool fix_cap, bool fix_transition,
     std::unordered_set<std::string> buffer_lib_names,
     std::unordered_set<std::string> inverter_lib_names, bool resize_gates,
-    bool use_inverter_pair, int max_iteration, float min_gain)
+    bool use_inverter_pair, int max_iteration, float min_gain,
+    float area_penalty)
 {
     std::vector<LibraryCell*> buffer_lib;
     std::vector<LibraryCell*> inverter_lib;
@@ -408,25 +464,27 @@ TimingBufferTransform::timingBuffer(
         PSN_LOG_DEBUG("Fix iteration {}", i);
         auto driver_pins = handler.levelDriverPins();
         std::reverse(driver_pins.begin(), driver_pins.end());
-        bool hasVio      = false;
-        int  pre_fix_cap = buffer_count_;
-        int  after_fix_cap;
+        bool hasVio         = false;
+        int  pre_fix_buff   = buffer_count_;
+        int  pre_fix_resize = resize_count_;
         if (fix_cap)
         {
-            after_fix_cap =
-                fixCapacitanceViolations(psn_inst, driver_pins, buffer_lib,
-                                         inverter_lib, resize_gates, min_gain);
-            if (after_fix_cap != pre_fix_cap)
+            fixCapacitanceViolations(psn_inst, driver_pins, buffer_lib,
+                                     inverter_lib, resize_gates, min_gain,
+                                     area_penalty);
+            if (buffer_count_ != pre_fix_buff ||
+                resize_count_ != pre_fix_resize)
             {
                 hasVio = true;
             }
         }
         if (fix_transition)
         {
-            after_fix_cap =
-                fixTransitionViolations(psn_inst, driver_pins, buffer_lib,
-                                        inverter_lib, resize_gates, min_gain);
-            if (after_fix_cap != pre_fix_cap)
+            fixTransitionViolations(psn_inst, driver_pins, buffer_lib,
+                                    inverter_lib, resize_gates, min_gain,
+                                    area_penalty);
+            if (buffer_count_ != pre_fix_buff ||
+                resize_count_ != pre_fix_resize)
             {
                 hasVio = true;
             }
@@ -437,17 +495,21 @@ TimingBufferTransform::timingBuffer(
             break;
         }
     }
-    return buffer_count_;
+    PSN_LOG_INFO("Placed {} buffers", buffer_count_);
+    PSN_LOG_INFO("Resized {} gates", resize_count_);
+    return buffer_count_ + resize_count_;
 }
 
 int
 TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
     buffer_count_                                     = 0;
+    resize_count_                                     = 0;
     net_index_                                        = 0;
     buff_index_                                       = 0;
     int                             max_iter          = 1;
     float                           min_gain          = 0;
+    float                           area_penalty      = 0.0;
     bool                            resize_gates      = false;
     bool                            use_inverter_pair = false;
     bool                            use_all_buffers   = false;
@@ -456,7 +518,9 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     std::unordered_set<std::string> inverter_lib_names;
     std::unordered_set<std::string> keywords(
         {"-buffers", "--buffers", "-inverters", "--inverters",
-         "-enable_gate_resize", "--enable_gate_resize"});
+         "-enable_gate_resize", "--enable_gate_resize", "-iterations",
+         "--min_gain", "-min_gain", "--iterations", "-area_penalty",
+         "--area_penalty"});
     if (args.size() < 2)
     {
         PSN_LOG_ERROR(help());
@@ -545,7 +609,7 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         else if (args[i] == "-iterations" || args[i] == "--iterations")
         {
             i++;
-            if (i < args.size() || !StringUtils::isNumber(args[i]))
+            if (i >= args.size() || !StringUtils::isNumber(args[i]))
             {
                 PSN_LOG_ERROR(help());
                 return -1;
@@ -558,7 +622,7 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         else if (args[i] == "-min_gain" || args[i] == "--min_gain")
         {
             i++;
-            if (i < args.size() || !StringUtils::isNumber(args[i]))
+            if (i >= args.size() || !StringUtils::isNumber(args[i]))
             {
                 PSN_LOG_ERROR(help());
                 return -1;
@@ -566,6 +630,19 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
             else
             {
                 min_gain = atof(args[i].c_str());
+            }
+        }
+        else if (args[i] == "-area_penalty" || args[i] == "--area_penalty")
+        {
+            i++;
+            if (i >= args.size() || !StringUtils::isNumber(args[i]))
+            {
+                PSN_LOG_ERROR(help());
+                return -1;
+            }
+            else
+            {
+                area_penalty = atof(args[i].c_str());
             }
         }
         else if (args[i] == "-enable_gate_resize" ||
@@ -600,5 +677,5 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     }
     return timingBuffer(psn_inst, true, true, buffer_lib_names,
                         inverter_lib_names, resize_gates, use_inverter_pair,
-                        max_iter, min_gain);
+                        max_iter, min_gain, area_penalty);
 }

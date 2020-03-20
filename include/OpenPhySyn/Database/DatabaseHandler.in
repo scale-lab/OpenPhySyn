@@ -60,6 +60,7 @@ virtual float                      power(std::vector<Instance*>& insts);
 virtual float                      power();
 virtual void                       setLocation(Instance* inst, Point pt);
 virtual LibraryTerm*               libraryPin(InstanceTerm* term) const;
+virtual Port*                      topPort(InstanceTerm* term) const;
 virtual LibraryCell*               libraryCell(InstanceTerm* term) const;
 virtual LibraryCell*               libraryCell(Instance* inst) const;
 virtual LibraryCell*               libraryCell(const char* name) const;
@@ -87,12 +88,19 @@ virtual float targetLoad(LibraryCell* cell);
 virtual float gateDelay(Instance* inst, InstanceTerm* to, float in_slew = 0,
                         LibraryTerm* from = nullptr, float* drvr_slew = nullptr,
                         int rise_fall = -1);
+virtual float gateDelay(LibraryCell* cell, InstanceTerm* to, float in_slew = 0,
+                        LibraryTerm* from = nullptr, float* drvr_slew = nullptr,
+                        int rise_fall = -1);
 virtual float gateDelay(InstanceTerm* out_port, float load_cap);
 virtual float gateDelay(LibraryTerm* out_port, float load_cap);
-virtual float bufferChainDelayPenalty(LibraryCell* cell);
+virtual float bufferChainDelayPenalty(float load_cap);
 virtual float inverterInputCapacitance(LibraryCell* buffer_cell);
 virtual float bufferInputCapacitance(LibraryCell* buffer_cell);
 virtual float bufferOutputCapacitance(LibraryCell* buffer_cell);
+virtual LibraryTerm*  largestInputCapacitanceLibraryPin(Instance* cell);
+virtual InstanceTerm* largestLoadCapacitancePin(Instance* cell);
+virtual float         largestInputCapacitance(Instance* cell);
+virtual float         largestInputCapacitance(LibraryCell* cell);
 virtual float portCapacitance(const LibraryTerm* port, bool isMax = true);
 virtual float bufferDelay(psn::LibraryCell* buffer_cell, float load_cap);
 virtual float maxLoad(LibraryTerm* term);
@@ -110,6 +118,7 @@ virtual std::vector<LibraryCell*> tiehiCells() const;
 virtual std::vector<LibraryCell*> tieloCells() const;
 virtual std::vector<LibraryCell*> inverterCells() const;
 virtual std::vector<LibraryCell*> bufferCells() const;
+virtual std::vector<LibraryCell*> equivalentCells(LibraryCell* cell);
 virtual LibraryCell*              smallestInverterCell() const;
 virtual LibraryCell*              smallestBufferCell() const;
 virtual bool                      isClocked(InstanceTerm* term) const;
@@ -131,6 +140,7 @@ virtual bool                      isCombinational(Instance* inst) const;
 virtual bool                      isCombinational(LibraryCell* cell) const;
 virtual bool      isSingleOutputCombinational(Instance* inst) const;
 virtual bool      isSingleOutputCombinational(LibraryCell* cell) const;
+virtual void      replaceInstance(Instance* inst, LibraryCell* cell);
 virtual bool      violatesMaximumCapacitance(InstanceTerm* term,
                                              float         load_cap) const;
 virtual bool      violatesMaximumCapacitance(InstanceTerm* term) const;
@@ -144,6 +154,7 @@ virtual void createClock(const char* clock_name, std::vector<std::string> ports,
 virtual Net* createNet(const char* net_name);
 virtual void connect(Net* net, InstanceTerm* term) const;
 virtual void connect(Net* net, Instance* inst, LibraryTerm* port) const;
+virtual void connect(Net* net, Instance* inst, Port* port) const;
 virtual void disconnect(InstanceTerm* term) const;
 virtual int  disconnectAll(Net* net) const;
 virtual void swapPins(InstanceTerm* first, InstanceTerm* second);

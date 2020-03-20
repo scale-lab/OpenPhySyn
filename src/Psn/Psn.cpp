@@ -663,6 +663,8 @@ Psn::printCommands(bool raw_str)
         "print_transforms		Print loaded transforms\n"
         "print_usage			Print usage instructions\n"
         "print_version			Print tool version\n"
+        "repair_timing			Repairs maximum capacitance and "
+        "transition time violations\n"
         "set_log				Alias for "
         "set_log_level\n"
         "set_log_level			Set log level [trace, debug, info, "

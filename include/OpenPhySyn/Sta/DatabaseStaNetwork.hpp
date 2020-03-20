@@ -183,4 +183,8 @@ protected:
 };
 
 } // namespace sta
+namespace psn
+{
+using sta::DatabaseStaNetwork;
+}
 #endif

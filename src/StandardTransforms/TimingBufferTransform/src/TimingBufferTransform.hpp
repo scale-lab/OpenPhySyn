@@ -46,12 +46,13 @@ class TimingBufferTransform : public PsnTransform
 
 private:
     int  buffer_count_;
+    int  resize_count_;
     int  net_index_;
     int  buff_index_;
     void bufferPin(Psn* psn_inst, InstanceTerm* pin,
                    std::vector<LibraryCell*>& buffer_lib,
                    std::vector<LibraryCell*>& inverter_lib, bool resize_gates,
-                   float min_gain);
+                   float min_gain, float area_penalty);
     std::shared_ptr<BufferSolution>
          bottomUp(Psn* psn_inst, SteinerPoint pt, SteinerPoint prev,
                   std::vector<LibraryCell*>&   buffer_lib,
@@ -67,17 +68,20 @@ private:
                      std::unordered_set<std::string> inverter_lib_names =
                          std::unordered_set<std::string>(),
                      bool resize_gates = false, bool use_inverter_pair = false,
-                     int max_iterations = 1, float min_gain = 0);
+                     int max_iterations = 1, float min_gain = 0.0,
+                     float area_penalty = 0.0);
     int fixCapacitanceViolations(Psn*                       psn_inst,
                                  std::vector<InstanceTerm*> driver_pins,
                                  std::vector<LibraryCell*>& buffer_lib,
                                  std::vector<LibraryCell*>& inverter_lib,
-                                 bool resize_gates, float min_gain);
+                                 bool resize_gates, float min_gain,
+                                 float area_penalty);
     int fixTransitionViolations(Psn*                       psn_inst,
                                 std::vector<InstanceTerm*> driver_pins,
                                 std::vector<LibraryCell*>& buffer_lib,
                                 std::vector<LibraryCell*>& inverter_lib,
-                                bool resize_gates, float min_gain);
+                                bool resize_gates, float min_gain,
+                                float area_penalty);
 
 public:
     TimingBufferTransform();
@@ -86,12 +90,11 @@ public:
 };
 
 DEFINE_TRANSFORM(
-    TimingBufferTransform, "timing_buffer", "1.2",
+    TimingBufferTransform, "timing_buffer", "1.3",
     "Performs several variations of buffering and resizing to fix timing "
     "violations",
     "Usage: transform timing_buffer buffers -all|<set of buffers> [-inverters "
     "-all|<set of inverters>] [-iterations <# iterations=1>] [-min_gain "
-    "<gain=0ps>]"
-    "[-enable_gate_resize]")
+    "<gain=0ps>] [-area_penalty <penalty=1ps/um>] [-enable_gate_resize]")
 
 } // namespace psn

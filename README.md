@@ -112,6 +112,19 @@ By default, the following transforms are built with OpenPhySyn:
 -   `constant_propagation`: Perform constant propagation optimization across the design hierarchy.
 -   `timing_buffer`: Perform van Ginneken based buffer tree insertion to fix capacitance and transition violations.
 
+# Fixing timing violations
+
+The `repair_timing` command repairs maximum capacitance and transition time violations by buffer tree insertion.
+
+`repair_timing` options:
+
+-   **-buffers {buffer cells}**: Specify a list of non-inverting buffer cells to use.
+-   **-inverters {inverter cells}**: Specify a list of inverting buffer cells to use.
+-   **-iterations {iterations=1}**: Specify the maximum number of iterations to fix violations.
+-   **-min_gain {gain=0.0}**: Minimum slack gain to accept a buffering option.
+-   **-enable_gate_resize**: Enable driver sizing.
+-   **-area_penalty {penalty area/time=0.0}**: When used with **-enable_gate_resize** penalizes solutions that cause area increase.
+
 ## Optimization Commands
 
 The main provided command for optimization are `optimize_design` for physical design optimization and `optimize_logic`.

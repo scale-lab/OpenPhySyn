@@ -66,10 +66,11 @@
 
 namespace psn
 {
-OpenStaHandler::OpenStaHandler(Psn* psn_inst, sta::DatabaseSta* sta)
+OpenStaHandler::OpenStaHandler(Psn* psn_inst, DatabaseSta* sta)
     : sta_(sta),
       db_(sta->db()),
       has_equiv_cells_(false),
+      has_buffer_inverter_seq_(false),
       has_target_loads_(false),
       psn_(psn_inst),
       has_wire_rc_(false)
@@ -288,6 +289,24 @@ OpenStaHandler::bufferCells() const
         cells.insert(cells.end(), buff_libs->begin(), buff_libs->end());
     }
     return cells;
+}
+std::vector<LibraryCell*>
+OpenStaHandler::equivalentCells(LibraryCell* cell)
+{
+    if (!has_equiv_cells_)
+    {
+        makeEquivalentCells();
+    }
+    auto                      equiv_cells = sta_->equivCells(cell);
+    std::vector<LibraryCell*> filtered_cells;
+    for (auto& cell : *equiv_cells)
+    {
+        if (!dontUse(cell))
+        {
+            filtered_cells.push_back(cell);
+        }
+    }
+    return filtered_cells;
 }
 
 LibraryCell*
@@ -561,8 +580,6 @@ OpenStaHandler::levelDriverPins() const
 
     auto handler_network = network();
 
-    handler_network->graphDelayCalc()->delaysInvalid();
-    handler_network->search()->arrivalsInvalid();
     std::vector<InstanceTerm*> terms;
     std::vector<sta::Vertex*>  vertices;
     sta::VertexIterator        itr(handler_network->graph());
@@ -732,6 +749,12 @@ LibraryTerm*
 OpenStaHandler::libraryPin(InstanceTerm* term) const
 {
     return network()->libertyPort(term);
+}
+
+Port*
+OpenStaHandler::topPort(InstanceTerm* term) const
+{
+    return network()->port(term);
 }
 bool
 OpenStaHandler::isClocked(InstanceTerm* term) const
@@ -1194,6 +1217,11 @@ OpenStaHandler::connect(Net* net, Instance* inst, LibraryTerm* port) const
 {
     sta_->connectPin(inst, port, net);
 }
+void
+OpenStaHandler::connect(Net* net, Instance* inst, Port* port) const
+{
+    sta_->connectPin(inst, port, net);
+}
 
 std::vector<Net*>
 OpenStaHandler::nets() const
@@ -1321,12 +1349,12 @@ OpenStaHandler::clear()
     sta_->clear();
     db_->clear();
 }
-sta::DatabaseStaNetwork*
+DatabaseStaNetwork*
 OpenStaHandler::network() const
 {
     return sta_->getDbNetwork();
 }
-sta::DatabaseSta*
+DatabaseSta*
 OpenStaHandler::sta() const
 {
     return sta_;
@@ -1402,6 +1430,20 @@ OpenStaHandler::isSingleOutputCombinational(Instance* inst) const
     }
     return isSingleOutputCombinational(libraryCell(inst));
 }
+void
+OpenStaHandler::replaceInstance(Instance* inst, LibraryCell* cell)
+{
+    auto current_name = name(cell);
+    auto db_lib_cell  = db_->findMaster(current_name.c_str());
+    if (db_lib_cell)
+    {
+        auto db_inst     = network()->staToDb(inst);
+        auto db_inst_lib = db_inst->getMaster();
+        auto sta_cell    = network()->dbToSta(db_lib_cell);
+        sta_->replaceCell(inst, sta_cell);
+    }
+}
+
 bool
 OpenStaHandler::isSingleOutputCombinational(LibraryCell* cell) const
 {
@@ -1567,8 +1609,9 @@ OpenStaHandler::allLibs() const
 void
 OpenStaHandler::resetCache()
 {
-    has_equiv_cells_  = false;
-    has_target_loads_ = false;
+    has_equiv_cells_         = false;
+    has_buffer_inverter_seq_ = false;
+    has_target_loads_        = false;
     target_load_map_.clear();
 }
 void
@@ -1667,12 +1710,202 @@ OpenStaHandler::evaluateFunctionExpression(
         return -1;
     }
 }
+
 float
-OpenStaHandler::bufferChainDelayPenalty(LibraryCell* cell)
+OpenStaHandler::bufferChainDelayPenalty(float load_cap)
 {
-    // TODO
-    return 0.0;
+    if (!has_buffer_inverter_seq_)
+    {
+        computeBuffersDelayPenalty();
+    }
+
+    if (!buffer_inverter_seq_.size())
+    {
+        return 0.0;
+    }
+
+    if (!penalty_cache_.count(load_cap))
+    {
+        auto smallest_buff = buffer_inverter_seq_[0];
+        if (bufferInputCapacitance(smallest_buff) >= load_cap)
+        {
+            penalty_cache_[load_cap] = 0.0;
+            return 0.0;
+        }
+        else
+        {
+            float        min_penalty = sta::INF;
+            LibraryCell* c;
+            for (auto& buf : buffer_inverter_seq_)
+            {
+                bool  is_inverting = inverting_buffer_.count(buf) > 0;
+                float d_penalty    = is_inverting
+                                      ? inverting_buffer_penalty_map_[buf]
+                                      : buffer_penalty_map_[buf];
+                auto  out_pin = bufferOutputPin(buf);
+                float delay   = gateDelay(out_pin, load_cap);
+                float penalty = delay + d_penalty;
+                if (penalty < min_penalty)
+                {
+                    min_penalty = penalty;
+                    c           = buf;
+                }
+            }
+            penalty_cache_[load_cap] = min_penalty;
+            return min_penalty;
+        }
+    }
+    return penalty_cache_[load_cap];
 }
+
+void
+OpenStaHandler::computeBuffersDelayPenalty(bool include_inverting)
+{
+    // TODO Support include buffer slews
+    auto all_libs = allLibs();
+    buffer_inverter_seq_.clear();
+    inverting_buffer_.clear();
+    non_inverting_buffer_.clear();
+
+    for (auto& lib : all_libs)
+    {
+        auto buff_types = *lib->buffers();
+        for (auto& b :
+             std::vector<LibraryCell*>(buff_types.begin(), buff_types.end()))
+        {
+            if (!dontUse(b))
+            {
+                non_inverting_buffer_.insert(b);
+                buffer_inverter_seq_.push_back(b);
+            }
+        }
+    }
+    if (include_inverting)
+    {
+        auto all_inverters = inverterCells();
+        for (auto& inv : all_inverters)
+        {
+            if (!dontUse(inv))
+            {
+                inverting_buffer_.insert(inv);
+                buffer_inverter_seq_.push_back(inv);
+            }
+        }
+    }
+
+    std::sort(buffer_inverter_seq_.begin(), buffer_inverter_seq_.end(),
+              [=](LibraryCell* b1, LibraryCell* b2) -> bool {
+                  return bufferInputCapacitance(b1) <
+                         bufferInputCapacitance(b2);
+              });
+    has_buffer_inverter_seq_ = true;
+    buffer_penalty_map_.clear();
+    inverting_buffer_penalty_map_.clear();
+    penalty_cache_.clear();
+    if (!buffer_inverter_seq_.size())
+    {
+        return;
+    }
+    auto first_cell = buffer_inverter_seq_[0];
+    buffer_penalty_map_[first_cell] =
+        inverting_buffer_.count(first_cell) ? sta::INF : 0;
+    inverting_buffer_penalty_map_[first_cell] =
+        inverting_buffer_.count(first_cell) ? 0 : sta::INF;
+
+    for (size_t i = 1; i < buffer_inverter_seq_.size(); i++)
+    {
+        float        min_penalty = sta::INF;
+        LibraryCell* best_chain  = nullptr;
+        bool         is_sink_inverting =
+            inverting_buffer_.count(buffer_inverter_seq_[i]) > 0;
+        for (size_t j = 0; j < i; j++)
+        {
+            bool is_inverting =
+                inverting_buffer_.count(buffer_inverter_seq_[j]) > 0;
+            auto  out_pin = bufferOutputPin(buffer_inverter_seq_[j]);
+            float delay   = gateDelay(
+                out_pin, bufferInputCapacitance(buffer_inverter_seq_[i]));
+
+            float d_penalty =
+                is_inverting
+                    ? inverting_buffer_penalty_map_[buffer_inverter_seq_[j]]
+                    : buffer_penalty_map_[buffer_inverter_seq_[j]];
+
+            float penalty = delay + d_penalty;
+            if (penalty < min_penalty)
+            {
+                min_penalty = penalty;
+                best_chain  = buffer_inverter_seq_[j];
+            }
+        }
+        if (is_sink_inverting)
+        {
+            inverting_buffer_penalty_map_[buffer_inverter_seq_[i]] =
+                min_penalty;
+        }
+        else
+        {
+            buffer_penalty_map_[buffer_inverter_seq_[i]] = min_penalty;
+        }
+    }
+}
+InstanceTerm*
+OpenStaHandler::largestLoadCapacitancePin(Instance* cell)
+{
+    float         max_cap = -sta::INF;
+    InstanceTerm* max_pin = nullptr;
+    for (auto& pin : inputPins(cell))
+    {
+        auto cap = loadCapacitance(pin);
+        if (cap > max_cap)
+        {
+            max_cap = cap;
+            max_pin = pin;
+        }
+    }
+    return max_pin;
+}
+LibraryTerm*
+OpenStaHandler::largestInputCapacitanceLibraryPin(Instance* cell)
+{
+    float        max_cap = -sta::INF;
+    LibraryTerm* max_pin = nullptr;
+    for (auto& pin : inputPins(cell))
+    {
+        auto cap = loadCapacitance(pin);
+        if (cap > max_cap)
+        {
+            max_cap = cap;
+            max_pin = libraryPin(pin);
+        }
+    }
+    return max_pin;
+}
+float
+OpenStaHandler::largestInputCapacitance(Instance* cell)
+{
+    return largestInputCapacitance(libraryCell(cell));
+}
+float
+OpenStaHandler::largestInputCapacitance(LibraryCell* cell)
+{
+    float max_cap    = -sta::INF;
+    auto  input_pins = libraryInputPins(cell);
+    if (!input_pins.size())
+    {
+        return 0.0;
+    }
+    for (auto& pin : input_pins)
+    {
+        float cap = pinCapacitance(pin);
+        if (cap > max_cap)
+        {
+            max_cap = cap;
+        }
+    }
+    return max_cap;
+}
+
 /* The following is borrowed from James Cherry's Resizer Code */
 
 // Find a target slew for the libraries and then
@@ -1704,8 +1937,15 @@ float
 OpenStaHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
                           LibraryTerm* from, float* drvr_slew, int rise_fall)
 {
-    sta::ArcDelay                        max      = -sta::INF;
-    auto                                 lib_cell = libraryCell(inst);
+    return gateDelay(libraryCell(inst), to, in_slew, from, drvr_slew,
+                     rise_fall);
+}
+float
+OpenStaHandler::gateDelay(LibraryCell* lib_cell, InstanceTerm* to,
+                          float in_slew, LibraryTerm* from, float* drvr_slew,
+                          int rise_fall)
+{
+    sta::ArcDelay                        max = -sta::INF;
     sta::LibertyCellTimingArcSetIterator itr(lib_cell);
     while (itr.hasNext())
     {

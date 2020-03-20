@@ -76,6 +76,7 @@ typedef odb::dbSet<Net>          NetSet;
 typedef odb::dbSet<BlockTerm>    BlockTermSet;
 typedef odb::dbSet<InstanceTerm> InstanceTermSet;
 typedef odb::dbIoType::Value     PinDirection;
+typedef sta::Port                Port;
 typedef odb::adsPoint            Point;
 typedef OpenDBHandler            DatabaseHandler;
 typedef odb::dbBTerm             Term;
@@ -103,6 +104,7 @@ typedef sta::PinSet         BlockTermSet;
 typedef sta::PinSet         InstanceTermSet;
 typedef sta::PortDirection  PinDirection;
 typedef sta::Term           Term;
+typedef sta::Port           Port;
 typedef odb::adsPoint       Point;
 typedef OpenStaHandler      DatabaseHandler;
 

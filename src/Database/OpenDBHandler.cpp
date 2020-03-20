@@ -592,7 +592,8 @@ OpenDBHandler::gateDelay(InstanceTerm* out_port, float load_cap)
     return 0.0;
 }
 float
-OpenDBHandler::bufferChainDelayPenalty(LibraryCell* cell)
+OpenDBHandler::bufferChainDelayPenalty(LibraryCell* cell, ,
+                                       float        area_penalty_alpha)
 {
     PSN_HANDLER_UNSUPPORTED_METHOD(OpenDBHandler, bufferChainDelayPenalty);
     return 0.0;

@@ -40,18 +40,20 @@
 #include <OpenPhySyn/Utils/PsnGlobal.hpp>
 #include <PsnLogger/PsnLogger.hpp>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
+
 namespace psn
 {
 class OpenStaHandler
 {
 public:
-    OpenStaHandler(Psn* psn_inst, sta::DatabaseSta* sta);
+    OpenStaHandler(Psn* psn_inst, DatabaseSta* sta);
 
 #include <OpenPhySyn/Database/DatabaseHandler.in>
 
-    sta::DatabaseStaNetwork* network() const;
-    sta::DatabaseSta*        sta() const;
+    DatabaseStaNetwork* network() const;
+    DatabaseSta*        sta() const;
     virtual ~OpenStaHandler();
 
     virtual int evaluateFunctionExpression(
@@ -60,20 +62,32 @@ public:
 
 private:
     sta::LibertyLibrarySeq allLibs() const;
-    sta::DatabaseSta*      sta_;
+    DatabaseSta*           sta_;
     Database*              db_;
 
-    const sta::MinMax* min_max_;
-    bool               has_equiv_cells_;
-    bool               has_target_loads_;
-    float              res_per_micron_;
-    float              cap_per_micron_;
-    bool               has_wire_rc_;
-    Psn*               psn_;
+    const sta::MinMax*        min_max_;
+    bool                      has_buffer_inverter_seq_;
+    bool                      has_equiv_cells_;
+    bool                      has_target_loads_;
+    float                     res_per_micron_;
+    float                     cap_per_micron_;
+    bool                      has_wire_rc_;
+    Psn*                      psn_;
+    std::vector<LibraryCell*> buffer_inverter_seq_;
+
+    std::unordered_map<LibraryCell*, float> buffer_penalty_map_;
+    std::unordered_map<LibraryCell*, float> inverting_buffer_penalty_map_;
+    std::unordered_set<LibraryCell*>        non_inverting_buffer_;
+    std::unordered_set<LibraryCell*>        inverting_buffer_;
+
+    std::unordered_map<float, float>
+        penalty_cache_; // TODO Convert into indexing table
 
     std::unordered_map<LibraryCell*, float> target_load_map_;
 
     sta::Vertex* vertex(InstanceTerm* term) const;
+
+    void computeBuffersDelayPenalty(bool include_inverting = true);
 
     /* The following code is borrowed from James Cherry's Resizer Code */
     const sta::Corner*              corner_;
