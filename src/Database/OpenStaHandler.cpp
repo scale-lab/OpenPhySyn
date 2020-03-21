@@ -509,6 +509,10 @@ OpenStaHandler::bufferClusters(float cluster_threshold, bool find_superior,
 std::vector<LibraryCell*>
 OpenStaHandler::equivalentCells(LibraryCell* cell)
 {
+    if (!libraryInputPins(cell).size())
+    {
+        return std::vector<LibraryCell*>({cell});
+    }
     if (!has_equiv_cells_)
     {
         makeEquivalentCells();
