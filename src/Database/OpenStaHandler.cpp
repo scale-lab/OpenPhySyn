@@ -37,6 +37,7 @@
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
+#include <OpenPhySyn/Utils/ClusteringUtils.hpp>
 #include <OpenSTA/dcalc/ArcDelayCalc.hh>
 #include <OpenSTA/dcalc/DcalcAnalysisPt.hh>
 #include <OpenSTA/dcalc/GraphDelayCalc.hh>
@@ -73,7 +74,8 @@ OpenStaHandler::OpenStaHandler(Psn* psn_inst, DatabaseSta* sta)
       has_buffer_inverter_seq_(false),
       has_target_loads_(false),
       psn_(psn_inst),
-      has_wire_rc_(false)
+      has_wire_rc_(false),
+      maximum_area_valid_(false)
 {
     // Use default corner for now
     corner_        = sta_->findCorner("default");
@@ -289,6 +291,220 @@ OpenStaHandler::bufferCells() const
         cells.insert(cells.end(), buff_libs->begin(), buff_libs->end());
     }
     return cells;
+}
+
+// cluster_threshold:
+// 1   : Single buffer cell
+// 3/4 : Small set
+// 1/4 : Medium set
+// 1/12: Large set
+// 0   : All buffer cells
+std::pair<std::vector<LibraryCell*>, std::vector<LibraryCell*>>
+OpenStaHandler::bufferClusters(float cluster_threshold, bool find_superior,
+                               bool include_inverting)
+{
+    std::vector<LibraryCell*>        buffer_cells, inverter_cells;
+    std::unordered_set<LibraryCell*> superior_buffer_cells,
+        superior_inverter_cells;
+    for (auto& buf : bufferCells())
+    {
+        if (!dontUse(buf))
+        {
+            buffer_cells.push_back(buf);
+        }
+    }
+    if (include_inverting)
+    {
+        for (auto& inv : inverterCells())
+        {
+            if (!dontUse(inv))
+            {
+                inverter_cells.push_back(inv);
+            }
+        }
+    }
+    std::sort(buffer_cells.begin(), buffer_cells.end(),
+              [=](LibraryCell* b1, LibraryCell* b2) -> bool {
+                  return bufferInputCapacitance(b1) <
+                         bufferInputCapacitance(b2);
+              });
+    std::sort(inverter_cells.begin(), inverter_cells.end(),
+              [=](LibraryCell* b1, LibraryCell* b2) -> bool {
+                  return bufferInputCapacitance(b1) <
+                         bufferInputCapacitance(b2);
+              });
+
+    // Get the smallest capacitance/resistance.
+    float min_buff_cap = bufferInputCapacitance(buffer_cells[0]);
+    float min_buff_resistance =
+        bufferOutputPin(buffer_cells[buffer_cells.size() - 1])
+            ->driveResistance();
+    float min_buff_slew      = 20E-12;
+    float min_inv_cap        = 0.0;
+    float min_inv_resistance = 0.0;
+    float min_inv_slew       = 20E-12;
+    if (inverter_cells.size())
+    {
+        min_inv_cap = bufferInputCapacitance(inverter_cells[0]);
+        float min_inv_resistance =
+            bufferOutputPin(inverter_cells[inverter_cells.size() - 1])
+                ->driveResistance();
+    }
+
+    // Find superior buffers/inverters.
+    if (!find_superior)
+    {
+        superior_buffer_cells.insert(buffer_cells.begin(), buffer_cells.end());
+        superior_inverter_cells.insert(inverter_cells.begin(),
+                                       inverter_cells.end());
+    }
+    else
+    {
+        for (int i = 1; i <= 100; i++)
+        {
+            float buf_cap = min_buff_cap * i;
+            float inv_cap = min_inv_cap * i;
+            for (int j = 1; j <= 25; j++)
+            {
+                float buf_res = min_buff_resistance * j;
+                float inv_res = min_inv_resistance * j;
+                for (int m = 1; m <= 1; m++)
+                {
+                    float        buf_slew   = m * min_buff_slew;
+                    float        inv_slew   = m * min_inv_slew;
+                    LibraryCell *chosen_buf = nullptr, *chosen_inv = nullptr;
+                    float        min_delay = sta::INF;
+                    for (auto& buf : buffer_cells)
+                    {
+                        float delay =
+                            buf_res * bufferInputCapacitance(buf) +
+                            gateDelay(bufferOutputPin(buf), buf_cap, &buf_slew);
+                        if (delay < min_delay &&
+                            buf_cap <= maxLoad(bufferOutputPin(buf)))
+                        {
+                            min_delay  = delay;
+                            chosen_buf = buf;
+                        }
+                    }
+                    min_delay = sta::INF;
+                    for (auto& inv : inverter_cells)
+                    {
+                        float delay =
+                            inv_res * bufferInputCapacitance(inv) +
+                            gateDelay(bufferOutputPin(inv), inv_cap, &buf_slew);
+                        if (delay < min_delay &&
+                            buf_cap <= maxLoad(bufferOutputPin(inv)))
+                        {
+                            min_delay  = delay;
+                            chosen_inv = inv;
+                        }
+                    }
+                    if (chosen_buf)
+                    {
+                        superior_buffer_cells.insert(chosen_buf);
+                    }
+                    if (chosen_inv)
+                    {
+                        superior_inverter_cells.insert(chosen_inv);
+                    }
+                }
+            }
+        }
+    }
+    std::unordered_map<LibraryCell*, float> input_capacitances;
+    std::unordered_map<LibraryCell*, float> drive_capacitances;
+    std::unordered_map<LibraryCell*, float> intrinsic_delays;
+    std::unordered_map<LibraryCell*, float> driver_conductance;
+    float max_buff_input_capacitances = -sta::INF;
+    float max_buff_drive_capacitance  = -sta::INF;
+    float max_buff_intrinsic_delays   = -sta::INF;
+    float max_buff_driver_conductance = -sta::INF;
+    float max_inv_input_capacitances  = -sta::INF;
+    float max_inv_drive_capacitance   = -sta::INF;
+    float max_inv_intrinsic_delays    = -sta::INF;
+    float max_inv_driver_conductance  = -sta::INF;
+    for (auto& buf : superior_buffer_cells)
+    {
+        auto output_pin         = bufferOutputPin(buf);
+        input_capacitances[buf] = bufferInputCapacitance(buf);
+        drive_capacitances[buf] = maxLoad(buf);
+        intrinsic_delays[buf]   = gateDelay(output_pin, min_buff_cap) -
+                                output_pin->driveResistance() * min_buff_cap;
+        driver_conductance[buf] = 1.0 / output_pin->driveResistance();
+        max_buff_input_capacitances =
+            std::max(max_buff_input_capacitances, input_capacitances[buf]);
+        max_buff_drive_capacitance =
+            std::max(max_buff_drive_capacitance, drive_capacitances[buf]);
+        max_buff_intrinsic_delays =
+            std::max(max_buff_intrinsic_delays, intrinsic_delays[buf]);
+        max_buff_driver_conductance =
+            std::max(max_buff_driver_conductance, driver_conductance[buf]);
+    }
+    for (auto& inv : superior_inverter_cells)
+    {
+        auto output_pin         = bufferOutputPin(inv);
+        input_capacitances[inv] = bufferInputCapacitance(inv);
+        drive_capacitances[inv] = maxLoad(inv);
+        intrinsic_delays[inv]   = gateDelay(output_pin, min_buff_cap) -
+                                output_pin->driveResistance() * min_buff_cap;
+        driver_conductance[inv] = 1.0 / output_pin->driveResistance();
+        max_inv_input_capacitances =
+            std::max(max_inv_input_capacitances, input_capacitances[inv]);
+        max_inv_drive_capacitance =
+            std::max(max_inv_drive_capacitance, drive_capacitances[inv]);
+        max_inv_intrinsic_delays =
+            std::max(max_inv_intrinsic_delays, intrinsic_delays[inv]);
+        max_inv_driver_conductance =
+            std::max(max_inv_driver_conductance, driver_conductance[inv]);
+    }
+
+    auto buff_distances = [&](LibraryCell* first,
+                              LibraryCell* second) -> float {
+        return std::sqrt(
+            std::pow((input_capacitances[first] - input_capacitances[second]) /
+                         max_buff_input_capacitances,
+                     2) +
+            std::pow((drive_capacitances[first] - drive_capacitances[second]) /
+                         max_buff_drive_capacitance,
+                     2) +
+            std::pow((intrinsic_delays[first] - intrinsic_delays[second]) /
+                         max_buff_intrinsic_delays,
+                     2) +
+            std::pow((driver_conductance[first] - driver_conductance[second]) /
+                         max_buff_driver_conductance,
+                     2)
+
+        );
+    };
+    auto inv_distances = [&](LibraryCell* first, LibraryCell* second) -> float {
+        return std::sqrt(
+            std::pow((input_capacitances[first] - input_capacitances[second]) /
+                         max_inv_input_capacitances,
+                     2) +
+            std::pow((drive_capacitances[first] - drive_capacitances[second]) /
+                         max_inv_drive_capacitance,
+                     2) +
+            std::pow((intrinsic_delays[first] - intrinsic_delays[second]) /
+                         max_inv_intrinsic_delays,
+                     2) +
+            std::pow((driver_conductance[first] - driver_conductance[second]) /
+                         max_inv_driver_conductance,
+                     2)
+
+        );
+    };
+
+    auto buff_vector = std::vector<LibraryCell*>(superior_buffer_cells.begin(),
+                                                 superior_buffer_cells.end());
+    auto inv_vector = std::vector<LibraryCell*>(superior_inverter_cells.begin(),
+                                                superior_inverter_cells.end());
+
+    auto buffer_cluster = KCenterClustering::cluster<LibraryCell*>(
+        buff_vector, buff_distances, cluster_threshold, 0);
+    auto inverter_cluster = KCenterClustering::cluster<LibraryCell*>(
+        inv_vector, inv_distances, cluster_threshold, 0);
+    return std::pair<std::vector<LibraryCell*>, std::vector<LibraryCell*>>(
+        buffer_cluster, inverter_cluster);
 }
 std::vector<LibraryCell*>
 OpenStaHandler::equivalentCells(LibraryCell* cell)
@@ -1211,6 +1427,29 @@ OpenStaHandler::createNet(const char* net_name)
     }
     return net;
 }
+float
+OpenStaHandler::resistance(LibraryTerm* term) const
+{
+    return term->driveResistance();
+}
+float
+OpenStaHandler::resistancePerMicron() const
+{
+    if (!has_wire_rc_)
+    {
+        PSN_LOG_WARN("Wire RC is not set or invalid");
+    }
+    return res_per_micron_;
+}
+float
+OpenStaHandler::capacitancePerMicron() const
+{
+    if (!has_wire_rc_)
+    {
+        PSN_LOG_WARN("Wire RC is not set or invalid");
+    }
+    return cap_per_micron_;
+}
 
 void
 OpenStaHandler::connect(Net* net, Instance* inst, LibraryTerm* port) const
@@ -1239,6 +1478,22 @@ OpenStaHandler::instances() const
     network()->findInstancesMatching(network()->topInstance(), &pattern,
                                      &all_insts);
     return static_cast<std::vector<Instance*>>(all_insts);
+}
+void
+OpenStaHandler::setDontUse(std::vector<std::string>& cell_names)
+{
+    for (auto& name : cell_names)
+    {
+        auto cell = libraryCell(name.c_str());
+        if (!cell)
+        {
+            PSN_LOG_WARN("Cannot find cell with the name {}", name);
+        }
+        else
+        {
+            dont_use_.insert(cell);
+        }
+    }
 }
 
 std::string
@@ -1325,6 +1580,13 @@ OpenStaHandler::technology() const
     }
     LibraryTechnology* tech = lib->getTech();
     return tech;
+}
+
+bool
+OpenStaHandler::hasLiberty() const
+{
+    sta::LibertyLibraryIterator* iter = network()->libertyLibraryIterator();
+    return iter->hasNext();
 }
 
 Block*
@@ -1612,6 +1874,7 @@ OpenStaHandler::resetCache()
     has_equiv_cells_         = false;
     has_buffer_inverter_seq_ = false;
     has_target_loads_        = false;
+    maximum_area_valid_      = false;
     target_load_map_.clear();
 }
 void
@@ -1934,6 +2197,57 @@ OpenStaHandler::targetLoad(LibraryCell* cell)
 }
 
 float
+OpenStaHandler::coreArea() const
+{
+    auto block = top();
+    Rect core;
+    auto rows = block->getRows();
+    if (rows.size() > 0)
+    {
+        core.mergeInit();
+        for (auto db_row : block->getRows())
+        {
+            int orig_x, orig_y;
+            db_row->getOrigin(orig_x, orig_y);
+            Rect row_bbox;
+            db_row->getBBox(row_bbox);
+            core.merge(row_bbox);
+        }
+    }
+    else
+    {
+        block->getDieArea(core);
+    }
+    return dbuToMeters(core.dx()) * dbuToMeters(core.dy());
+}
+
+bool
+OpenStaHandler::maximumUtilizationViolation() const
+{
+    return sta::fuzzyGreaterEqual(area(), maximumArea());
+}
+void
+OpenStaHandler::setMaximumArea(float area)
+{
+    maximum_area_       = area;
+    maximum_area_valid_ = true;
+}
+bool
+OpenStaHandler::hasMaximumArea() const
+{
+    return maximum_area_valid_;
+}
+float
+OpenStaHandler::maximumArea() const
+{
+    if (!maximum_area_valid_)
+    {
+        PSN_LOG_WARN("Maximum area is not set or invalid");
+    }
+    return maximum_area_;
+}
+
+float
 OpenStaHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
                           LibraryTerm* from, float* drvr_slew, int rise_fall)
 {
@@ -2071,10 +2385,10 @@ std::set<Net*>
 OpenStaHandler::clockNets() const
 {
     std::set<Net*>            nets;
-    sta::ClkArrivalSearchPred srch_pred(network());
-    sta::BfsFwdIterator       bfs(sta::BfsIndex::other, &srch_pred, network());
+    sta::ClkArrivalSearchPred srch_pred(sta_);
+    sta::BfsFwdIterator       bfs(sta::BfsIndex::other, &srch_pred, sta_);
     sta::PinSet               clk_pins;
-    network()->search()->findClkVertexPins(clk_pins);
+    sta_->search()->findClkVertexPins(clk_pins);
     for (auto pin : clk_pins)
     {
         sta::Vertex *vert, *bi_vert;
@@ -2152,13 +2466,13 @@ OpenStaHandler::slewLimit(InstanceTerm* pin, sta::MinMax* min_max,
 }
 
 float
-OpenStaHandler::gateDelay(InstanceTerm* pin, float load_cap)
+OpenStaHandler::gateDelay(InstanceTerm* pin, float load_cap, float* tr_slew)
 {
-    return gateDelay(libraryPin(pin), load_cap);
+    return gateDelay(libraryPin(pin), load_cap, tr_slew);
 }
 
 float
-OpenStaHandler::gateDelay(LibraryTerm* out_port, float load_cap)
+OpenStaHandler::gateDelay(LibraryTerm* out_port, float load_cap, float* tr_slew)
 {
     if (!has_target_loads_)
     {
@@ -2176,11 +2490,12 @@ OpenStaHandler::gateDelay(LibraryTerm* out_port, float load_cap)
             sta::TimingArcSetArcIterator arc_iter(arc_set);
             while (arc_iter.hasNext())
             {
-                sta::TimingArc* arc     = arc_iter.next();
-                sta::RiseFall*  in_rf   = arc->fromTrans()->asRiseFall();
-                float           in_slew = target_slews_[in_rf->index()];
-                sta::ArcDelay   gate_delay;
-                sta::Slew       drvr_slew;
+                sta::TimingArc* arc   = arc_iter.next();
+                sta::RiseFall*  in_rf = arc->fromTrans()->asRiseFall();
+                float           in_slew =
+                    tr_slew ? *tr_slew : target_slews_[in_rf->index()];
+                sta::ArcDelay gate_delay;
+                sta::Slew     drvr_slew;
                 sta_->arcDelayCalc()->gateDelay(cell, arc, in_slew, load_cap,
                                                 nullptr, 0.0, pvt_, dcalc_ap_,
                                                 gate_delay, drvr_slew);
@@ -2200,7 +2515,7 @@ OpenStaHandler::bufferDelay(psn::LibraryCell* buffer_cell, float load_cap)
 }
 
 float
-OpenStaHandler::portCapacitance(const LibraryTerm* port, bool isMax)
+OpenStaHandler::portCapacitance(const LibraryTerm* port, bool isMax) const
 {
     float cap1 = port->capacitance(
         sta::RiseFall::rise(), isMax ? sta::MinMax::max() : sta::MinMax::min());
@@ -2232,7 +2547,7 @@ OpenStaHandler::inverterInputCapacitance(LibraryCell* inv_cell)
     return portCapacitance(input);
 }
 float
-OpenStaHandler::bufferInputCapacitance(LibraryCell* buffer_cell)
+OpenStaHandler::bufferInputCapacitance(LibraryCell* buffer_cell) const
 {
     LibraryTerm *input, *output;
     buffer_cell->bufferPorts(input, output);
@@ -2281,7 +2596,7 @@ OpenStaHandler::findBufferTargetSlews(sta::LibertyLibrarySeq* resize_libs)
 bool
 OpenStaHandler::dontUse(LibraryCell* cell) const
 {
-    return cell->dontUse();
+    return cell->dontUse() || dont_use_.count(cell);
 }
 bool
 OpenStaHandler::dontTouch(Instance*) const

@@ -74,6 +74,10 @@ private:
     bool                      has_wire_rc_;
     Psn*                      psn_;
     std::vector<LibraryCell*> buffer_inverter_seq_;
+    float                     maximum_area_;
+    bool                      maximum_area_valid_;
+
+    std::unordered_set<LibraryCell*> dont_use_;
 
     std::unordered_map<LibraryCell*, float> buffer_penalty_map_;
     std::unordered_map<LibraryCell*, float> inverting_buffer_penalty_map_;

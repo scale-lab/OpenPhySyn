@@ -80,7 +80,6 @@ Psn::Psn(Database* db) : db_(db), interp_(nullptr)
         initializeDatabase();
     }
     exec_path_ = FileUtils::executablePath();
-    settings_  = new DesignSettings();
     initializeSta();
     db_handler_ = new DatabaseHandler(this, sta_);
 }
@@ -113,7 +112,6 @@ Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
     }
     exec_path_  = FileUtils::executablePath();
     db_         = sta_->db();
-    settings_   = new DesignSettings();
     db_handler_ = new DatabaseHandler(this, sta_);
 }
 
@@ -141,7 +139,6 @@ Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
 
 Psn::~Psn()
 {
-    delete settings_;
     delete db_handler_;
     delete sta_;
     if (db_ != nullptr)
@@ -313,10 +310,15 @@ Psn::handler() const
     return db_handler_;
 }
 
-DesignSettings*
-Psn::settings() const
+bool
+Psn::hasDesign() const
 {
-    return settings_;
+    return (database() && database()->getChip() != nullptr);
+}
+bool
+Psn::hasLiberty() const
+{
+    return handler()->hasLiberty();
 }
 
 Psn&
@@ -408,7 +410,7 @@ Psn::hasTransform(std::string transform_name)
 int
 Psn::runTransform(std::string transform_name, std::vector<std::string> args)
 {
-    if (!database() || database()->getChip() == nullptr)
+    if (!hasDesign())
     {
         PSN_LOG_ERROR("Could not find any loaded design.");
         return -1;
@@ -845,9 +847,6 @@ Psn::setWireRC(float res_per_micon, float cap_per_micron)
         PSN_LOG_ERROR("Could not find any loaded design.");
         return;
     }
-    settings()
-        ->setResistancePerMicron(res_per_micon)
-        ->setCapacitancePerMicron(cap_per_micron);
     handler()->setWireRC(res_per_micon, cap_per_micron);
 }
 int

@@ -50,9 +50,9 @@
 // * Multiple buffer sizes. [Done]
 // * Inverter pair instead of buffer pairs. [Done]
 // * Simultaneous buffering and gate sizing. [Done]
+// * Buffer library pruning. [Done]
 // * Squeeze pruning. [TODO]
 // * Preslack pruning. [TODO]
-// * Buffer library pruning. [TODO]
 // * Timerless buffering. [TODO]
 // * Layout aware buffering. [TODO]
 // * Logic aware buffering. [TODO]
@@ -60,7 +60,11 @@
 using namespace psn;
 
 TimingBufferTransform::TimingBufferTransform()
-    : buffer_count_(0), resize_count_(0), net_index_(0), buff_index_(0)
+    : buffer_count_(0),
+      resize_count_(0),
+      net_index_(0),
+      buff_index_(0),
+      current_area_(0.0)
 {
 }
 
@@ -139,6 +143,8 @@ TimingBufferTransform::bufferPin(Psn* psn_inst, InstanceTerm* pin,
                 if (replace_driver)
                 {
                     handler.replaceInstance(driver_cell, replace_driver);
+                    current_area_ -= handler.area(driver_lib);
+                    current_area_ += handler.area(replace_driver);
                     resize_count_++;
                 }
             }
@@ -166,9 +172,9 @@ TimingBufferTransform::bottomUp(Psn* psn_inst, SteinerPoint pt,
         float wire_length =
             psn_inst->handler()->dbuToMeters(st_tree->distance(prev, pt));
         float wire_res =
-            wire_length * psn_inst->settings()->resistancePerMicron();
+            wire_length * psn_inst->handler()->resistancePerMicron();
         float wire_cap =
-            wire_length * psn_inst->settings()->capacitancePerMicron();
+            wire_length * psn_inst->handler()->capacitancePerMicron();
         float wire_delay    = wire_cap * wire_res;
         auto  location      = st_tree->location(pt);
         auto  prev_location = st_tree->location(prev);
@@ -210,7 +216,7 @@ TimingBufferTransform::bottomUp(Psn* psn_inst, SteinerPoint pt,
             std::shared_ptr<BufferSolution> buff_sol =
                 std::make_shared<BufferSolution>(
                     psn_inst, left, right, location,
-                    buffer_lib[buffer_lib.size() - 1]);
+                    buffer_lib[buffer_lib.size() / 2]);
             buff_sol->addWireDelayAndCapacitance(wire_delay, wire_cap);
             buff_sol->addLeafTrees(psn_inst, prev_location, buffer_lib,
                                    inverter_lib);
@@ -292,6 +298,7 @@ TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
         handler.setLocation(buf_inst, tree->location());
         handler.calculateParasitics(net);
         handler.calculateParasitics(buf_net);
+        current_area_ += handler.area(tree->bufferCell());
         topDown(psn_inst, buf_net, tree->left());
         buffer_count_++;
     }
@@ -312,11 +319,12 @@ TimingBufferTransform::fixCapacitanceViolations(
     float area_penalty)
 {
     PSN_LOG_DEBUG("Fixing capacitance violations");
-    DatabaseHandler& handler = *(psn_inst->handler());
+    DatabaseHandler& handler    = *(psn_inst->handler());
+    auto             clock_nets = handler.clockNets();
     for (auto& pin : driver_pins)
     {
         auto pin_net = handler.net(pin);
-        if (pin_net && !handler.isClock(pin_net))
+        if (pin_net && !clock_nets.count(pin_net))
         {
             auto net_pins = handler.pins(pin_net);
             bool fix      = false;
@@ -335,9 +343,16 @@ TimingBufferTransform::fixCapacitanceViolations(
                               handler.name(pin));
                 bufferPin(psn_inst, pin, buffer_lib, inverter_lib, resize_gates,
                           min_gain, area_penalty);
+                if (handler.hasMaximumArea() &&
+                    current_area_ > handler.maximumArea())
+                {
+                    PSN_LOG_WARN("Maximum utilization reached");
+                    return buffer_count_ + resize_count_;
+                }
             }
         }
     }
+
     return buffer_count_;
 }
 int
@@ -350,10 +365,12 @@ TimingBufferTransform::fixTransitionViolations(
     PSN_LOG_DEBUG("Fixing transition violations");
     DatabaseHandler& handler = *(psn_inst->handler());
     handler.resetDelays();
+    auto clock_nets = handler.clockNets();
     for (auto& pin : driver_pins)
     {
         auto pin_net = handler.net(pin);
-        if (pin_net && !handler.isClock(pin_net))
+
+        if (pin_net && !clock_nets.count(pin_net))
         {
             auto net_pins = handler.pins(pin_net);
             bool fix      = false;
@@ -373,6 +390,12 @@ TimingBufferTransform::fixTransitionViolations(
                               handler.name(pin));
                 bufferPin(psn_inst, pin, buffer_lib, inverter_lib, resize_gates,
                           min_gain, area_penalty);
+                if (handler.hasMaximumArea() &&
+                    current_area_ > handler.maximumArea())
+                {
+                    PSN_LOG_WARN("Maximum utilization reached");
+                    return buffer_count_ + resize_count_;
+                }
             }
         }
     }
@@ -383,23 +406,34 @@ int
 TimingBufferTransform::timingBuffer(
     Psn* psn_inst, bool fix_cap, bool fix_transition,
     std::unordered_set<std::string> buffer_lib_names,
-    std::unordered_set<std::string> inverter_lib_names, bool resize_gates,
-    bool use_inverter_pair, int max_iteration, float min_gain,
-    float area_penalty)
+    std::unordered_set<std::string> inverter_lib_names, bool cluster_buffers,
+    bool cluster_inverters, bool minimize_cluster_buffers,
+    float cluster_threshold, bool resize_gates, int max_iteration,
+    float min_gain, float area_penalty)
 {
     std::vector<LibraryCell*> buffer_lib;
     std::vector<LibraryCell*> inverter_lib;
     DatabaseHandler&          handler = *(psn_inst->handler());
 
-    if (!buffer_lib_names.size())
+    if (cluster_buffers)
     {
-        for (auto& lib_cell : handler.bufferCells())
+        PSN_LOG_DEBUG("Generating buffer library");
+        auto cluster_libs = handler.bufferClusters(
+            cluster_threshold, minimize_cluster_buffers, cluster_inverters);
+        buffer_lib   = cluster_libs.first;
+        inverter_lib = cluster_libs.second;
+        buffer_lib_names.clear();
+        inverter_lib_names.clear();
+        for (auto& b : buffer_lib)
         {
-            if (!handler.dontUse(lib_cell))
-            {
-                buffer_lib.push_back(lib_cell);
-            }
+            buffer_lib_names.insert(handler.name(b));
         }
+        for (auto& b : inverter_lib)
+        {
+            inverter_lib_names.insert(handler.name(b));
+        }
+        PSN_LOG_INFO("Using {} Buffers and {} Inverters", buffer_lib.size(),
+                     inverter_lib.size());
     }
     else
     {
@@ -414,32 +448,17 @@ TimingBufferTransform::timingBuffer(
             }
             buffer_lib.push_back(lib_cell);
         }
-    }
-    if (use_inverter_pair)
-    {
-        if (!inverter_lib_names.size())
+
+        for (auto& inv_name : inverter_lib_names)
         {
-            for (auto& lib_cell : handler.inverterCells())
+            auto lib_cell = handler.libraryCell(inv_name.c_str());
+            if (!lib_cell)
             {
-                if (!handler.dontUse(lib_cell))
-                {
-                    inverter_lib.push_back(lib_cell);
-                }
+                PSN_LOG_ERROR("Inverter cell {} not found in the library.",
+                              inv_name);
+                return -1;
             }
-        }
-        else
-        {
-            for (auto& inv_name : inverter_lib_names)
-            {
-                auto lib_cell = handler.libraryCell(inv_name.c_str());
-                if (!lib_cell)
-                {
-                    PSN_LOG_ERROR("Inverter cell {} not found in the library.",
-                                  inv_name);
-                    return -1;
-                }
-                inverter_lib.push_back(lib_cell);
-            }
+            inverter_lib.push_back(lib_cell);
         }
     }
     std::sort(buffer_lib.begin(), buffer_lib.end(),
@@ -458,6 +477,9 @@ TimingBufferTransform::timingBuffer(
                                                   inverter_lib_names.end());
     PSN_LOG_DEBUG("Inverter library: {}",
                   StringUtils::join(inv_names_vec, ", "));
+    PSN_LOG_INFO("Buffer library: {}", StringUtils::join(buf_names_vec, ", "));
+    PSN_LOG_INFO("Inverter library: {}",
+                 StringUtils::join(inv_names_vec, ", "));
 
     for (int i = 0; i < max_iteration; i++)
     {
@@ -503,24 +525,28 @@ TimingBufferTransform::timingBuffer(
 int
 TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
-    buffer_count_                                     = 0;
-    resize_count_                                     = 0;
-    net_index_                                        = 0;
-    buff_index_                                       = 0;
-    int                             max_iter          = 1;
-    float                           min_gain          = 0;
-    float                           area_penalty      = 0.0;
-    bool                            resize_gates      = false;
-    bool                            use_inverter_pair = false;
-    bool                            use_all_buffers   = false;
-    bool                            use_all_inverters = false;
+    buffer_count_                                = 0;
+    resize_count_                                = 0;
+    net_index_                                   = 0;
+    buff_index_                                  = 0;
+    current_area_                                = psn_inst->handler()->area();
+    int                             max_iter     = 1;
+    float                           min_gain     = 0;
+    float                           area_penalty = 0.0;
+    bool                            cluster_buffers          = false;
+    bool                            cluster_inverters        = false;
+    bool                            minimize_cluster_buffers = false;
+    float                           cluster_threshold        = 0.0;
+    bool                            resize_gates             = false;
     std::unordered_set<std::string> buffer_lib_names;
     std::unordered_set<std::string> inverter_lib_names;
     std::unordered_set<std::string> keywords(
         {"-buffers", "--buffers", "-inverters", "--inverters",
          "-enable_gate_resize", "--enable_gate_resize", "-iterations",
          "--min_gain", "-min_gain", "--iterations", "-area_penalty",
-         "--area_penalty"});
+         "--area_penalty", "-auto_buffer_library", "--auto_buffer_library",
+         "-minimize_buffer_library", "--minimize_buffer_library",
+         "-use_inverting_buffer_library", "--use_inverting_buffer_library"});
     if (args.size() < 2)
     {
         PSN_LOG_ERROR(help());
@@ -533,19 +559,7 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
             i++;
             while (i < args.size())
             {
-                if (args[i] == "-all" || args[i] == "--all")
-                {
-                    if (buffer_lib_names.size())
-                    {
-                        PSN_LOG_ERROR(help());
-                        return -1;
-                    }
-                    else
-                    {
-                        use_all_buffers = true;
-                    }
-                }
-                else if (args[i] == "-buffers" || args[i] == "--buffers")
+                if (args[i] == "-buffers" || args[i] == "--buffers")
                 {
                     PSN_LOG_ERROR(help());
                     return -1;
@@ -572,19 +586,7 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
             i++;
             while (i < args.size())
             {
-                if (args[i] == "-all" || args[i] == "--all")
-                {
-                    if (inverter_lib_names.size())
-                    {
-                        PSN_LOG_ERROR(help());
-                        return -1;
-                    }
-                    else
-                    {
-                        use_all_inverters = true;
-                    }
-                }
-                else if (args[i] == "-inverters" || args[i] == "--inverters")
+                if (args[i] == "-inverters" || args[i] == "--inverters")
                 {
                     PSN_LOG_ERROR(help());
                     return -1;
@@ -605,6 +607,45 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
                 i++;
             }
             i--;
+        }
+        else if (args[i] == "-auto_buffer_library" ||
+                 args[i] == "--auto_buffer_library")
+        {
+            cluster_buffers = true;
+            i++;
+            if (i >= args.size())
+            {
+                PSN_LOG_ERROR(help());
+                return -1;
+            }
+            else
+            {
+                if (args[i] == "single")
+                {
+                    cluster_threshold = 1.0;
+                }
+                else if (args[i] == "small")
+                {
+                    cluster_threshold = 3.0 / 4.0;
+                }
+                else if (args[i] == "medium")
+                {
+                    cluster_threshold = 1.0 / 4.0;
+                }
+                else if (args[i] == "large")
+                {
+                    cluster_threshold = 1.0 / 12.0;
+                }
+                else if (args[i] == "all")
+                {
+                    cluster_threshold = 0.0;
+                }
+                else
+                {
+                    PSN_LOG_ERROR(help());
+                    return -1;
+                }
+            }
         }
         else if (args[i] == "-iterations" || args[i] == "--iterations")
         {
@@ -650,32 +691,25 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         {
             resize_gates = true;
         }
+        else if (args[i] == "-minimize_buffer_library" ||
+                 args[i] == "--minimize_buffer_library")
+        {
+            minimize_cluster_buffers = true;
+        }
+        else if (args[i] == "-use_inverting_buffer_library" ||
+                 args[i] == "--use_inverting_buffer_library")
+        {
+            cluster_inverters = true;
+        }
         else
         {
             PSN_LOG_ERROR(help());
             return -1;
         }
     }
-    if ((!buffer_lib_names.size() && !use_all_buffers) ||
-        (buffer_lib_names.size() && use_all_buffers))
-    {
-        PSN_LOG_ERROR(help());
-        return -1;
-    }
-    if (inverter_lib_names.size() || use_all_inverters)
-    {
-        use_inverter_pair = true;
-    }
-    if (use_inverter_pair)
-    {
-        if ((!inverter_lib_names.size() && !use_all_inverters) ||
-            (inverter_lib_names.size() && use_all_inverters))
-        {
-            PSN_LOG_ERROR(help());
-            return -1;
-        }
-    }
+
     return timingBuffer(psn_inst, true, true, buffer_lib_names,
-                        inverter_lib_names, resize_gates, use_inverter_pair,
-                        max_iter, min_gain, area_penalty);
+                        inverter_lib_names, cluster_buffers, cluster_inverters,
+                        minimize_cluster_buffers, cluster_threshold,
+                        resize_gates, max_iter, min_gain, area_penalty);
 }

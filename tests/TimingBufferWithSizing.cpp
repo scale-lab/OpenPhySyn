@@ -60,7 +60,7 @@ TEST_CASE(
             std::vector<std::string>({"-buffers", "CLKBUF_X1", "BUF_X1",
                                       "BUF_X2", "BUF_X4", "-enable_gate_resize",
                                       "-area_penalty", "0.5"}));
-        CHECK(result == 90);
+        CHECK(result == 22);
     }
     catch (PsnException& e)
     {

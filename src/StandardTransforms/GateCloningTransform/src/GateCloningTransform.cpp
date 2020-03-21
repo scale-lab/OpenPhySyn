@@ -64,7 +64,7 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
                                 bool clone_largest_only)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
-    float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
+    float cap_per_micron     = psn_inst->handler()->capacitancePerMicron();
 
     auto output_pins = handler.outputPins(inst);
     if (!output_pins.size())
@@ -126,7 +126,7 @@ GateCloningTransform::topDownClone(Psn*                          psn_inst,
                                    SteinerPoint k, float c_limit)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
-    float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
+    float cap_per_micron     = psn_inst->handler()->capacitancePerMicron();
 
     SteinerPoint drvr = tree->driverPoint();
 

@@ -117,9 +117,38 @@ set_wire_rc(const char* layer_name)
 int
 set_max_area(float area)
 {
-    Psn::instance().settings()->setMaxArea(area);
+    Psn::instance().handler()->setMaximumArea(area);
     return 1;
 }
+
+float
+max_area()
+{
+    return Psn::instance().handler()->maximumArea();
+}
+float
+core_area()
+{
+    return Psn::instance().handler()->coreArea();
+}
+
+void
+set_dont_use(std::vector<std::string> cell_names)
+{
+    Psn::instance().handler()->setDontUse(cell_names);
+}
+
+bool
+has_design()
+{
+    return Psn::instance().hasDesign();
+}
+bool
+has_liberty()
+{
+    return Psn::instance().hasLiberty();
+}
+
 int
 link(const char* top_module)
 {

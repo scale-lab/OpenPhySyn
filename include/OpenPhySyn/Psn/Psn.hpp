@@ -33,7 +33,6 @@
 #define __PSN_PSN__
 #include <OpenPhySyn/Database/DatabaseHandler.hpp>
 #include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Psn/DesignSettings.hpp>
 #include <OpenPhySyn/Psn/ProgramOptions.hpp>
 #include <OpenPhySyn/PsnLogger/LogLevel.hpp>
 #include <OpenPhySyn/Sta/DatabaseSta.hpp>
@@ -86,7 +85,9 @@ public:
     virtual int  linkDesign(const char* design_name);
 
     virtual DatabaseHandler* handler() const;
-    virtual DesignSettings*  settings() const;
+
+    virtual bool hasDesign() const;
+    virtual bool hasLiberty() const;
 
     virtual void printVersion(bool raw_str = false);
     virtual void printUsage(bool raw_str = false, bool print_transforms = true,
@@ -116,7 +117,6 @@ public:
 private:
     Psn(Database* db = nullptr);
     Psn(sta::DatabaseSta* sta);
-    DesignSettings*   settings_;
     Liberty*          liberty_;
     sta::DatabaseSta* sta_;
     Database*         db_;

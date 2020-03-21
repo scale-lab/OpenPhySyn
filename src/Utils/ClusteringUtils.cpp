@@ -29,66 +29,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <OpenPhySyn/Psn/DesignSettings.hpp>
-#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
-#include <OpenPhySyn/Utils/PsnGlobal.hpp>
+#include <OpenPhySyn/Utils/ClusteringUtils.hpp>
 
 namespace psn
 {
 
-DesignSettings::DesignSettings(float max_area, float res_per_micron,
-                               float cap_per_micron)
-{
-    setMaxArea(max_area);
-    setResistancePerMicron(res_per_micron);
-    setCapacitancePerMicron(cap_per_micron);
-}
-
-float
-DesignSettings::maxArea() const
-{
-    if (max_area_ == 0)
-    {
-        PSN_LOG_WARN("Max area is 0 or not set.");
-    }
-    return max_area_;
-}
-float
-DesignSettings::resistancePerMicron() const
-{
-    if (res_per_micron_ == 0)
-    {
-        PSN_LOG_WARN("Resistance per micron is 0 or not set, use_set_wire_rc.");
-    }
-    return res_per_micron_;
-}
-float
-DesignSettings::capacitancePerMicron() const
-{
-    if (cap_per_micron_ == 0)
-    {
-        PSN_LOG_WARN(
-            "Capacitance per micron is 0 or not set, use set_wire_rc.");
-    }
-    return cap_per_micron_;
-}
-
-DesignSettings*
-DesignSettings::setMaxArea(float max_area)
-{
-    max_area_ = max_area;
-    return this;
-}
-DesignSettings*
-DesignSettings::setResistancePerMicron(float res_per_micron)
-{
-    res_per_micron_ = res_per_micron;
-    return this;
-}
-DesignSettings*
-DesignSettings::setCapacitancePerMicron(float cap_per_micron)
-{
-    cap_per_micron_ = cap_per_micron;
-    return this;
-}
 } // namespace psn

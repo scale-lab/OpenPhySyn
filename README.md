@@ -118,6 +118,10 @@ The `repair_timing` command repairs maximum capacitance and transition time viol
 
 `repair_timing` options:
 
+-   **-auto_buffer_library {single|small|medium|large|all}**: Auto-select the buffer library for timing repair.
+-   **-minimize_buffer_library**: Attempt to minimize the size of the buffer library selected by **-auto_buffer_library**.
+-   **-use_inverting_buffer_library**: Used with **-auto_buffer_library** to allow the selection of inverting buffers.
+-   **-buffers {buffer cells}**: Specify a list of non-inverting buffer cells to use.
 -   **-buffers {buffer cells}**: Specify a list of non-inverting buffer cells to use.
 -   **-inverters {inverter cells}**: Specify a list of inverting buffer cells to use.
 -   **-iterations {iterations=1}**: Specify the maximum number of iterations to fix violations.

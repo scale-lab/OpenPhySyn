@@ -1,6 +1,17 @@
-cmake_minimum_required(VERSION 3.1...3.15)
+cmake_minimum_required (VERSION 3.9)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
+cmake_policy(SET CMP0078 NEW)
+endif()
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.14)
+cmake_policy(SET CMP0086 NEW)
+endif()
 
-project(OpenPhySyn VERSION 1.4.2 LANGUAGES CXX)
+
+project(OpenPhySyn VERSION 1.4.2)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add flags and defines.
@@ -177,7 +188,6 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Psn/Psn.cpp
     ${PSN_HOME}/src/Psn/Exports.cpp
     ${PSN_HOME}/src/Psn/ProgramOptions.cpp
-    ${PSN_HOME}/src/Psn/DesignSettings.cpp
     ${PSN_HOME}/src/SteinerTree/SteinerTree.cpp
     ${PSN_HOME}/src/PsnLogger/PsnLogger.cpp
     ${PSN_HOME}/src/Database/OpenDBHandler.cpp
@@ -192,6 +202,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Utils/FileUtils.cpp
     ${PSN_HOME}/src/Utils/FilesystemLegacyHelpers.cpp
     ${PSN_HOME}/src/Utils/StringUtils.cpp
+    ${PSN_HOME}/src/Utils/ClusteringUtils.cpp
     ${PSN_HOME}/src/Utils/PsnGlobal.cpp
     ${PSN_HOME}/src/PsnException/Error.cpp
     ${PSN_HOME}/src/PsnException/FileException.cpp
