@@ -519,11 +519,11 @@ OpenStaHandler::equivalentCells(LibraryCell* cell)
     }
     auto                      equiv_cells = sta_->equivCells(cell);
     std::vector<LibraryCell*> filtered_cells;
-    for (auto& cell : *equiv_cells)
+    for (auto& c : *equiv_cells)
     {
-        if (!dontUse(cell))
+        if (!dontUse(cell) || c == cell)
         {
-            filtered_cells.push_back(cell);
+            filtered_cells.push_back(c);
         }
     }
     return filtered_cells;
