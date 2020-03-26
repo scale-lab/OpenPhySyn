@@ -13,6 +13,27 @@ namespace eval psn {
         psn::transform_internal $transform_name $args
     }
 
+    define_cmd_args "import_lef" {[-tech] [-library] filename}
+    proc import_lef { args } {
+       sta::parse_key_args "import_lef" args \
+            keys {} \
+            flags {-tech -library}
+            set has_tech [info exists flags(-tech)]
+            set has_lib [info exists flags(-library)]
+            if {[llength $args] != 1} {
+                sta::cmd_usage_error "import_lef"
+                return
+            }
+            set filename [lindex $args 0]
+            if {($has_tech && $has_lib) || (!$has_tech && !$has_lib)} {
+                psn::import_lef_tech_sc $filename
+            } elseif {$has_tech} {
+                psn::import_lef_tech $filename
+            } elseif {$has_lib} {
+                psn::import_lef_sc $filename
+            }
+    }
+
     define_cmd_args "optimize_design" {\
         [-no_gate_clone] \
         [-no_pin_swap] \
@@ -155,7 +176,55 @@ namespace eval psn {
         transform buffer_fanout $max_fanout $cell
     }
 
-    define_cmd_args "repair_timing" {[-auto_buffer_library library_size] [-minimize_buffer_library]\
+    define_cmd_args "cluster_buffers" {[-cluster_threshold diameter] [-cluster_size single|small|medium|large|all]}
+    proc cluster_buffers { args } {
+        sta::parse_key_args "cluster_buffers" args \
+        keys {-cluster_threshold -cluster_size} \
+        flags {}
+
+        if {![psn::has_liberty]} {
+            sta::sta_error "No liberty filed is loaded"
+            return
+        }
+
+        if {[info exists keys(-cluster_threshold)] && [info exists keys(-cluster_size)]} {
+            sta::sta_error "You can only specify either -cluster_threshold or -cluster_size"
+            return
+        } elseif {![info exists keys(-cluster_threshold)] && ![info exists keys(-cluster_size)]} {
+            sta::cmd_usage_error "cluster_buffers"
+            return
+        }
+        if {[info exists keys(-cluster_threshold)]} {
+            if {($keys(-cluster_threshold) < 0.0) || ($keys(-cluster_threshold) > 1.0)} {
+                sta::sta_error "-cluster_threshold should be between 0.0 and 1.0"
+                return
+            }
+            return [psn::cluster_buffer_names $keys(-cluster_threshold) true]
+        } else {
+            set size $keys(-cluster_size)
+            set valid_lib_size [list "single" "small" "medium" "large" "all"]
+            if {[lsearch -exact $valid_lib_size $size] < 0} {
+                sta::sta_error "Invalid value for -cluster_size, valid values are $valid_lib_size"
+                return
+            }
+            set cluster_threshold ""
+            if {$size == "single"} {
+                set cluster_threshold 1.0
+            } elseif {$size == "small"} {
+                set cluster_threshold [expr 3.0 / 4.0]
+            } elseif {$size == "medium"} {
+                set cluster_threshold [expr 1.0 / 4.0]
+            } elseif {$size == "large"} {
+                set cluster_threshold [expr 1.0 / 12.0]
+            } elseif {$size == "all"} {
+                set cluster_threshold 0.0
+            }
+
+            return [psn::cluster_buffer_names $cluster_threshold true]
+        }
+    }
+
+    define_cmd_args "repair_timing" {[-maximum_capacitance] [-maximum_transition] [-auto_buffer_library single|small|medium|large|all] [-minimize_buffer_library]\
 				 [-use_inverting_buffer_library] [-buffers buffers]\
 				 [-inverters inverters ] [-iterations iterations] [-area_penalty area_penalty]\
 				 [-min_gain gain] [-enable_gate_resize] \
@@ -167,6 +236,19 @@ namespace eval psn {
         flags {-enable_gate_resize -minimize_buffer_library -use_inverting_buffer_library}
         set buffer_lib_flag ""
         set auto_buf_flag ""
+
+        set has_max_cap [info exists flags(-maximum_capacitance)]
+        set has_max_transition [info exists flags(-maximum_transition)]
+
+        set repair_target_flag ""
+
+        if {($has_max_cap && $has_max_transition) || (!$has_max_cap && !$has_max_transition)} {
+            set repair_target_flag "-maximum_capacitance -maximum_transition"
+        } elseif {$has_max_cap} {
+            set repair_target_flag "-maximum_capacitance"
+        } elseif {$has_max_transition} {
+            set repair_target_flag "-maximum_transition"
+        }
 
         set has_auto_buff [info exists keys(-auto_buffer_library)]
 
@@ -186,19 +268,11 @@ namespace eval psn {
         }
 
         if {[info exists keys(-buffers)]} {
-            if {$has_auto_buff} {
-                sta::sta_error "Cannot specify the buffer/inerter library manully with auto_buffer_library option"
-                return
-            }
             set blist $keys(-buffers)
             set buffer_lib_flag "-buffers $blist"
         }
         set inverters_flag ""
         if {[info exists keys(-inverters)]} {
-            if {$has_auto_buff} {
-                sta::sta_error "Cannot specify the buffer/inerters lib manully with -auto_buffer_library option"
-                return
-            }
             set ilist $keys(-inverters)
             set inverters_flag "-inverters $ilist"
         }
@@ -234,7 +308,7 @@ namespace eval psn {
         if {[info exists keys(-iterations)]} {
             set iterations "$keys(-iterations)"
         }
-        set bufargs "$auto_buf_flag $minimuze_buf_lib_flag $use_inv_buf_lib_flag $buffer_lib_flag $inverters_flag $min_gain_flag $resize_flag $area_penalty_flag -iterations $iterations"
+        set bufargs "$repair_target_flag $auto_buf_flag $minimuze_buf_lib_flag $use_inv_buf_lib_flag $buffer_lib_flag $inverters_flag $min_gain_flag $resize_flag $area_penalty_flag -iterations $iterations"
         set affected [transform timing_buffer {*}$bufargs]
         if {$affected < 0} {
             puts "Timing buffer failed"

@@ -49,7 +49,10 @@ private:
     int   resize_count_;
     int   net_index_;
     int   buff_index_;
+    int   transition_violations_;
+    int   capacitance_violations_;
     float current_area_;
+    int   hasViolation(Psn* psn_inst, InstanceTerm* pin);
     void  bufferPin(Psn* psn_inst, InstanceTerm* pin,
                     std::vector<LibraryCell*>& buffer_lib,
                     std::vector<LibraryCell*>& inverter_lib, bool resize_gates,
@@ -97,7 +100,8 @@ DEFINE_TRANSFORM(
     TimingBufferTransform, "timing_buffer", "1.4",
     "Performs several variations of buffering and resizing to fix timing "
     "violations",
-    "Usage: transform timing_buffer [-auto_buffer_library "
+    "Usage: transform timing_buffer [-maximum_capacitance] "
+    "[-maximum_transition] [-auto_buffer_library "
     "<single|small|medium|large|all>] [-minimize_buffer_library] "
     "[-use_inverting_buffer_library] [-buffers "
     "<buffer library>] [-inverters "

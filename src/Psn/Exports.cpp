@@ -43,9 +43,19 @@ import_def(const char* def_path)
     return Psn::instance().readDef(def_path);
 }
 int
-import_lef(const char* lef_path, int ignore_routing_layers)
+import_lef_tech(const char* lef_path)
 {
-    return Psn::instance().readLef(lef_path, ignore_routing_layers);
+    return Psn::instance().readLef(lef_path, false, true);
+}
+int
+import_lef_sc(const char* lef_path)
+{
+    return Psn::instance().readLef(lef_path, true, false);
+}
+int
+import_lef_tech_sc(const char* lef_path)
+{
+    return Psn::instance().readLef(lef_path, true, true);
 }
 int
 import_lib(const char* lib_path)
@@ -147,6 +157,35 @@ bool
 has_liberty()
 {
     return Psn::instance().hasLiberty();
+}
+
+std::vector<std::string>
+cluster_buffer_names(float cluster_threshold, bool find_superior)
+{
+    std::vector<std::string> names;
+    auto                     cells = Psn::instance()
+                     .handler()
+                     ->bufferClusters(cluster_threshold, find_superior, false)
+                     .first;
+    for (auto& cell : cells)
+    {
+        names.push_back(Psn::instance().handler()->name(cell));
+    }
+    return names;
+}
+std::vector<std::string>
+cluster_inverter_names(float cluster_threshold, bool find_superior)
+{
+    std::vector<std::string> names;
+    auto                     cells = Psn::instance()
+                     .handler()
+                     ->bufferClusters(cluster_threshold, find_superior, true)
+                     .second;
+    for (auto& cell : cells)
+    {
+        names.push_back(Psn::instance().handler()->name(cell));
+    }
+    return names;
 }
 
 int

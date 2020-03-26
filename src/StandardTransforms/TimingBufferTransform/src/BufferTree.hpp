@@ -598,22 +598,22 @@ public:
         return max_tree;
     }
 
-    bool
-    isGreater(float first, float second, float threshold = 1E-6F) const
+    static bool
+    isGreater(float first, float second, float threshold = 1E-6F)
     {
         return first > second &&
                !(std::abs(first - second) <
                  threshold * std::max(std::abs(first), std::abs(second)));
     }
-    bool
-    isLess(float first, float second, float threshold) const
+    static bool
+    isLess(float first, float second, float threshold)
     {
         return first < second &&
                !(std::abs(first - second) <
                  threshold * std::max(std::abs(first), std::abs(second)));
     }
-    bool
-    isLessOrEqual(float first, float second, float threshold) const
+    static bool
+    isLessOrEqual(float first, float second, float threshold)
     {
         return first < second ||
                (std::abs(first - second) <

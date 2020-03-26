@@ -64,6 +64,8 @@ TimingBufferTransform::TimingBufferTransform()
       resize_count_(0),
       net_index_(0),
       buff_index_(0),
+      transition_violations_(0),
+      capacitance_violations_(0),
       current_area_(0.0)
 {
 }
@@ -218,6 +220,7 @@ TimingBufferTransform::bottomUp(Psn* psn_inst, SteinerPoint pt,
                     psn_inst, left, right, location,
                     buffer_lib[buffer_lib.size() / 2]);
             buff_sol->addWireDelayAndCapacitance(wire_delay, wire_cap);
+
             buff_sol->addLeafTrees(psn_inst, prev_location, buffer_lib,
                                    inverter_lib);
             return buff_sol;
@@ -312,6 +315,26 @@ TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
 }
 
 int
+TimingBufferTransform::hasViolation(Psn* psn_inst, InstanceTerm* pin)
+{
+    DatabaseHandler& handler  = *(psn_inst->handler());
+    auto             pin_net  = handler.net(pin);
+    auto             net_pins = handler.pins(pin_net);
+    for (auto connected_pin : net_pins)
+    {
+        if (handler.violatesMaximumTransition(connected_pin))
+        {
+            return 1;
+        }
+        else if (handler.violatesMaximumCapacitance(connected_pin))
+        {
+            return 2;
+        }
+    }
+    return 0;
+}
+
+int
 TimingBufferTransform::fixCapacitanceViolations(
     Psn* psn_inst, std::vector<InstanceTerm*> driver_pins,
     std::vector<LibraryCell*>& buffer_lib,
@@ -332,6 +355,7 @@ TimingBufferTransform::fixCapacitanceViolations(
             {
                 if (handler.violatesMaximumCapacitance(connected_pin))
                 {
+                    capacitance_violations_++;
                     PSN_LOG_DEBUG("Violating pin {}", handler.name(pin));
                     fix = true;
                     break;
@@ -379,8 +403,8 @@ TimingBufferTransform::fixTransitionViolations(
                 if (handler.violatesMaximumTransition(connected_pin))
                 {
                     PSN_LOG_DEBUG("Violating pin {}", handler.name(pin));
-
-                    fix = true;
+                    transition_violations_ = true;
+                    fix                    = true;
                     break;
                 }
             }
@@ -435,32 +459,31 @@ TimingBufferTransform::timingBuffer(
         PSN_LOG_INFO("Using {} Buffers and {} Inverters", buffer_lib.size(),
                      inverter_lib.size());
     }
-    else
+    for (auto& buf_name : buffer_lib_names)
     {
-        for (auto& buf_name : buffer_lib_names)
+        auto lib_cell = handler.libraryCell(buf_name.c_str());
+        if (!lib_cell)
         {
-            auto lib_cell = handler.libraryCell(buf_name.c_str());
-            if (!lib_cell)
-            {
-                PSN_LOG_ERROR("Buffer cell {} not found in the library.",
-                              buf_name);
-                return -1;
-            }
-            buffer_lib.push_back(lib_cell);
+            PSN_LOG_ERROR("Buffer cell {} not found in the library.", buf_name);
+            return -1;
         }
-
-        for (auto& inv_name : inverter_lib_names)
-        {
-            auto lib_cell = handler.libraryCell(inv_name.c_str());
-            if (!lib_cell)
-            {
-                PSN_LOG_ERROR("Inverter cell {} not found in the library.",
-                              inv_name);
-                return -1;
-            }
-            inverter_lib.push_back(lib_cell);
-        }
+        buffer_lib.push_back(lib_cell);
     }
+
+    for (auto& inv_name : inverter_lib_names)
+    {
+        auto lib_cell = handler.libraryCell(inv_name.c_str());
+        if (!lib_cell)
+        {
+            PSN_LOG_ERROR("Inverter cell {} not found in the library.",
+                          inv_name);
+            return -1;
+        }
+        inverter_lib.push_back(lib_cell);
+    }
+    std::unique(buffer_lib.begin(), buffer_lib.end());
+    std::unique(inverter_lib.begin(), inverter_lib.end());
+
     std::sort(buffer_lib.begin(), buffer_lib.end(),
               [&](LibraryCell* a, LibraryCell* b) -> bool {
                   return handler.area(a) < handler.area(b);
@@ -472,18 +495,21 @@ TimingBufferTransform::timingBuffer(
 
     auto buf_names_vec = std::vector<std::string>(buffer_lib_names.begin(),
                                                   buffer_lib_names.end());
-    PSN_LOG_DEBUG("Buffer library: {}", StringUtils::join(buf_names_vec, ", "));
     auto inv_names_vec = std::vector<std::string>(inverter_lib_names.begin(),
                                                   inverter_lib_names.end());
-    PSN_LOG_DEBUG("Inverter library: {}",
-                  StringUtils::join(inv_names_vec, ", "));
-    PSN_LOG_INFO("Buffer library: {}", StringUtils::join(buf_names_vec, ", "));
+    PSN_LOG_INFO("Buffer library: {}",
+                 buffer_lib_names.size()
+                     ? StringUtils::join(buf_names_vec, ", ")
+                     : "None");
     PSN_LOG_INFO("Inverter library: {}",
-                 StringUtils::join(inv_names_vec, ", "));
+                 inverter_lib_names.size()
+                     ? StringUtils::join(inv_names_vec, ", ")
+                     : "None");
+    PSN_LOG_INFO("Driver sizing {}", resize_gates ? "enabled" : "disabled");
 
     for (int i = 0; i < max_iteration; i++)
     {
-        PSN_LOG_DEBUG("Fix iteration {}", i);
+        PSN_LOG_INFO("Iteration {}", i + 1);
         auto driver_pins = handler.levelDriverPins();
         std::reverse(driver_pins.begin(), driver_pins.end());
         bool hasVio         = false;
@@ -517,6 +543,10 @@ TimingBufferTransform::timingBuffer(
             break;
         }
     }
+    PSN_LOG_INFO("Found {} maximum capacitance violations",
+                 capacitance_violations_);
+    PSN_LOG_INFO("Found {} maximum transition violations",
+                 transition_violations_);
     PSN_LOG_INFO("Placed {} buffers", buffer_count_);
     PSN_LOG_INFO("Resized {} gates", resize_count_);
     return buffer_count_ + resize_count_;
@@ -527,8 +557,8 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
     buffer_count_                                = 0;
     resize_count_                                = 0;
-    net_index_                                   = 0;
-    buff_index_                                  = 0;
+    transition_violations_                       = 0;
+    capacitance_violations_                      = 0;
     current_area_                                = psn_inst->handler()->area();
     int                             max_iter     = 1;
     float                           min_gain     = 0;
@@ -538,6 +568,8 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     bool                            minimize_cluster_buffers = false;
     float                           cluster_threshold        = 0.0;
     bool                            resize_gates             = false;
+    bool                            fix_max_cap              = false;
+    bool                            fix_max_trans            = false;
     std::unordered_set<std::string> buffer_lib_names;
     std::unordered_set<std::string> inverter_lib_names;
     std::unordered_set<std::string> keywords(
@@ -691,6 +723,16 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         {
             resize_gates = true;
         }
+        else if (args[i] == "-maximum_capacitance" ||
+                 args[i] == "--maximum_capacitance")
+        {
+            fix_max_cap = true;
+        }
+        else if (args[i] == "-maximum_transition" ||
+                 args[i] == "--maximum_transition")
+        {
+            fix_max_trans = true;
+        }
         else if (args[i] == "-minimize_buffer_library" ||
                  args[i] == "--minimize_buffer_library")
         {
@@ -708,7 +750,13 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         }
     }
 
-    return timingBuffer(psn_inst, true, true, buffer_lib_names,
+    if (!fix_max_cap && !fix_max_trans)
+    {
+        fix_max_trans = true;
+        fix_max_cap   = true;
+    }
+
+    return timingBuffer(psn_inst, fix_max_cap, fix_max_trans, buffer_lib_names,
                         inverter_lib_names, cluster_buffers, cluster_inverters,
                         minimize_cluster_buffers, cluster_threshold,
                         resize_gates, max_iter, min_gain, area_penalty);

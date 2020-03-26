@@ -7,7 +7,7 @@ cmake_policy(SET CMP0086 NEW)
 endif()
 
 
-project(OpenPhySyn VERSION 1.4.2)
+project(OpenPhySyn VERSION 1.4.3)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -25,7 +25,7 @@ option(OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED "Build Buffer Fan-Out transfor
 option(OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED "Build Gate Clone transform" ON)
 option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
 option(OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED "Build Constant Propagation transform" ON)
-option(OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED "Build Buffer Resize transform" ON)
+option(OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED "Build Timing Buffer transform" ON)
 option(OPENPHYSYN_READLINE_ENABLED "Enable Tcl Readline" ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-error -Wno-deprecated-copy")

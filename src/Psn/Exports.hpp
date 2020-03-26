@@ -45,7 +45,9 @@ void  print_transforms();
 void  print_license();
 float design_area();
 int   import_def(const char* def_path);
-int   import_lef(const char* lef_path, int ignore_routing_layers = true);
+int   import_lef_tech(const char* lef_path);
+int   import_lef_sc(const char* lef_path);
+int   import_lef_tech_sc(const char* lef_path);
 int   import_lib(const char* lib_path); // Alias for import_liberty
 int   import_liberty(const char* lib_path);
 int   export_def(const char* def_path);
@@ -66,8 +68,12 @@ int   set_log_pattern(const char* pattern);
 void  set_dont_use(std::vector<std::string> cell_names);
 bool  has_design();
 bool  has_liberty();
-int   transform_internal(std::string              transform_name,
-                         std::vector<std::string> args);
+std::vector<std::string> cluster_buffer_names(float cluster_threshold,
+                                              bool  find_superior = true);
+std::vector<std::string> cluster_inverter_names(float cluster_threshold,
+                                                bool  find_superior = true);
+int                      transform_internal(std::string              transform_name,
+                                            std::vector<std::string> args);
 
 DatabaseHandler& get_handler();
 DatabaseHandler& get_database_handler();
