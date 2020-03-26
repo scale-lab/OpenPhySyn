@@ -34,6 +34,7 @@
 #include <OpenPhySyn/Psn/Psn.hpp>
 #include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
 #include <OpenPhySyn/Transform/PsnTransform.hpp>
+#include <OpenPhySyn/Utils/IntervalMap.hpp>
 #include <cstring>
 #include <memory>
 #include <unordered_set>

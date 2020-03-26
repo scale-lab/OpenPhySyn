@@ -390,7 +390,7 @@ public:
     void
     mergeBranches(Psn* psn_inst, std::shared_ptr<BufferSolution>& left,
                   std::shared_ptr<BufferSolution>& right, Point location,
-                  LibraryCell* upstream_res_cell, float)
+                  LibraryCell* upstream_res_cell, float minimum_upstream_res)
     {
         buffer_trees_.resize(left->bufferTrees().size() *
                                  right->bufferTrees().size(),
@@ -408,7 +408,7 @@ public:
             }
         }
         buffer_trees_.resize(index);
-        prune(psn_inst, upstream_res_cell);
+        prune(psn_inst, upstream_res_cell, minimum_upstream_res);
     }
     void
     addTree(std::shared_ptr<BufferTree>& tree)
@@ -661,10 +661,17 @@ public:
                (std::abs(first - second) <
                 threshold * std::max(std::abs(first), std::abs(second)));
     }
+    static bool
+    isGreaterOrEqual(float first, float second, float threshold)
+    {
+        return first > second ||
+               (std::abs(first - second) <
+                threshold * std::max(std::abs(first), std::abs(second)));
+    }
 
     void
     prune(Psn* psn_inst, LibraryCell* upstream_res_cell,
-          const float cap_prune_threshold  = 1E-6F,
+          float minimum_upstream_res, const float cap_prune_threshold = 1E-6F,
           const float cost_prune_threshold = 1E-6F)
     {
         // TODO Add squeeze pruning
@@ -700,6 +707,35 @@ public:
                 }
             }
             buffer_trees_.resize(index);
+        }
+        if (minimum_upstream_res)
+        {
+            std::sort(buffer_trees_.begin(), buffer_trees_.end(),
+                      [=](const std::shared_ptr<BufferTree>& a,
+                          const std::shared_ptr<BufferTree>& b) -> bool {
+                          return a->totalRequired() < b->totalRequired();
+                      });
+
+            index = 0;
+            for (size_t i = 0; i < buffer_trees_.size(); i++) // q1, c1
+            {
+                index = i + 1;
+                for (size_t j = i + 1; j < buffer_trees_.size(); j++) // q2, c2
+                {
+                    if (isGreaterOrEqual(buffer_trees_[i]->totalCapacitance(),
+                                         buffer_trees_[j]->totalCapacitance(),
+                                         cap_prune_threshold) ||
+                        !((buffer_trees_[j]->totalRequired() -
+                           buffer_trees_[i]->totalRequired()) /
+                              (buffer_trees_[j]->totalCapacitance() -
+                               buffer_trees_[i]->totalCapacitance()) <
+                          minimum_upstream_res))
+                    {
+                        buffer_trees_[index++] = buffer_trees_[j];
+                    }
+                }
+                buffer_trees_.resize(index);
+            }
         }
     }
 };

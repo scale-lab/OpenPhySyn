@@ -58,7 +58,7 @@ TEST_CASE("Should perform buffer insertion to fix cap./trans. violations for "
                                  {"-buffers", "CLKBUF_X1", "CLKBUF_X2",
                                   "CLKBUF_X3", "BUF_X1", "BUF_X2", "BUF_X4",
                                   "-inverters", "INV_X1", "INV_X2", "INV_X4"}));
-        CHECK(result == 185);
+        CHECK(result == 288);
     }
     catch (PsnException& e)
     {
