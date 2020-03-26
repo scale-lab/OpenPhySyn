@@ -121,11 +121,12 @@ TimingBufferTransform::bufferPin(Psn* psn_inst, InstanceTerm* pin,
         {
             buff_tree = buff_sol->optimalDriverTree(psn_inst, pin);
         }
-        auto replace_driver = (buff_tree->hasDriverCell() &&
-                               buff_tree->driverCell() != driver_lib)
-                                  ? buff_tree->driverCell()
-                                  : nullptr;
+        if (buff_tree)
         {
+            auto replace_driver = (buff_tree->hasDriverCell() &&
+                                   buff_tree->driverCell() != driver_lib)
+                                      ? buff_tree->driverCell()
+                                      : nullptr;
             float old_delay = handler.gateDelay(
                 pin, buff_sol->bufferTrees()[0]->totalCapacitance());
             float old_slack =
@@ -403,8 +404,8 @@ TimingBufferTransform::fixTransitionViolations(
                 if (handler.violatesMaximumTransition(connected_pin))
                 {
                     PSN_LOG_DEBUG("Violating pin {}", handler.name(pin));
-                    transition_violations_ = true;
-                    fix                    = true;
+                    transition_violations_++;
+                    fix = true;
                     break;
                 }
             }
