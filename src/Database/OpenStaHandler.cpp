@@ -1102,7 +1102,18 @@ OpenStaHandler::pinCapacitance(LibraryTerm* term) const
     float cap2 = term->capacitance(sta::RiseFall::fall(), sta::MinMax::max());
     return std::max(cap1, cap2);
 }
-
+float
+OpenStaHandler::pinSlewLimit(InstanceTerm* term, bool* exists) const
+{
+    float limit;
+    bool  limit_exists;
+    slewLimit(term, sta::MinMax::max(), limit, limit_exists);
+    if (exists)
+    {
+        *exists = limit_exists;
+    }
+    return limit;
+}
 float
 OpenStaHandler::pinAverageRise(LibraryTerm* from, LibraryTerm* to) const
 {

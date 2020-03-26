@@ -41,6 +41,32 @@
 
 namespace psn
 {
+
+class TimingBufferTransformOptions
+{
+public:
+    float                     initial_area;
+    int                       max_iterations;
+    float                     min_gain;
+    float                     area_penalty;
+    bool                      cluster_buffers;
+    bool                      cluster_inverters;
+    bool                      minimize_cluster_buffers;
+    float                     cluster_threshold;
+    bool                      resize_gates;
+    bool                      repair_capacitance_violations;
+    bool                      repair_transition_violations;
+    bool                      timerless;
+    bool                      cirtical_path;
+    std::vector<LibraryCell*> buffer_lib;
+    std::vector<LibraryCell*> inverter_lib;
+    std::string               phase;
+    bool                      use_best_solution_threshold;
+    float                     best_solution_threshold;
+    size_t                    best_solution_threshold_range;
+    float                     minimum_upstresm_resistance;
+};
+
 class TimingBufferTransform : public PsnTransform
 {
 
@@ -54,41 +80,29 @@ private:
     float current_area_;
     int   hasViolation(Psn* psn_inst, InstanceTerm* pin);
     void  bufferPin(Psn* psn_inst, InstanceTerm* pin,
-                    std::vector<LibraryCell*>& buffer_lib,
-                    std::vector<LibraryCell*>& inverter_lib, bool resize_gates,
-                    float min_gain, float area_penalty);
+                    std::unique_ptr<TimingBufferTransformOptions>& options);
     std::shared_ptr<BufferSolution>
          bottomUp(Psn* psn_inst, SteinerPoint pt, SteinerPoint prev,
                   std::vector<LibraryCell*>&   buffer_lib,
                   std::vector<LibraryCell*>&   inverter_lib,
-                  std::shared_ptr<SteinerTree> st_tree, bool resize_gates = false);
+                  std::shared_ptr<SteinerTree> st_tree,
+                  float                        minimum_upstream_resistance);
     void topDown(Psn* psn_inst, Net* net, std::shared_ptr<BufferTree> tree);
     void topDown(Psn* psn_inst, InstanceTerm* pin,
                  std::shared_ptr<BufferTree> tree);
 
-    int timingBuffer(Psn* psn_inst, bool fix_cap = true, bool fix_slew = true,
+    int timingBuffer(Psn*                                           psn_inst,
+                     std::unique_ptr<TimingBufferTransformOptions>& options,
                      std::unordered_set<std::string> buffer_lib_names =
                          std::unordered_set<std::string>(),
                      std::unordered_set<std::string> inverter_lib_names =
-                         std::unordered_set<std::string>(),
-                     bool  cluster_buffers         = false,
-                     bool  cluster_inverters       = false,
-                     bool  minimize_cluster_buffer = false,
-                     float cluster_threshold = 0.0, bool resize_gates = false,
-                     int max_iterations = 1, float min_gain = 0.0,
-                     float area_penalty = 0.0);
-    int fixCapacitanceViolations(Psn*                       psn_inst,
-                                 std::vector<InstanceTerm*> driver_pins,
-                                 std::vector<LibraryCell*>& buffer_lib,
-                                 std::vector<LibraryCell*>& inverter_lib,
-                                 bool resize_gates, float min_gain,
-                                 float area_penalty);
-    int fixTransitionViolations(Psn*                       psn_inst,
-                                std::vector<InstanceTerm*> driver_pins,
-                                std::vector<LibraryCell*>& buffer_lib,
-                                std::vector<LibraryCell*>& inverter_lib,
-                                bool resize_gates, float min_gain,
-                                float area_penalty);
+                         std::unordered_set<std::string>());
+    int fixCapacitanceViolations(
+        Psn* psn_inst, std::vector<InstanceTerm*>& driver_pins,
+        std::unique_ptr<TimingBufferTransformOptions>& options);
+    int fixTransitionViolations(
+        Psn* psn_inst, std::vector<InstanceTerm*>& driver_pins,
+        std::unique_ptr<TimingBufferTransformOptions>& options);
 
 public:
     TimingBufferTransform();
@@ -105,7 +119,9 @@ DEFINE_TRANSFORM(
     "<single|small|medium|large|all>] [-minimize_buffer_library] "
     "[-use_inverting_buffer_library] [-buffers "
     "<buffer library>] [-inverters "
-    "<inverters library>] [-iterations <# iterations=1>] [-min_gain "
+    "<inverters library>] [-timerless] [-cirtical_path] [-iterations <# "
+    "iterations=1>] [-postGlobalPlace|-postDetailedPlace|-postRoute] "
+    "[-min_gain "
     "<gain=0ps>] [-enable_gate_resize] [-area_penalty <penalty=0ps/um>]")
 
 } // namespace psn

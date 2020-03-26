@@ -52,6 +52,7 @@ class BufferTree
     LibraryCell*                upstream_buffer_cell_;
     LibraryCell*                driver_cell_;
     int                         polarity_;
+    int                         buffer_count_;
 
 public:
     BufferTree(float cap = 0.0, float req = 0.0, float cost = 0.0,
@@ -69,7 +70,8 @@ public:
           pin_(pin),
           upstream_buffer_cell_(buffer_cell),
           driver_cell_(nullptr),
-          polarity_(polarity)
+          polarity_(polarity),
+          buffer_count_(0)
 
     {
     }
@@ -87,7 +89,8 @@ public:
           pin_(nullptr),
           upstream_buffer_cell_(nullptr),
           driver_cell_(nullptr),
-          polarity_(0)
+          polarity_(0),
+          buffer_count_(left->bufferCount() + right->bufferCount())
 
     {
         if (left->hasUpstreamBufferCell())
@@ -325,11 +328,23 @@ public:
         return (required_ - wire_delay_) >=
                (other.required_ - other.wire_delay_);
     }
-    int
-    count() const
+    void
+    setBufferCount(int buffer_count)
     {
-        return (buffer_cell_ != nullptr) + (left_ ? left_->count() : 0) +
-               (right_ ? right_->count() : 0);
+        buffer_count_ = buffer_count;
+    }
+    int
+    bufferCount() const
+    {
+        return buffer_count_;
+    }
+    int
+    count()
+    {
+        buffer_count_ = (buffer_cell_ != nullptr) +
+                        (left_ ? left_->count() : 0) +
+                        (right_ ? right_->count() : 0);
+        return bufferCount();
     }
     int
     branchCount() const
@@ -342,8 +357,8 @@ public:
     {
         PSN_LOG_INFO("Buffers {} Cap. {} (+W {}) Req. {} (+W {}) Cost {} Left? "
                      "{} Right? {} Branches {}",
-                     count(), capacitance(), totalCapacitance(), required(),
-                     totalRequired(), cost(), left_ != nullptr,
+                     bufferCount(), capacitance(), totalCapacitance(),
+                     required(), totalRequired(), cost(), left_ != nullptr,
                      right_ != nullptr, branchCount());
     }
     void
@@ -352,7 +367,7 @@ public:
         PSN_LOG_DEBUG(
             "Buffers {} Cap. {} (+W {}) Req. {} (+W {}) Cost {} Left? "
             "{} Right? {} Branches {}",
-            count(), capacitance(), totalCapacitance(), required(),
+            bufferCount(), capacitance(), totalCapacitance(), required(),
             totalRequired(), cost(), left_ != nullptr, right_ != nullptr,
             branchCount());
     }
@@ -366,15 +381,16 @@ public:
     BufferSolution(){};
     BufferSolution(Psn* psn_inst, std::shared_ptr<BufferSolution>& left,
                    std::shared_ptr<BufferSolution>& right, Point location,
-                   LibraryCell* upstream_res_cell)
+                   LibraryCell* upstream_res_cell, float minimum_upstream_res)
 
     {
-        mergeBranches(psn_inst, left, right, location, upstream_res_cell);
+        mergeBranches(psn_inst, left, right, location, upstream_res_cell,
+                      minimum_upstream_res);
     }
     void
     mergeBranches(Psn* psn_inst, std::shared_ptr<BufferSolution>& left,
                   std::shared_ptr<BufferSolution>& right, Point location,
-                  LibraryCell* upstream_res_cell)
+                  LibraryCell* upstream_res_cell, float)
     {
         buffer_trees_.resize(left->bufferTrees().size() *
                                  right->bufferTrees().size(),
@@ -438,7 +454,9 @@ public:
             auto buffer_cost = psn_inst->handler()->area(buff);
             auto buffer_cap = psn_inst->handler()->bufferInputCapacitance(buff);
             auto buffer_opt = std::make_shared<BufferTree>(
-                buffer_cap, buff_required, buffer_cost, pt, nullptr, buff);
+                buffer_cap, buff_required, optimal_tree->cost() + buffer_cost,
+                pt, nullptr, buff);
+            buffer_opt->setBufferCount(optimal_tree->bufferCount() + 1);
 
             buffer_opt->setLeft(optimal_tree);
             buffer_trees_.push_back(buffer_opt);
@@ -460,7 +478,8 @@ public:
             auto buffer_cap =
                 psn_inst->handler()->inverterInputCapacitance(inv);
             auto buffer_opt = std::make_shared<BufferTree>(
-                buffer_cap, buff_required, buffer_cost, pt, nullptr, inv);
+                buffer_cap, buff_required, optimal_tree->cost() + buffer_cost,
+                pt, nullptr, inv);
             if (optimal_tree->polarity() == 1)
             {
                 buffer_opt->setPolarity(0);
@@ -469,6 +488,7 @@ public:
             {
                 buffer_opt->setPolarity(1);
             }
+            buffer_opt->setBufferCount(optimal_tree->bufferCount() + 1);
 
             buffer_opt->setLeft(optimal_tree);
             buffer_trees_.push_back(buffer_opt);
@@ -573,6 +593,21 @@ public:
         {
             return nullptr;
         }
+        auto first_tree = buffer_trees_[0];
+        std::sort(buffer_trees_.begin(), buffer_trees_.end(),
+                  [&](const std::shared_ptr<BufferTree>& a,
+                      const std::shared_ptr<BufferTree>& b) -> bool {
+                      float a_delay = psn_inst->handler()->gateDelay(
+                          driver_pin, a->totalCapacitance());
+                      float a_slack = a->totalRequired() - a_delay;
+                      float b_delay = psn_inst->handler()->gateDelay(
+                          driver_pin, b->totalCapacitance());
+                      float b_slack = b->totalRequired() - b_delay;
+                      return a_slack > b_slack ||
+                             (isEqual(a_slack, b_slack, 1E-6F) &&
+                              a->cost() < b->cost());
+                  });
+
         float                       max_slack = -1E+30F;
         std::shared_ptr<BufferTree> max_tree  = nullptr;
         for (auto& tree : buffer_trees_)
@@ -585,7 +620,7 @@ public:
                 driver_pin, tree->totalCapacitance());
             float slack = tree->totalRequired() - delay;
 
-            if (slack > max_slack)
+            if (isGreater(slack, max_slack))
             {
                 max_slack = slack;
                 max_tree  = tree;
@@ -593,6 +628,7 @@ public:
                 {
                     *tree_slack = max_slack;
                 }
+                break; // Already sorted, no need to continue searching.
             }
         }
         return max_tree;
@@ -611,6 +647,12 @@ public:
         return first < second &&
                !(std::abs(first - second) <
                  threshold * std::max(std::abs(first), std::abs(second)));
+    }
+    static bool
+    isEqual(float first, float second, float threshold)
+    {
+        return std::abs(first - second) <
+               threshold * std::max(std::abs(first), std::abs(second));
     }
     static bool
     isLessOrEqual(float first, float second, float threshold)

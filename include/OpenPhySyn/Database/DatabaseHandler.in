@@ -76,6 +76,7 @@ virtual Instance*                  instance(const char* name) const;
 virtual BlockTerm*                 port(const char* name) const;
 virtual float                      pinCapacitance(InstanceTerm* term) const;
 virtual float                      pinCapacitance(LibraryTerm* term) const;
+virtual float pinSlewLimit(InstanceTerm* term, bool* exists = nullptr) const;
 virtual float pinAverageRise(LibraryTerm* from, LibraryTerm* to) const;
 virtual float pinAverageFall(LibraryTerm* from, LibraryTerm* to) const;
 virtual float pinAverageRiseTransition(LibraryTerm* from,

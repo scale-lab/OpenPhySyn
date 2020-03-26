@@ -224,7 +224,10 @@ namespace eval psn {
         }
     }
 
-    define_cmd_args "repair_timing" {[-maximum_capacitance] [-maximum_transition] [-auto_buffer_library single|small|medium|large|all] [-minimize_buffer_library]\
+    define_cmd_args "repair_timing" {[-maximum_capacitance] [-maximum_transition]\
+				 [-timerless] [-cirtical_path]\
+				 [-auto_buffer_library single|small|medium|large|all]\
+				 [-minimize_buffer_library]\
 				 [-use_inverting_buffer_library] [-buffers buffers]\
 				 [-inverters inverters ] [-iterations iterations] [-area_penalty area_penalty]\
 				 [-min_gain gain] [-enable_gate_resize] \
@@ -233,9 +236,11 @@ namespace eval psn {
     proc repair_timing { args } {
         sta::parse_key_args "repair_timing" args \
         keys {-auto_buffer_library -buffers -inverters -iterations -min_gain -area_penalty}\
-        flags {-enable_gate_resize -minimize_buffer_library -use_inverting_buffer_library}
+        flags {-timerless -cirtical_path -enable_gate_resize -minimize_buffer_library -use_inverting_buffer_library -maximum_capacitance] -maximum_transition}
+        
         set buffer_lib_flag ""
         set auto_buf_flag ""
+        set mode_flag ""
 
         set has_max_cap [info exists flags(-maximum_capacitance)]
         set has_max_transition [info exists flags(-maximum_transition)]
@@ -248,6 +253,13 @@ namespace eval psn {
             set repair_target_flag "-maximum_capacitance"
         } elseif {$has_max_transition} {
             set repair_target_flag "-maximum_transition"
+        }
+
+        if {[info exists flags(-timerless)]} {
+            set mode_flag "-timerless"
+        }
+        if {[info exists flags(-cirtical_path)]} {
+            set mode_flag "$mode_flag -cirtical_path"
         }
 
         set has_auto_buff [info exists keys(-auto_buffer_library)]
@@ -308,7 +320,7 @@ namespace eval psn {
         if {[info exists keys(-iterations)]} {
             set iterations "$keys(-iterations)"
         }
-        set bufargs "$repair_target_flag $auto_buf_flag $minimuze_buf_lib_flag $use_inv_buf_lib_flag $buffer_lib_flag $inverters_flag $min_gain_flag $resize_flag $area_penalty_flag -iterations $iterations"
+        set bufargs "$repair_target_flag $mode_flag $auto_buf_flag $minimuze_buf_lib_flag $use_inv_buf_lib_flag $buffer_lib_flag $inverters_flag $min_gain_flag $resize_flag $area_penalty_flag -iterations $iterations"
         set affected [transform timing_buffer {*}$bufargs]
         if {$affected < 0} {
             puts "Timing buffer failed"
