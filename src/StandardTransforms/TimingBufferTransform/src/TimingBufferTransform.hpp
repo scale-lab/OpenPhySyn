@@ -43,6 +43,19 @@
 namespace psn
 {
 
+enum TimingRepairPhase
+{
+    PostGlobalPlace,
+    PostDetailedPlace,
+    PostRoue
+};
+enum TimingRepairTarget
+{
+    RepairMaxCapacitance,
+    RepairMaxTransition,
+    RepairSlack,
+};
+
 class TimingBufferTransformOptions
 {
 public:
@@ -63,17 +76,18 @@ public:
     bool                           repair_transition_violations;
     bool                           timerless;
     bool                           cirtical_path;
+    bool                           maximize_slack;
     bool                           use_library_lookup;
     int                            legalization_frequency;
     std::vector<LibraryCell*>      buffer_lib;
     std::vector<LibraryCell*>      inverter_lib;
     IntervalMap<int, LibraryCell*> buffer_lib_lookup;
     IntervalMap<int, LibraryCell*> inverter_lib_lookup;
-    std::string                    phase;
+    TimingRepairPhase              phase;
     bool                           use_best_solution_threshold;
     float                          best_solution_threshold;
     size_t                         best_solution_threshold_range;
-    float                          minimum_upstresm_resistance;
+    float                          minimum_upstream_resistance;
 };
 
 class TimingBufferTransform : public PsnTransform
@@ -88,14 +102,13 @@ private:
     int   capacitance_violations_;
     float current_area_;
     int   hasViolation(Psn* psn_inst, InstanceTerm* pin);
-    void  bufferPin(Psn* psn_inst, InstanceTerm* pin,
+    void  bufferPin(Psn* psn_inst, InstanceTerm* pin, TimingRepairTarget target,
                     std::unique_ptr<TimingBufferTransformOptions>& options);
     std::shared_ptr<BufferSolution>
-         bottomUp(Psn* psn_inst, SteinerPoint pt, SteinerPoint prev,
-                  std::vector<LibraryCell*>&   buffer_lib,
-                  std::vector<LibraryCell*>&   inverter_lib,
-                  std::shared_ptr<SteinerTree> st_tree,
-                  float                        minimum_upstream_resistance);
+         bottomUp(Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt,
+                  SteinerPoint prev, std::shared_ptr<SteinerTree> st_tree,
+                  TimingRepairTarget                             target,
+                  std::unique_ptr<TimingBufferTransformOptions>& options);
     void topDown(Psn* psn_inst, Net* net, std::shared_ptr<BufferTree> tree);
     void topDown(Psn* psn_inst, InstanceTerm* pin,
                  std::shared_ptr<BufferTree> tree);

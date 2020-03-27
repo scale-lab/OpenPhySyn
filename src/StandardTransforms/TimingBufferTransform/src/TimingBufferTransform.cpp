@@ -51,7 +51,6 @@
 // * Inverter pair instead of buffer pairs. [Done]
 // * Simultaneous buffering and gate sizing. [Done]
 // * Buffer library pruning. [Done]
-// * Buffer library lookup. [TODO]
 // * Squeeze pruning. [TODO]
 // * Preslack pruning. [Done]
 // * Timerless buffering. [InProgress]
@@ -73,7 +72,7 @@ TimingBufferTransform::TimingBufferTransform()
 
 void
 TimingBufferTransform::bufferPin(
-    Psn* psn_inst, InstanceTerm* pin,
+    Psn* psn_inst, InstanceTerm* pin, TimingRepairTarget target,
     std::unique_ptr<TimingBufferTransformOptions>& options)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
@@ -96,10 +95,8 @@ TimingBufferTransform::bufferPin(
     PSN_LOG_DEBUG("{} Slew Limit {}", handler.name(driver_pin),
                   handler.pinSlewLimit(driver_pin));
     auto top_point = st_tree->top();
-    auto buff_sol =
-        bottomUp(psn_inst, top_point, driver_point, options->buffer_lib,
-                 options->inverter_lib, std::move(st_tree),
-                 options->minimum_upstresm_resistance);
+    auto buff_sol  = bottomUp(psn_inst, driver_pin, top_point, driver_point,
+                             std::move(st_tree), target, options);
     if (buff_sol->bufferTrees().size())
     {
         std::shared_ptr<BufferTree> buff_tree    = nullptr;
@@ -191,12 +188,10 @@ TimingBufferTransform::bufferPin(
 }
 
 std::shared_ptr<BufferSolution>
-TimingBufferTransform::bottomUp(Psn* psn_inst, SteinerPoint pt,
-                                SteinerPoint                 prev,
-                                std::vector<LibraryCell*>&   buffer_lib,
-                                std::vector<LibraryCell*>&   inverter_lib,
-                                std::shared_ptr<SteinerTree> st_tree,
-                                float minimum_upstream_resistance)
+TimingBufferTransform::bottomUp(
+    Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt, SteinerPoint prev,
+    std::shared_ptr<SteinerTree> st_tree, TimingRepairTarget target,
+    std::unique_ptr<TimingBufferTransformOptions>& options)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
     if (pt != SteinerNull)
@@ -227,8 +222,8 @@ TimingBufferTransform::bottomUp(Psn* psn_inst, SteinerPoint pt,
                 std::make_shared<BufferSolution>();
             buff_sol->addTree(base_buffer_tree);
             buff_sol->addWireDelayAndCapacitance(wire_delay, wire_cap);
-            buff_sol->addLeafTrees(psn_inst, prev_location, buffer_lib,
-                                   inverter_lib);
+            buff_sol->addLeafTrees(psn_inst, driver_pin, prev_location,
+                                   options->buffer_lib, options->inverter_lib);
             buff_sol->addUpstreamReferences(psn_inst, base_buffer_tree);
 
             return buff_sol;
@@ -237,26 +232,24 @@ TimingBufferTransform::bottomUp(Psn* psn_inst, SteinerPoint pt,
         {
             PSN_LOG_DEBUG("({}, {}) bottomUp ---> left", location.getX(),
                           location.getY());
-            auto left =
-                bottomUp(psn_inst, st_tree->left(pt), pt, buffer_lib,
-                         inverter_lib, st_tree, minimum_upstream_resistance);
+            auto left = bottomUp(psn_inst, driver_pin, st_tree->left(pt), pt,
+                                 st_tree, target, options);
             PSN_LOG_DEBUG("({}, {}) bottomUp ---> right", location.getX(),
                           location.getY());
-            auto right =
-                bottomUp(psn_inst, st_tree->right(pt), pt, buffer_lib,
-                         inverter_lib, st_tree, minimum_upstream_resistance);
+            auto right = bottomUp(psn_inst, driver_pin, st_tree->right(pt), pt,
+                                  st_tree, target, options);
 
             PSN_LOG_DEBUG("({}, {}) bottomUp merging", location.getX(),
                           location.getY());
             std::shared_ptr<BufferSolution> buff_sol =
                 std::make_shared<BufferSolution>(
                     psn_inst, left, right, location,
-                    buffer_lib[buffer_lib.size() / 2],
-                    minimum_upstream_resistance);
+                    options->buffer_lib[options->buffer_lib.size() / 2],
+                    options->minimum_upstream_resistance);
             buff_sol->addWireDelayAndCapacitance(wire_delay, wire_cap);
 
-            buff_sol->addLeafTrees(psn_inst, prev_location, buffer_lib,
-                                   inverter_lib);
+            buff_sol->addLeafTrees(psn_inst, driver_pin, prev_location,
+                                   options->buffer_lib, options->inverter_lib);
             return buff_sol;
         }
     }
@@ -397,7 +390,8 @@ TimingBufferTransform::fixCapacitanceViolations(
             {
                 PSN_LOG_DEBUG("Fixing cap. violations for pin {}",
                               handler.name(pin));
-                bufferPin(psn_inst, pin, options);
+                bufferPin(psn_inst, pin,
+                          TimingRepairTarget::RepairMaxCapacitance, options);
                 if (handler.hasMaximumArea() &&
                     current_area_ > handler.maximumArea())
                 {
@@ -441,7 +435,8 @@ TimingBufferTransform::fixTransitionViolations(
             {
                 PSN_LOG_DEBUG("Fixing transition violations for pin {}",
                               handler.name(pin));
-                bufferPin(psn_inst, pin, options);
+                bufferPin(psn_inst, pin,
+                          TimingRepairTarget::RepairMaxTransition, options);
                 if (handler.hasMaximumArea() &&
                     current_area_ > handler.maximumArea())
                 {
@@ -606,13 +601,14 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     options->repair_transition_violations  = false;
     options->timerless                     = false;
     options->cirtical_path                 = false;
+    options->maximize_slack                = false;
     options->use_library_lookup            = true;
     options->legalization_frequency        = 0;
-    options->phase                         = "postGlobalPlace";
+    options->phase                         = TimingRepairPhase::PostGlobalPlace;
     options->use_best_solution_threshold   = true;
     options->best_solution_threshold       = 10E-12; // 10ps
     options->best_solution_threshold_range = 3; // Check the top 3 solutions
-    options->minimum_upstresm_resistance   = 120;
+    options->minimum_upstream_resistance   = 120;
 
     std::unordered_set<std::string> buffer_lib_names;
     std::unordered_set<std::string> inverter_lib_names;
@@ -620,7 +616,7 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         {"-buffers", "-inverters", "-enable_gate_resize", "-iterations",
          "-min_gain", "-area_penalty", "-auto_buffer_library",
          "-minimize_buffer_library", "-use_inverting_buffer_library",
-         "-timerless", "-cirtical_path", "-postGlobalPlace",
+         "-timerless", "-cirtical_path", "-maximize_slack", "-postGlobalPlace",
          "-postDetailedPlace", "-postRoute"});
 
     if (args.size() < 2)
@@ -788,6 +784,10 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         {
             options->cirtical_path = true;
         }
+        else if (args[i] == "-maximize_slack")
+        {
+            options->maximize_slack = true;
+        }
         else if (args[i] == "-minimize_buffer_library")
         {
             options->minimize_cluster_buffers = true;
@@ -798,19 +798,19 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         }
         else if (args[i] == "-postGlobalPlace")
         {
-            options->phase = "postGlobalPlace";
+            options->phase = TimingRepairPhase::PostGlobalPlace;
         }
         else if (args[i] == "-postDetailedPlace")
         {
             PSN_LOG_ERROR(
                 "Post detailed placement timing repair is not supported");
-            options->phase = "postDetailedPlace";
+            options->phase = TimingRepairPhase::PostDetailedPlace;
             return -1;
         }
         else if (args[i] == "-postRoute")
         {
             PSN_LOG_ERROR("Post routing timing repair is not supported");
-            options->phase = "postRoute";
+            options->phase = TimingRepairPhase::PostRoue;
             return -1;
         }
         else

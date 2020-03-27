@@ -225,7 +225,7 @@ namespace eval psn {
     }
 
     define_cmd_args "repair_timing" {[-maximum_capacitance] [-maximum_transition]\
-				 [-timerless] [-cirtical_path]\
+				 [-timerless] [-cirtical_path] [-maximize_slack]\
 				 [-auto_buffer_library single|small|medium|large|all]\
 				 [-minimize_buffer_library]\
 				 [-use_inverting_buffer_library] [-buffers buffers]\
@@ -236,7 +236,7 @@ namespace eval psn {
     proc repair_timing { args } {
         sta::parse_key_args "repair_timing" args \
         keys {-auto_buffer_library -buffers -inverters -iterations -min_gain -area_penalty}\
-        flags {-timerless -cirtical_path -enable_gate_resize -minimize_buffer_library -use_inverting_buffer_library -maximum_capacitance] -maximum_transition}
+        flags {-maximize_slack -timerless -cirtical_path -enable_gate_resize -minimize_buffer_library -use_inverting_buffer_library -maximum_capacitance] -maximum_transition}
         
         set buffer_lib_flag ""
         set auto_buf_flag ""
@@ -260,6 +260,14 @@ namespace eval psn {
         }
         if {[info exists flags(-cirtical_path)]} {
             set mode_flag "$mode_flag -cirtical_path"
+        }
+
+        if {[info exists flags(-maximize_slack)]} {
+            if {[info exists flags(-timerless)]} {
+                 sta::sta_error "Cannot use -maximize_slack with -timerless mode"
+                retrun
+            }
+            set mode_flag "$mode_flag -maximize_slack"
         }
 
         set has_auto_buff [info exists keys(-auto_buffer_library)]

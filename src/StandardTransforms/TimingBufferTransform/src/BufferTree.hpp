@@ -431,13 +431,15 @@ public:
     }
 
     void
-    addLeafTrees(Psn* psn_inst, Point pt, std::vector<LibraryCell*>& buffer_lib,
+    addLeafTrees(Psn* psn_inst, InstanceTerm*, Point pt,
+                 std::vector<LibraryCell*>& buffer_lib,
                  std::vector<LibraryCell*>& inverter_lib)
     {
         if (!buffer_trees_.size())
         {
             return;
         }
+
         for (auto& buff : buffer_lib)
         {
             auto optimal_tree  = *(buffer_trees_.begin());
@@ -457,7 +459,6 @@ public:
                 buffer_cap, buff_required, optimal_tree->cost() + buffer_cost,
                 pt, nullptr, buff);
             buffer_opt->setBufferCount(optimal_tree->bufferCount() + 1);
-
             buffer_opt->setLeft(optimal_tree);
             buffer_trees_.push_back(buffer_opt);
         }
