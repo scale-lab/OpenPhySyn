@@ -28,41 +28,10 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "Psn/Psn.hpp"
-#include "PsnException/PsnException.hpp"
-#include "Utils/FileUtils.hpp"
-#include "doctest.h"
 
-using namespace psn;
+#include <OpenPhySyn/Utils/IntervalMap.hpp>
 
-TEST_CASE("Should perform buffer insertion to fix cap./trans. violations for "
-          "large buffer library")
+namespace psn
 {
-    Psn& psn_inst = Psn::instance();
-    try
-    {
-        psn_inst.clearDatabase();
-        psn_inst.readLib("../tests/data/libraries/Nangate45/"
-                         "NangateOpenCellLibrary_typical.lib");
-        psn_inst.readLef(
-            "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
-        psn_inst.readDef(
-            "../tests/data/designs/timing_buffer/ibex_resized.def");
-        psn_inst.setWireRC("metal2");
-        CHECK(psn_inst.database()->getChip() != nullptr);
-        CHECK(psn_inst.hasTransform("timing_buffer"));
-        auto& handler = *(psn_inst.handler());
-        handler.createClock("core_clock", {"clk_i"}, 10E-09);
-        auto result = psn_inst.runTransform(
-            "timing_buffer", std::vector<std::string>(
-                                 {"-buffers", "CLKBUF_X1", "CLKBUF_X2",
-                                  "CLKBUF_X3", "BUF_X1", "BUF_X2", "BUF_X4",
-                                  "-inverters", "INV_X1", "INV_X2", "INV_X4"}));
-        CHECK(result <= 288);
-        CHECK(result >= 220);
-    }
-    catch (PsnException& e)
-    {
-        FAIL(e.what());
-    }
-}
+
+} // namespace psn

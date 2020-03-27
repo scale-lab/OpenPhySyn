@@ -224,3 +224,5 @@ virtual HandlerType handlerType() const;
 virtual void        calculateParasitics();
 virtual void        calculateParasitics(Net* net);
 void                resetCache();
+void                setLegalizer(std::function<bool()> legalizer);
+bool                legalize();

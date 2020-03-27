@@ -606,6 +606,8 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     options->repair_transition_violations  = false;
     options->timerless                     = false;
     options->cirtical_path                 = false;
+    options->use_library_lookup            = true;
+    options->legalization_frequency        = 0;
     options->phase                         = "postGlobalPlace";
     options->use_best_solution_threshold   = true;
     options->best_solution_threshold       = 10E-12; // 10ps

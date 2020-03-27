@@ -124,11 +124,12 @@ private:
                                     int counts[]);
     void      slewLimit(InstanceTerm* pin, sta::MinMax* min_max, float& limit,
                         bool& exists) const;
-    sta::ParasiticNode* findParasiticNode(std::unique_ptr<SteinerTree>& tree,
-                                          sta::Parasitic*     parasitic,
-                                          const Net*          net,
-                                          const InstanceTerm* pin,
-                                          SteinerPoint        pt);
+    sta::ParasiticNode*   findParasiticNode(std::unique_ptr<SteinerTree>& tree,
+                                            sta::Parasitic*     parasitic,
+                                            const Net*          net,
+                                            const InstanceTerm* pin,
+                                            SteinerPoint        pt);
+    std::function<bool()> legalizer_;
 };
 
 } // namespace psn

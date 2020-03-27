@@ -46,26 +46,34 @@ namespace psn
 class TimingBufferTransformOptions
 {
 public:
-    float                     initial_area;
-    int                       max_iterations;
-    float                     min_gain;
-    float                     area_penalty;
-    bool                      cluster_buffers;
-    bool                      cluster_inverters;
-    bool                      minimize_cluster_buffers;
-    float                     cluster_threshold;
-    bool                      resize_gates;
-    bool                      repair_capacitance_violations;
-    bool                      repair_transition_violations;
-    bool                      timerless;
-    bool                      cirtical_path;
-    std::vector<LibraryCell*> buffer_lib;
-    std::vector<LibraryCell*> inverter_lib;
-    std::string               phase;
-    bool                      use_best_solution_threshold;
-    float                     best_solution_threshold;
-    size_t                    best_solution_threshold_range;
-    float                     minimum_upstresm_resistance;
+    TimingBufferTransformOptions()
+        : buffer_lib_lookup(0), inverter_lib_lookup(0)
+    {
+    }
+    float                          initial_area;
+    int                            max_iterations;
+    float                          min_gain;
+    float                          area_penalty;
+    bool                           cluster_buffers;
+    bool                           cluster_inverters;
+    bool                           minimize_cluster_buffers;
+    float                          cluster_threshold;
+    bool                           resize_gates;
+    bool                           repair_capacitance_violations;
+    bool                           repair_transition_violations;
+    bool                           timerless;
+    bool                           cirtical_path;
+    bool                           use_library_lookup;
+    int                            legalization_frequency;
+    std::vector<LibraryCell*>      buffer_lib;
+    std::vector<LibraryCell*>      inverter_lib;
+    IntervalMap<int, LibraryCell*> buffer_lib_lookup;
+    IntervalMap<int, LibraryCell*> inverter_lib_lookup;
+    std::string                    phase;
+    bool                           use_best_solution_threshold;
+    float                          best_solution_threshold;
+    size_t                         best_solution_threshold_range;
+    float                          minimum_upstresm_resistance;
 };
 
 class TimingBufferTransform : public PsnTransform

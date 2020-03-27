@@ -1338,6 +1338,20 @@ OpenStaHandler::filterPins(std::vector<InstanceTerm*>& terms,
     return inst_terms;
 }
 
+void
+OpenStaHandler::setLegalizer(std::function<bool()> legalizer)
+{
+    legalizer_ = legalizer;
+}
+bool
+OpenStaHandler::legalize()
+{
+    if (legalizer_)
+    {
+        return legalizer_();
+    }
+    return false;
+}
 bool
 OpenStaHandler::isTopLevel(InstanceTerm* term) const
 {
