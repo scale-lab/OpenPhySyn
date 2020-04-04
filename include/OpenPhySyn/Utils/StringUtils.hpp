@@ -29,8 +29,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_STRING_UTILS__
-#define __PSN_STRING_UTILS__
+#pragma once
+
 #include <string>
 #include <vector>
 
@@ -48,4 +48,3 @@ public:
     static bool                     isFalsy(std::string s);
 };
 } // namespace psn
-#endif

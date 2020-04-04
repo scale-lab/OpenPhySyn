@@ -29,10 +29,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <PsnLogger/PsnLogger.hpp>
 #include <tcl.h>
+#include "OpenPhySyn/Utils/PsnGlobal.hpp"
 #include "Psn/Psn.hpp"
 #include "PsnException/ProgramOptionsException.hpp"
+#include "PsnLogger/PsnLogger.hpp"
+
 int psnTclAppInit(Tcl_Interp* interp);
 
 int

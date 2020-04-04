@@ -29,9 +29,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_DEF_WRITER_
-#define __PSN_DEF_WRITER_
-#include <OpenPhySyn/Database/Types.hpp>
+#pragma once
+
+#include "OpenPhySyn/Database/Types.hpp"
+#include "opendb/defout.h"
 
 namespace psn
 {
@@ -47,4 +48,3 @@ private:
     DefOut    out_;
 };
 } // namespace psn
-#endif

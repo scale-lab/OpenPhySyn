@@ -30,9 +30,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "HelloTransform.hpp"
-#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
 #include <algorithm>
 #include <cmath>
+#include "OpenPhySyn/PsnLogger/PsnLogger.hpp"
+#include "OpenPhySyn/Utils/PsnGlobal.hpp"
 
 using namespace psn;
 

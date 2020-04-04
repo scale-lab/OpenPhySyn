@@ -30,8 +30,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "Exports.hpp"
-#include <OpenPhySyn/Psn/Psn.hpp>
 #include <memory>
+#include "OpenPhySyn/Psn/Psn.hpp"
+#include "OpenPhySyn/Utils/PsnGlobal.hpp"
+#include "OpenSTA/liberty/Liberty.hh"
 #include "PsnLogger/PsnLogger.hpp"
 
 namespace psn
@@ -157,6 +159,37 @@ bool
 has_liberty()
 {
     return Psn::instance().hasLiberty();
+}
+
+std::vector<std::string>
+capacitance_violations()
+{
+    std::vector<std::string> names;
+    if (!Psn::instance().hasDesign())
+    {
+        PSN_LOG_ERROR("Could not find any loaded design.");
+        return names;
+    }
+    for (auto& pin : Psn::instance().handler()->maximumTransitionViolations())
+    {
+        names.push_back(Psn::instance().handler()->name(pin));
+    }
+    return names;
+}
+std::vector<std::string>
+transition_violations()
+{
+    std::vector<std::string> names;
+    if (!Psn::instance().hasDesign())
+    {
+        PSN_LOG_ERROR("Could not find any loaded design.");
+        return names;
+    }
+    for (auto& pin : Psn::instance().handler()->maximumCapacitanceViolations())
+    {
+        names.push_back(Psn::instance().handler()->name(pin));
+    }
+    return names;
 }
 
 std::vector<std::string>

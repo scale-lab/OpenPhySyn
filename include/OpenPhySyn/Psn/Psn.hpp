@@ -29,17 +29,17 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_PSN__
-#define __PSN_PSN__
-#include <OpenPhySyn/Database/DatabaseHandler.hpp>
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Psn/ProgramOptions.hpp>
-#include <OpenPhySyn/PsnLogger/LogLevel.hpp>
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
-#include <OpenPhySyn/Transform/PsnTransform.hpp>
-#include <OpenPhySyn/Transform/TransformHandler.hpp>
-#include <OpenPhySyn/Transform/TransformInfo.hpp>
-#include <OpenSTA/network/ConcreteNetwork.hh>
+#pragma once
+
+#include "OpenPhySyn/Database/DatabaseHandler.hpp"
+#include "OpenPhySyn/Database/Types.hpp"
+#include "OpenPhySyn/Psn/ProgramOptions.hpp"
+#include "OpenPhySyn/PsnLogger/LogLevel.hpp"
+#include "OpenPhySyn/Sta/DatabaseSta.hpp"
+#include "OpenPhySyn/Transform/PsnTransform.hpp"
+#include "OpenPhySyn/Transform/TransformHandler.hpp"
+#include "OpenPhySyn/Transform/TransformInfo.hpp"
+#include "OpenSTA/network/ConcreteNetwork.hh"
 
 #include <unordered_map>
 
@@ -136,4 +136,3 @@ private:
     static bool                                    is_initialized_;
 };
 } // namespace psn
-#endif

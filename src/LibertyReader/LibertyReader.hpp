@@ -29,11 +29,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_LIBERTY_READER__
-#define __PSN_LIBERTY_READER__
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
-#include <OpenSTA/liberty/LibertyParser.hh>
+#pragma once
+
+#include "OpenPhySyn/Database/Types.hpp"
+#include "OpenPhySyn/Sta/DatabaseSta.hpp"
+#include "OpenSTA/liberty/LibertyParser.hh"
 
 namespace psn
 {
@@ -47,4 +47,3 @@ private:
     sta::DatabaseSta* sta_;
 };
 } // namespace psn
-#endif

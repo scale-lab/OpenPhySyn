@@ -29,28 +29,46 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #ifdef USE_OPENSTA_DB_HANDLER
-#ifndef __PSN_OPEN_STA_HANDLER__
-#define __PSN_OPEN_STA_HANDLER__
+#pragma once
 
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
-#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
-#include <OpenPhySyn/Sta/PathPoint.hpp>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
-#include <OpenPhySyn/Utils/PsnGlobal.hpp>
-#include <PsnLogger/PsnLogger.hpp>
+#include "OpenPhySyn/Database/Types.hpp"
+#include "OpenPhySyn/Sta/PathPoint.hpp"
+
+#include <functional>
+#include <memory>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+namespace sta
+{
+class TimingArc;
+class RiseFall;
+class ParasiticAnalysisPt;
+class Pvt;
+class Corner;
+class Path;
+class Vertex;
+class FuncExpr;
+class MinMax;
+class PathEnd;
+class ParasiticNode;
+class DcalcAnalysisPt;
+class Parasitic;
+} // namespace sta
 
 namespace psn
 {
+class Psn;
+class SteinerTree;
+typedef int SteinerPoint;
 class OpenStaHandler
 {
+
 public:
     OpenStaHandler(Psn* psn_inst, DatabaseSta* sta);
 
-#include <OpenPhySyn/Database/DatabaseHandler.in>
+#include "OpenPhySyn/Database/DatabaseHandler.in"
 
     DatabaseStaNetwork* network() const;
     DatabaseSta*        sta() const;
@@ -61,9 +79,9 @@ public:
         std::unordered_map<LibraryTerm*, int>& inputs) const;
 
 private:
-    sta::LibertyLibrarySeq allLibs() const;
-    DatabaseSta*           sta_;
-    Database*              db_;
+    std::vector<Liberty*> allLibs() const;
+    DatabaseSta*          sta_;
+    Database*             db_;
 
     const sta::MinMax*        min_max_;
     bool                      has_buffer_inverter_seq_;
@@ -98,7 +116,7 @@ private:
     const sta::DcalcAnalysisPt*     dcalc_ap_;
     const sta::Pvt*                 pvt_;
     const sta::ParasiticAnalysisPt* parasitics_ap_;
-    sta::Slew                       target_slews_[sta::RiseFall::index_count];
+    float                           target_slews_[2];
     float pinTableAverage(LibraryTerm* from, LibraryTerm* to,
                           bool is_delay = true, bool is_rise = true) const;
     float pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,
@@ -113,25 +131,23 @@ private:
     void                                findTargetLoads();
     void                                makeEquivalentCells();
 
-    void      findTargetLoads(sta::LibertyLibrarySeq* resize_libs);
-    void      findTargetLoads(Liberty* library, sta::Slew slews[]);
-    void      findTargetLoad(LibraryCell* cell, sta::Slew slews[]);
-    float     findTargetLoad(LibraryCell* cell, sta::TimingArc* arc,
-                             sta::Slew in_slew, sta::Slew out_slew);
-    sta::Slew targetSlew(const sta::RiseFall* rf);
-    void      findBufferTargetSlews(sta::LibertyLibrarySeq* resize_libs);
-    void      findBufferTargetSlews(Liberty* library, sta::Slew slews[],
-                                    int counts[]);
-    void      slewLimit(InstanceTerm* pin, sta::MinMax* min_max, float& limit,
-                        bool& exists) const;
-    sta::ParasiticNode*   findParasiticNode(std::unique_ptr<SteinerTree>& tree,
-                                            sta::Parasitic*     parasitic,
-                                            const Net*          net,
-                                            const InstanceTerm* pin,
-                                            SteinerPoint        pt);
-    std::function<bool()> legalizer_;
+    void  findTargetLoads(std::vector<Liberty*>* resize_libs);
+    void  findTargetLoads(Liberty* library, float slews[]);
+    void  findTargetLoad(LibraryCell* cell, float slews[]);
+    float findTargetLoad(LibraryCell* cell, sta::TimingArc* arc, float in_slew,
+                         float out_slew);
+    float targetSlew(const sta::RiseFall* rf);
+    void  findBufferTargetSlews(std::vector<Liberty*>* resize_libs);
+    void  findBufferTargetSlews(Liberty* library, float slews[], int counts[]);
+    void  slewLimit(InstanceTerm* pin, sta::MinMax* min_max, float& limit,
+                    bool& exists) const;
+    sta::ParasiticNode* findParasiticNode(std::unique_ptr<SteinerTree>& tree,
+                                          sta::Parasitic*     parasitic,
+                                          const Net*          net,
+                                          const InstanceTerm* pin,
+                                          SteinerPoint        pt);
+    std::function<bool(float)> legalizer_;
 };
 
 } // namespace psn
-#endif
 #endif

@@ -149,34 +149,38 @@ virtual bool                      isBiDirect(LibraryTerm* term) const;
 virtual bool                      isTriState(LibraryTerm* term) const;
 virtual bool                      isCombinational(Instance* inst) const;
 virtual bool                      isCombinational(LibraryCell* cell) const;
-virtual bool      isSingleOutputCombinational(Instance* inst) const;
-virtual bool      isSingleOutputCombinational(LibraryCell* cell) const;
-virtual void      replaceInstance(Instance* inst, LibraryCell* cell);
-virtual bool      violatesMaximumCapacitance(InstanceTerm* term,
-                                             float         load_cap) const;
-virtual bool      violatesMaximumCapacitance(InstanceTerm* term) const;
-virtual bool      violatesMaximumTransition(InstanceTerm* term) const;
-virtual bool      isLoad(InstanceTerm* term) const;
+virtual bool isSingleOutputCombinational(Instance* inst) const;
+virtual bool isSingleOutputCombinational(LibraryCell* cell) const;
+virtual void replaceInstance(Instance* inst, LibraryCell* cell);
+virtual bool violatesMaximumCapacitance(InstanceTerm* term,
+                                        float         load_cap) const;
+virtual bool violatesMaximumCapacitance(InstanceTerm* term) const;
+virtual bool violatesMaximumTransition(InstanceTerm* term) const;
+virtual std::vector<InstanceTerm*> maximumTransitionViolations() const;
+virtual std::vector<InstanceTerm*> maximumCapacitanceViolations() const;
+virtual bool                       isLoad(InstanceTerm* term) const;
 virtual Instance* createInstance(const char* inst_name, LibraryCell* cell);
 virtual void createClock(const char* clock_name, std::vector<BlockTerm*> ports,
                          float period);
 virtual void createClock(const char* clock_name, std::vector<std::string> ports,
                          float period);
 virtual Net* createNet(const char* net_name);
-virtual float        resistance(LibraryTerm* term) const;
-virtual float        resistancePerMicron() const;
-virtual float        capacitancePerMicron() const;
-virtual void         connect(Net* net, InstanceTerm* term) const;
-virtual void         connect(Net* net, Instance* inst, LibraryTerm* port) const;
-virtual void         connect(Net* net, Instance* inst, Port* port) const;
-virtual void         disconnect(InstanceTerm* term) const;
-virtual int          disconnectAll(Net* net) const;
-virtual void         swapPins(InstanceTerm* first, InstanceTerm* second);
-virtual void         del(Net* net) const;
-virtual void         del(Instance* inst) const;
-virtual void         clear();
-virtual unsigned int fanoutCount(Net* net,
-                                 bool include_top_level = false) const;
+virtual float resistance(LibraryTerm* term) const;
+virtual float resistancePerMicron() const;
+virtual float capacitancePerMicron() const;
+virtual void  connect(Net* net, InstanceTerm* term) const;
+virtual void  connect(Net* net, Instance* inst, LibraryTerm* port) const;
+virtual void  connect(Net* net, Instance* inst, Port* port) const;
+virtual void  disconnect(InstanceTerm* term) const;
+virtual int   disconnectAll(Net* net) const;
+virtual Net* bufferNet(Net* b_net, LibraryCell* buffer, std::string buffer_name,
+                       std::string net_name, Point location);
+virtual void swapPins(InstanceTerm* first, InstanceTerm* second);
+virtual void del(Net* net) const;
+virtual void del(Instance* inst) const;
+virtual void clear();
+virtual unsigned int           fanoutCount(Net* net,
+                                           bool include_top_level = false) const;
 virtual std::vector<PathPoint> criticalPath(int path_count = 1) const;
 virtual std::vector<std::vector<PathPoint>> bestPath(int path_count = 1) const;
 virtual std::vector<PathPoint> worstSlackPath(InstanceTerm* term) const;
@@ -187,7 +191,9 @@ virtual float slack(InstanceTerm* term, bool is_rise, bool worst) const;
 virtual float slack(InstanceTerm* term, bool worst = true) const;
 virtual float arrival(InstanceTerm* term, int ap_index,
                       bool is_rise = true) const;
-virtual float slew(InstanceTerm* term, bool is_rise = true) const;
+virtual float slew(InstanceTerm* term) const;
+virtual float slew(InstanceTerm* term, bool is_rise) const;
+virtual float slew(LibraryTerm* term, float cap, float* tr_slew = nullptr);
 virtual float required(InstanceTerm* term, bool worst = true) const;
 virtual bool  isCommutative(InstanceTerm* first, InstanceTerm* second) const;
 virtual bool  dontUse(LibraryCell* cell) const;
@@ -223,6 +229,7 @@ virtual bool        hasWireRC();
 virtual HandlerType handlerType() const;
 virtual void        calculateParasitics();
 virtual void        calculateParasitics(Net* net);
-void                resetCache();
-void                setLegalizer(std::function<bool()> legalizer);
-bool                legalize();
+virtual void        resetCache();
+virtual void        setLegalizer(std::function<bool(float)> legalizer);
+virtual bool        legalize(float max_displacement = 0.0);
+virtual float       bufferFixedInputSlew(LibraryCell* buffer_cell, float cap);

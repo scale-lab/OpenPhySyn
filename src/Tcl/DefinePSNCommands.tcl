@@ -230,12 +230,12 @@ namespace eval psn {
 				 [-minimize_buffer_library]\
 				 [-use_inverting_buffer_library] [-buffers buffers]\
 				 [-inverters inverters ] [-iterations iterations] [-area_penalty area_penalty]\
-				 [-min_gain gain] [-enable_gate_resize] \
+				 [-legalization_frequency count] [-min_gain gain] [-enable_gate_resize] \
     }
 
     proc repair_timing { args } {
         sta::parse_key_args "repair_timing" args \
-        keys {-auto_buffer_library -buffers -inverters -iterations -min_gain -area_penalty}\
+        keys {-auto_buffer_library -buffers -inverters -iterations -min_gain -area_penalty -legalization_frequency}\
         flags {-maximize_slack -timerless -cirtical_path -enable_gate_resize -minimize_buffer_library -use_inverting_buffer_library -maximum_capacitance] -maximum_transition}
         
         set buffer_lib_flag ""
@@ -316,6 +316,10 @@ namespace eval psn {
         if {[info exists keys(-min_gain)]} {
             set min_gain_flag  "-min_gain $keys(-min_gain)"
         }
+        set legalization_freq_flag ""
+        if {[info exists keys(-legalization_frequency)]} {
+            set legalization_freq_flag  "-legalization_frequency $keys(-legalization_frequency)"
+        }
         set area_penalty_flag ""
         if {[info exists keys(-area_penalty)]} {
             set area_penalty_flag  "-area_penalty $keys(-area_penalty)"
@@ -328,7 +332,7 @@ namespace eval psn {
         if {[info exists keys(-iterations)]} {
             set iterations "$keys(-iterations)"
         }
-        set bufargs "$repair_target_flag $mode_flag $auto_buf_flag $minimuze_buf_lib_flag $use_inv_buf_lib_flag $buffer_lib_flag $inverters_flag $min_gain_flag $resize_flag $area_penalty_flag -iterations $iterations"
+        set bufargs "$repair_target_flag $mode_flag $auto_buf_flag $minimuze_buf_lib_flag $use_inv_buf_lib_flag $legalization_freq_flag $buffer_lib_flag $inverters_flag $min_gain_flag $resize_flag $area_penalty_flag -iterations $iterations"
         set affected [transform timing_buffer {*}$bufargs]
         if {$affected < 0} {
             puts "Timing buffer failed"

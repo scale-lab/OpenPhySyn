@@ -29,8 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_INTERVAL_MAP__
-#define __PSN_INTERVAL_MAP__
+#pragma once
 
 #include <iterator>
 #include <limits>
@@ -101,4 +100,3 @@ public:
         return (--map_.upper_bound(key))->second;
     }
 };
-#endif

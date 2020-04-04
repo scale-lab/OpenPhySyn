@@ -29,7 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <OpenPhySyn/Utils/StringUtils.hpp>
+#include "OpenPhySyn/Utils/StringUtils.hpp"
 #include <algorithm>
 #include <fstream>
 #include <libgen.h>

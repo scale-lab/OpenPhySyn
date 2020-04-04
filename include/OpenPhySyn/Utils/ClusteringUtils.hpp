@@ -29,8 +29,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_CLUSTERING_UTILS__
-#define __PSN_CLUSTERING_UTILS__
+#pragma once
+
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -199,4 +199,3 @@ public:
     }
 };
 } // namespace psn
-#endif

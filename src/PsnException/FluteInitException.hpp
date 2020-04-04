@@ -29,8 +29,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_FLUTE_INIT_EXCEPTION__
-#define __PSN_FLUTE_INIT_EXCEPTION__
+#pragma once
+
 #include "PsnException.hpp"
 
 namespace psn
@@ -45,4 +45,3 @@ public:
 private:
 };
 } // namespace psn
-#endif

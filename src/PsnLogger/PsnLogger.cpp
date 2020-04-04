@@ -29,7 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
+#include "OpenPhySyn/PsnLogger/PsnLogger.hpp"
 
 namespace psn
 {

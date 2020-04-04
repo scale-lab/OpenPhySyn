@@ -29,16 +29,16 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <OpenPhySyn/Database/DatabaseHandler.hpp>
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Psn/Psn.hpp>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
-#include <OpenPhySyn/Transform/PsnTransform.hpp>
-#include <OpenPhySyn/Utils/IntervalMap.hpp>
 #include <cstring>
 #include <memory>
 #include <unordered_set>
 #include "BufferTree.hpp"
+#include "OpenPhySyn/Database/DatabaseHandler.hpp"
+#include "OpenPhySyn/Database/Types.hpp"
+#include "OpenPhySyn/Psn/Psn.hpp"
+#include "OpenPhySyn/SteinerTree/SteinerTree.hpp"
+#include "OpenPhySyn/Transform/PsnTransform.hpp"
+#include "OpenPhySyn/Utils/IntervalMap.hpp"
 
 namespace psn
 {
@@ -62,6 +62,26 @@ public:
     TimingBufferTransformOptions()
         : buffer_lib_lookup(0), inverter_lib_lookup(0)
     {
+        max_iterations                = 1;
+        min_gain                      = 0;
+        area_penalty                  = 0.0;
+        cluster_buffers               = false;
+        cluster_inverters             = false;
+        minimize_cluster_buffers      = false;
+        cluster_threshold             = 0.0;
+        resize_gates                  = false;
+        repair_capacitance_violations = false;
+        repair_transition_violations  = false;
+        timerless                     = false;
+        cirtical_path                 = false;
+        maximize_slack                = false;
+        use_library_lookup            = true;
+        legalization_frequency        = 0;
+        phase                         = TimingRepairPhase::PostGlobalPlace;
+        use_best_solution_threshold   = true;
+        best_solution_threshold       = 10E-12; // 10ps
+        best_solution_threshold_range = 3;      // Check the top 3 solutions
+        minimum_upstream_resistance   = 120;
     }
     float                          initial_area;
     int                            max_iterations;
@@ -96,6 +116,7 @@ class TimingBufferTransform : public PsnTransform
 private:
     int   buffer_count_;
     int   resize_count_;
+    int   net_count_;
     int   net_index_;
     int   buff_index_;
     int   transition_violations_;
@@ -105,10 +126,15 @@ private:
     void  bufferPin(Psn* psn_inst, InstanceTerm* pin, TimingRepairTarget target,
                     std::unique_ptr<TimingBufferTransformOptions>& options);
     std::shared_ptr<BufferSolution>
-         bottomUp(Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt,
-                  SteinerPoint prev, std::shared_ptr<SteinerTree> st_tree,
-                  TimingRepairTarget                             target,
-                  std::unique_ptr<TimingBufferTransformOptions>& options);
+    bottomUp(Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt,
+             SteinerPoint prev, std::shared_ptr<SteinerTree> st_tree,
+             TimingRepairTarget                             target,
+             std::unique_ptr<TimingBufferTransformOptions>& options);
+    std::shared_ptr<BufferSolution>
+         bottomUpTimerless(Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt,
+                           SteinerPoint prev, std::shared_ptr<SteinerTree> st_tree,
+                           TimingRepairTarget                             target,
+                           std::unique_ptr<TimingBufferTransformOptions>& options);
     void topDown(Psn* psn_inst, Net* net, std::shared_ptr<BufferTree> tree);
     void topDown(Psn* psn_inst, InstanceTerm* pin,
                  std::shared_ptr<BufferTree> tree);
@@ -133,7 +159,7 @@ public:
 };
 
 DEFINE_TRANSFORM(
-    TimingBufferTransform, "timing_buffer", "1.4",
+    TimingBufferTransform, "timing_buffer", "1.5",
     "Performs several variations of buffering and resizing to fix timing "
     "violations",
     "Usage: transform timing_buffer [-maximum_capacitance] "
@@ -143,6 +169,7 @@ DEFINE_TRANSFORM(
     "<buffer library>] [-inverters "
     "<inverters library>] [-timerless] [-cirtical_path] [-iterations <# "
     "iterations=1>] [-postGlobalPlace|-postDetailedPlace|-postRoute] "
+    "[-legalization_frequency <numBuffer>]"
     "[-min_gain "
     "<gain=0ps>] [-enable_gate_resize] [-area_penalty <penalty=0ps/um>]")
 

@@ -29,9 +29,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <OpenPhySyn/Psn/Psn.hpp>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
+#include "OpenPhySyn/SteinerTree/SteinerTree.hpp"
 #include <algorithm>
+#include "OpenPhySyn/Psn/Psn.hpp"
 #include "PsnException/SteinerException.hpp"
 namespace psn
 {
@@ -57,6 +57,7 @@ SteinerTree::create(Net* net, Psn* psn_inst, int flute_accuracy)
         Flute::Tree flute_tree = Flute::flute(pin_count, x, y, flute_accuracy);
 
         tree.reset(new SteinerTree(flute_tree, pins, psn_inst));
+        tree->net_ = net;
 
         delete[] x;
         delete[] y;
@@ -398,4 +399,85 @@ SteinerTree::alias(SteinerPoint pt)
     return pin_loc_[Point(branch_pt.x, branch_pt.y)];
 }
 
+float
+SteinerTree::wirelength() const
+{
+    SteinerPoint     top_pt  = top();
+    SteinerPoint     drvr_pt = driverPoint();
+    DatabaseHandler& handler = *(psn_->handler());
+    if (top_pt == SteinerNull)
+    {
+        return 0;
+    }
+    float top_length     = handler.dbuToMeters(distance(drvr_pt, top_pt));
+    float subtree_length = subtreeWirelength(top_pt);
+    return top_length + subtree_length;
+}
+float
+SteinerTree::subtreeWirelength(SteinerPoint pt) const
+{
+    DatabaseHandler& handler = *(psn_->handler());
+
+    if (pt == SteinerNull)
+    {
+        return 0.0;
+    }
+    SteinerPoint left_pt  = left(pt);
+    SteinerPoint right_pt = right(pt);
+    bool         isLeaf   = left_pt == SteinerNull && right_pt == SteinerNull;
+
+    if (isLeaf)
+    {
+        return 0.0;
+    }
+    else
+    {
+        float left_wire  = 0.0;
+        float right_wire = 0.0;
+        if (left_pt != SteinerNull)
+        {
+            float left_segment = handler.dbuToMeters(distance(pt, left_pt));
+            left_wire          = subtreeWirelength(left_pt) + left_segment;
+        }
+        if (right_pt != SteinerNull)
+        {
+            float right_segment = handler.dbuToMeters(distance(pt, right_pt));
+            right_wire          = subtreeWirelength(right_pt) + right_segment;
+        }
+
+        return left_wire + right_wire;
+    }
+}
+
+Net*
+SteinerTree::net() const
+{
+    return net_;
+}
+
+float
+SteinerTree::pinsCapacitance() const
+{
+    float            total_cap = 0.0;
+    DatabaseHandler& handler   = *(psn_->handler());
+
+    for (auto& p : pins_)
+    {
+        total_cap += handler.pinCapacitance(p);
+    }
+
+    return total_cap;
+}
+
+size_t
+SteinerTree::pinCount() const
+{
+    return pins_.size();
+}
+
+std::vector<InstanceTerm*>
+SteinerTree::pins() const
+{
+    return pins_;
+}
 } // namespace psn

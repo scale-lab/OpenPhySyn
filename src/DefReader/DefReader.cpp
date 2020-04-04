@@ -29,6 +29,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "DefReader.hpp"
+#include "OpenPhySyn/Sta/DatabaseSta.hpp"
+#include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"
+#include "OpenPhySyn/Utils/PsnGlobal.hpp"
 #include "PsnException/FileException.hpp"
 #include "PsnException/NoTechException.hpp"
 #include "PsnLogger/PsnLogger.hpp"
@@ -49,7 +52,7 @@ DefReader::read(const char* path)
         throw FileException();
     }
     fclose(fp);
-    LibrarySet            lib_set = db_->getLibs();
+    auto                  lib_set = db_->getLibs();
     std::vector<Library*> libs;
     for (auto itr = lib_set.begin(); itr != lib_set.end(); ++itr)
     {

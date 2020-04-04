@@ -29,9 +29,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_LEF_READER__
-#define __PSN_LEF_READER__
-#include <OpenPhySyn/Database/Types.hpp>
+#pragma once
+
+#include <string>
+#include "OpenPhySyn/Database/Types.hpp"
+#include "opendb/lefin.h"
 
 namespace psn
 {
@@ -48,4 +50,3 @@ private:
     LefParser parser_;
 };
 } // namespace psn
-#endif

@@ -33,12 +33,6 @@
 #define THROW_DCL throw()
 
 #include <Config.hpp>
-#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
-#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
-#include <OpenSTA/dcalc/ArcDelayCalc.hh>
-#include <OpenSTA/network/ConcreteNetwork.hh>
-#include <OpenSTA/search/Search.hh>
-#include <OpenSTA/search/Sta.hh>
 #include <Psn/Psn.hpp>
 #include <flute.h>
 #include <tcl.h>
@@ -46,6 +40,14 @@
 #include "DefWriter/DefWriter.hpp"
 #include "LefReader/LefReader.hpp"
 #include "LibertyReader/LibertyReader.hpp"
+#include "OpenPhySyn/PsnLogger/PsnLogger.hpp"
+#include "OpenPhySyn/Sta/DatabaseSta.hpp"
+#include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"
+#include "OpenPhySyn/Utils/PsnGlobal.hpp"
+#include "OpenSTA/dcalc/ArcDelayCalc.hh"
+#include "OpenSTA/network/ConcreteNetwork.hh"
+#include "OpenSTA/search/Search.hh"
+#include "OpenSTA/search/Sta.hh"
 #include "PsnException/FileException.hpp"
 #include "PsnException/FluteInitException.hpp"
 #include "PsnException/NoTechException.hpp"

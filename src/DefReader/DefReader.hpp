@@ -29,9 +29,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_DEF_READER__
-#define __PSN_DEF_READER__
-#include <OpenPhySyn/Database/Types.hpp>
+#pragma once
+
+#include "OpenPhySyn/Database/Types.hpp"
+#include "opendb/defin.h"
 
 namespace psn
 {
@@ -46,4 +47,3 @@ private:
     DefParser parser_;
 };
 } // namespace psn
-#endif

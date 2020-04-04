@@ -30,8 +30,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "GateCloningTransform.hpp"
-#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
-#include <OpenPhySyn/Utils/PsnGlobal.hpp>
+#include "OpenPhySyn/PsnLogger/PsnLogger.hpp"
+#include "OpenPhySyn/Utils/PsnGlobal.hpp"
 #include "Utils/StringUtils.hpp"
 
 #include <algorithm>

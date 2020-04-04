@@ -14,9 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __PSN_DATABASE_SDC_NETWORK_H__
-#define __PSN_DATABASE_SDC_NETWORK_H__
-
+#pragma once
 // Temproary fix for OpenSTA
 #define THROW_DCL throw()
 
@@ -51,4 +49,3 @@ protected:
 };
 
 } // namespace sta
-#endif

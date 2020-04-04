@@ -29,17 +29,16 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #ifdef USE_OPENDB_DB_HANDLER
-#ifndef __PSN_OPEN_DB_HANDLER__
-#define __PSN_OPEN_DB_HANDLER__
+#pragma once
 
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
-#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
-#include <OpenPhySyn/Sta/PathPoint.hpp>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
-#include <OpenPhySyn/Utils/PsnGlobal.hpp>
-#include <PsnLogger/PsnLogger.hpp>
 #include <vector>
+#include "OpenPhySyn/Database/Types.hpp"
+#include "OpenPhySyn/Sta/DatabaseSta.hpp"
+#include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"
+#include "OpenPhySyn/Sta/PathPoint.hpp"
+#include "OpenPhySyn/SteinerTree/SteinerTree.hpp"
+#include "OpenPhySyn/Utils/PsnGlobal.hpp"
+#include "PsnLogger/PsnLogger.hpp"
 
 namespace psn
 {
@@ -47,7 +46,7 @@ class OpenDBHandler
 {
 public:
     OpenDBHandler(Psn* psn_inst, sta::DatabaseSta* sta);
-#include <OpenPhySyn/Database/DatabaseHandler.in>
+#include "OpenPhySyn/Database/DatabaseHandler.in"
     Point               location(BlockTerm* term);
     bool                isPlaced(BlockTerm* term) const;
     virtual bool        isInput(BlockTerm* term) const;
@@ -66,5 +65,4 @@ private:
 };
 
 } // namespace psn
-#endif
 #endif

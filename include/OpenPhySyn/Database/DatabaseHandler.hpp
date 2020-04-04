@@ -29,7 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #ifdef USE_OPENDB_DB_HANDLER
-#include <OpenPhySyn/Database/OpenDBHandler.hpp>
+#include "OpenPhySyn/Database/OpenDBHandler.hpp"
 #else
-#include <OpenPhySyn/Database/OpenStaHandler.hpp>
+#include "OpenPhySyn/Database/OpenStaHandler.hpp"
 #endif

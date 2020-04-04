@@ -31,7 +31,7 @@
 %module psn
 %{
 #include "Psn/Exports.hpp"
-#include <OpenPhySyn/Psn/Psn.hpp>
+#include "OpenPhySyn/Psn/Psn.hpp"
 
 #include "db.h"
 #include "dbShape.h"
@@ -39,8 +39,8 @@
 using namespace odb;
 
 #include <memory>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
-#include <OpenPhySyn/Database/DatabaseHandler.hpp>
+#include "OpenPhySyn/SteinerTree/SteinerTree.hpp"
+#include "OpenPhySyn/Database/DatabaseHandler.hpp"
 using namespace psn;
 DatabaseHandler *handler() {
    return Psn::instance().handler();

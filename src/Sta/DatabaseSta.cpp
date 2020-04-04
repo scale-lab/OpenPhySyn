@@ -13,11 +13,11 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
-#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
+#include "OpenPhySyn/Sta/DatabaseSta.hpp"
 #include <Sta/DatabaseSdcNetwork.hpp>
 #include <tcl.h>
 #include "Machine.hh"
+#include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"
 #include "StaMain.hh"
 #include "opendb/db.h"
 

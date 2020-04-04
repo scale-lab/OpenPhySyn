@@ -29,20 +29,39 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_TYPES__
-#define __PSN_TYPES__
+#pragma once
 
-// Temproary fix for OpenSTA
-#define THROW_DCL throw()
-
-#include <OpenSTA/liberty/Liberty.hh>
-#include <opendb/db.h>
-#include <opendb/dbTypes.h>
-#include <opendb/defin.h>
-#include <opendb/defout.h>
-#include <opendb/lefin.h>
-#include <tuple>
-#include <unordered_map>
+namespace sta
+{
+class dbSta;
+class dbNetwork;
+class Instance;
+class Pin;
+class LibertyPort;
+class Pin;
+class LibertyCell;
+class Net;
+class LibertyLibrary;
+class PortDirection;
+class Term;
+class Port;
+class DatabaseSta;
+class DatabaseStaNetwork;
+} // namespace sta
+namespace odb
+{
+class dbDatabase;
+class dbChip;
+class dbBlock;
+class dbLib;
+class dbTech;
+class Point;
+class Library;
+class Rect;
+class defin;
+class defout;
+class lefin;
+} // namespace odb
 
 namespace psn
 {
@@ -82,7 +101,7 @@ typedef odb::Rect                Rect;
 typedef OpenDBHandler            DatabaseHandler;
 typedef odb::dbBTerm             Term;
 #else
-// Default is OpenSTA handler
+typedef int                 DefDbu;
 typedef odb::dbDatabase     Database;
 typedef odb::dbChip         Chip;
 typedef odb::dbBlock        Block;
@@ -94,44 +113,21 @@ typedef sta::LibertyCell    LibraryCell;
 typedef odb::dbLib          Library;
 typedef odb::dbTech         LibraryTechnology;
 typedef sta::Net            Net;
-typedef odb::defin          DefParser;
-typedef odb::defout         DefOut;
-typedef odb::lefin          LefParser;
+typedef sta::Port           Port;
 typedef sta::LibertyLibrary Liberty;
 
-typedef odb::dbSet<Library> LibrarySet;
-typedef sta::NetSet         NetSet;
-typedef sta::PinSet         BlockTermSet;
-typedef sta::PinSet         InstanceTermSet;
-typedef sta::PortDirection  PinDirection;
-typedef sta::Term           Term;
-typedef sta::Port           Port;
-typedef odb::Point          Point;
-typedef odb::Rect           Rect;
-typedef OpenStaHandler      DatabaseHandler;
+typedef sta::PortDirection PinDirection;
+typedef sta::Term          Term;
+typedef odb::Point         Point;
+typedef odb::Rect          Rect;
+typedef OpenStaHandler     DatabaseHandler;
+
+typedef odb::defin              DefParser;
+typedef odb::defout             DefOut;
+typedef odb::lefin              LefParser;
+typedef sta::DatabaseSta        DatabaseSta;
+typedef sta::DatabaseStaNetwork DatabaseStaNetwork;
 
 #endif
 
-class PointHash
-{
-public:
-    size_t
-    operator()(const Point& pt) const
-    {
-        size_t h1 = std::hash<int>()(pt.x());
-        size_t h2 = std::hash<int>()(pt.y());
-        return h1 ^ h2;
-    }
-};
-
-class PointEqual
-{
-public:
-    bool
-    operator()(const Point& pt1, const Point& pt2) const
-    {
-        return pt1.x() == pt2.x() && pt1.y() == pt2.y();
-    }
-};
 } // namespace psn
-#endif

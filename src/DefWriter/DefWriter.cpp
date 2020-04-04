@@ -30,7 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include "DefWriter.hpp"
 #include "PsnLogger/PsnLogger.hpp"
-
+#include "opendb/db.h"
 namespace psn
 {
 

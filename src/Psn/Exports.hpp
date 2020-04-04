@@ -29,11 +29,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_EXPORTS__
-#define __PSN_EXPORTS__
-#include <OpenPhySyn/Database/DatabaseHandler.hpp>
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
+#pragma once
+
+#include "OpenPhySyn/Database/DatabaseHandler.hpp"
+#include "OpenPhySyn/Database/Types.hpp"
+#include "OpenPhySyn/SteinerTree/SteinerTree.hpp"
 
 namespace psn
 {
@@ -68,6 +68,8 @@ int   set_log_pattern(const char* pattern);
 void  set_dont_use(std::vector<std::string> cell_names);
 bool  has_design();
 bool  has_liberty();
+std::vector<std::string> capacitance_violations();
+std::vector<std::string> transition_violations();
 std::vector<std::string> cluster_buffer_names(float cluster_threshold,
                                               bool  find_superior = true);
 std::vector<std::string> cluster_inverter_names(float cluster_threshold,
@@ -82,5 +84,3 @@ Liberty&         get_liberty();
 SteinerTree*     make_steiner_tree(const char* pin_name);
 SteinerTree*     make_steiner_tree(Net* net);
 } // namespace psn
-
-#endif
