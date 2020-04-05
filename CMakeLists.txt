@@ -115,10 +115,11 @@ set(FLUTE_HOME
 ${PROJECT_SOURCE_DIR}/external/flute
 )
 
-# Build spdlok
+# Build spdlog
 set(SPD_LOG_HOME
   ${PROJECT_SOURCE_DIR}/external/spdlog
 )
+
 
 # Build cxxopts
 set(CXXOPTS_HOME
@@ -312,7 +313,6 @@ set(PRIVATE_INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/external/StandardTransforms
   ${PROJECT_SOURCE_DIR}/external/flute
   ${TCL_INCLUDE_PATH}
-  ${SPD_LOG_HOME}/include
   ${FLUTE_HOME}/include
   ${OPENDB_HOME}/include
   ${OPENDB_HOME}/src
@@ -367,6 +367,7 @@ opendb
 OpenSTA
 sta_swig
 flute
+spdlog::spdlog
 ${PUBLIC_LIBRARIES}
 )
 
