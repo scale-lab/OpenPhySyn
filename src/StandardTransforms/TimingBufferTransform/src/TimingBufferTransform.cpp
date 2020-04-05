@@ -31,20 +31,14 @@
 
 #include "TimingBufferTransform.hpp"
 #include "OpenPhySyn/PsnLogger/PsnLogger.hpp"
-#include "OpenPhySyn/Sta/PathPoint.hpp"
 #include "OpenPhySyn/Utils/PsnGlobal.hpp"
 #include "OpenPhySyn/Utils/StringUtils.hpp"
-#include "OpenSTA/dcalc/ArcDelayCalc.hh"
-#include "OpenSTA/dcalc/GraphDelayCalc.hh"
-#include "OpenSTA/liberty/TimingArc.hh"
-#include "OpenSTA/liberty/TimingModel.hh"
-#include "OpenSTA/liberty/TimingRole.hh"
-#include "OpenSTA/search/Corner.hh"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <sstream>
+
 // Objectives:
 // * Standard Van Ginneken buffering (with pruning). [Done]
 // * Multiple buffer sizes. [Done]
@@ -70,7 +64,9 @@ TimingBufferTransform::TimingBufferTransform()
       buff_index_(0),
       transition_violations_(0),
       capacitance_violations_(0),
-      current_area_(0.0)
+      slack_violations_(0),
+      current_area_(0.0),
+      saved_slack_(0.0)
 {
 }
 
@@ -131,7 +127,7 @@ TimingBufferTransform::bufferPin(
         {
             buff_tree = buff_sol->optimalTimerlessDriverTree(psn_inst, pin);
         }
-        else if (options->resize_gates && driver_cell &&
+        else if (options->driver_resize && driver_cell &&
                  handler.outputPins(driver_cell).size() == 1)
         {
             buff_tree = buff_sol->optimalDriverTree(psn_inst, pin);
@@ -173,6 +169,7 @@ TimingBufferTransform::bufferPin(
                     handler.gateDelay(pin, buff_tree->totalCapacitance());
                 float buff_tree_slack =
                     buff_tree->totalRequiredOrSlew() - buff_tree_delay;
+
                 for (size_t i = 1; i < buff_sol->bufferTrees().size() &&
                                    i < options->best_solution_threshold_range;
                      i++)
@@ -205,6 +202,7 @@ TimingBufferTransform::bufferPin(
             float new_slack = buff_tree->totalRequiredOrSlew() - new_delay;
 
             float gain = new_slack - old_slack;
+            saved_slack_ += gain;
 
             if (buff_tree->cost() <= std::numeric_limits<float>::epsilon() ||
                 std::fabs(gain - options->min_gain) >=
@@ -539,6 +537,70 @@ TimingBufferTransform::fixCapacitanceViolations(
 
     return buffer_count_;
 }
+
+int
+TimingBufferTransform::fixNegativeSlack(
+    Psn* psn_inst, std::vector<InstanceTerm*>& driver_pins,
+    std::unique_ptr<TimingBufferTransformOptions>& options)
+{
+    PSN_LOG_DEBUG("Fixing negative slack violations");
+    DatabaseHandler& handler              = *(psn_inst->handler());
+    auto             negative_slack_paths = handler.getNegativeSlackPaths(20);
+    if (!negative_slack_paths.size())
+    {
+        return 0;
+    }
+    int                               check_negative_slack_freq = 10;
+    std::unordered_set<InstanceTerm*> buffered_pins;
+    float                             worst_slack       = handler.worstSlack();
+    int                               iteration         = 0;
+    int                               last_buffer_count = buffer_count_;
+    for (auto& pth : negative_slack_paths)
+    {
+        std::reverse(pth.begin(), pth.end());
+
+        for (auto& pt : pth)
+        {
+            if (worst_slack < 0.0)
+            {
+                auto pin = pt.pin();
+                if (!buffered_pins.count(pin))
+                {
+                    if (handler.isAnyOutput(pin))
+                    {
+                        bufferPin(psn_inst, pin,
+                                  TimingRepairTarget::RepairSlack, options);
+                        if (options->legalization_frequency >
+                            (buffer_count_ - last_buffer_count >=
+                             options->legalization_frequency))
+                        {
+                            last_buffer_count = buffer_count_;
+                            handler.legalize();
+                        }
+
+                        if (handler.hasMaximumArea() &&
+                            current_area_ > handler.maximumArea())
+                        {
+                            PSN_LOG_WARN("Maximum utilization reached");
+                            return buffer_count_ + resize_count_;
+                        }
+                        iteration++;
+                        if (iteration % check_negative_slack_freq == 0)
+                        {
+                            worst_slack = handler.worstSlack();
+                        }
+                    }
+                }
+            }
+            else
+            {
+                PSN_LOG_DEBUG("Slack is positive");
+            }
+        }
+    }
+
+    return buffer_count_;
+}
 int
 TimingBufferTransform::fixTransitionViolations(
     Psn* psn_inst, std::vector<InstanceTerm*>& driver_pins,
@@ -685,7 +747,7 @@ TimingBufferTransform::timingBuffer(
                      ? StringUtils::join(inv_names_vec, ", ")
                      : "None");
     PSN_LOG_INFO("Driver sizing: {}",
-                 options->resize_gates ? "enabled" : "disabled");
+                 options->driver_resize ? "enabled" : "disabled");
     PSN_LOG_INFO("Mode: {}",
                  options->timerless ? "Timerless" : "Timing-Driven");
 
@@ -697,8 +759,24 @@ TimingBufferTransform::timingBuffer(
         bool hasVio         = false;
         int  pre_fix_buff   = buffer_count_;
         int  pre_fix_resize = resize_count_;
+        if (options->repair_negative_slack)
+        {
+            fixNegativeSlack(psn_inst, driver_pins, options);
+            if (buffer_count_ != pre_fix_buff ||
+                resize_count_ != pre_fix_resize)
+            {
+                hasVio = true;
+            }
+            if (options->legalization_frequency > 0)
+            {
+                handler.legalize();
+            }
+        }
         if (options->repair_capacitance_violations)
         {
+            pre_fix_buff   = buffer_count_;
+            pre_fix_resize = resize_count_;
+
             fixCapacitanceViolations(psn_inst, driver_pins, options);
             if (buffer_count_ != pre_fix_buff ||
                 resize_count_ != pre_fix_resize)
@@ -712,6 +790,8 @@ TimingBufferTransform::timingBuffer(
         }
         if (options->repair_transition_violations)
         {
+            pre_fix_buff   = buffer_count_;
+            pre_fix_resize = resize_count_;
             fixTransitionViolations(psn_inst, driver_pins, options);
             if (buffer_count_ != pre_fix_buff ||
                 resize_count_ != pre_fix_resize)
@@ -725,6 +805,8 @@ TimingBufferTransform::timingBuffer(
         }
         if (!hasVio)
         {
+            PSN_LOG_INFO(
+                "No more violations or cannot find more optimal buffer");
             PSN_LOG_DEBUG(
                 "No more violations or cannot find more optimal buffer");
             break;
@@ -762,7 +844,9 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     net_count_                = 0;
     transition_violations_    = 0;
     capacitance_violations_   = 0;
+    slack_violations_         = 0;
     current_area_             = psn_inst->handler()->area();
+    saved_slack_              = 0.0;
 
     std::unique_ptr<TimingBufferTransformOptions> options(
         new TimingBufferTransformOptions);
@@ -772,11 +856,12 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     std::unordered_set<std::string> buffer_lib_names;
     std::unordered_set<std::string> inverter_lib_names;
     std::unordered_set<std::string> keywords(
-        {"-buffers", "-inverters", "-enable_gate_resize", "-iterations",
+        {"-buffers", "-inverters", "-enable_driver_resize", "-iterations",
          "-min_gain", "-area_penalty", "-auto_buffer_library",
          "-minimize_buffer_library", "-use_inverting_buffer_library",
-         "-timerless", "-cirtical_path", "-maximize_slack", "-postGlobalPlace",
-         "-postDetailedPlace", "-postRoute", "-legalization_frequency"});
+         "-timerless", "-repair_by_resize", "-repair_by_clone",
+         "-postGlobalPlace", "-postDetailedPlace", "-postRoute",
+         "-legalization_frequency"});
 
     if (args.size() < 2)
     {
@@ -936,9 +1021,9 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
                 options->area_penalty = atof(args[i].c_str());
             }
         }
-        else if (args[i] == "-enable_gate_resize")
+        else if (args[i] == "-enable_driver_resize")
         {
-            options->resize_gates = true;
+            options->driver_resize = true;
         }
         else if (args[i] == "-maximum_capacitance")
         {
@@ -948,17 +1033,13 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         {
             options->repair_transition_violations = true;
         }
+        else if (args[i] == "-negative_slack")
+        {
+            options->repair_negative_slack = true;
+        }
         else if (args[i] == "-timerless")
         {
             options->timerless = true;
-        }
-        else if (args[i] == "-cirtical_path")
-        {
-            options->cirtical_path = true;
-        }
-        else if (args[i] == "-maximize_slack")
-        {
-            options->maximize_slack = true;
         }
         else if (args[i] == "-minimize_buffer_library")
         {
@@ -967,6 +1048,16 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         else if (args[i] == "-use_inverting_buffer_library")
         {
             options->cluster_inverters = true;
+        }
+        else if (args[i] == "-repair_by_resize")
+        {
+            PSN_LOG_WARN("Repair by resize is not supported yet");
+            options->repair_by_resize = true;
+        }
+        else if (args[i] == "-repair_by_clone")
+        {
+            PSN_LOG_WARN("Repair by clone is not supported yet");
+            options->repair_by_clone = true;
         }
         else if (args[i] == "-postGlobalPlace")
         {
@@ -999,20 +1090,24 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     }
     if (options->timerless)
     {
-        if (options->repair_capacitance_violations)
+        if (options->repair_capacitance_violations ||
+            options->repair_negative_slack)
         {
             PSN_LOG_ERROR("Timerless mode cannot be used to repair maximum "
-                          "capacitance violations");
+                          "capacitance violations or negative slack");
             return -1;
         }
         options->repair_transition_violations  = true;
         options->repair_capacitance_violations = false;
+        options->repair_negative_slack         = false;
     }
     else if (!options->repair_capacitance_violations &&
-             !options->repair_transition_violations)
+             !options->repair_transition_violations &&
+             !options->repair_negative_slack)
     {
         options->repair_transition_violations  = true;
         options->repair_capacitance_violations = true;
+        options->repair_negative_slack         = true;
     }
     if (options->timerless &&
         (options->cluster_inverters || inverter_lib_names.size()))

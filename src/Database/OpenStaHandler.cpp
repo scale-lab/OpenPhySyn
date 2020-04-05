@@ -63,6 +63,7 @@
 #include "OpenSTA/search/PathExpanded.hh"
 #include "OpenSTA/search/Power.hh"
 #include "OpenSTA/search/Search.hh"
+#include "OpenSTA/util/MinMax.hh"
 #include "OpenSTA/util/PatternMatch.hh"
 
 namespace psn
@@ -644,17 +645,22 @@ OpenStaHandler::bestArrivalPath(InstanceTerm* term) const
     return expandPath(&path);
 }
 float
-OpenStaHandler::slack(InstanceTerm* term, bool is_rise, bool worst) const
+OpenStaHandler::pinSlack(InstanceTerm* term, bool is_rise, bool worst) const
 {
     return sta_->pinSlack(
         term, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
         worst ? sta::MinMax::min() : sta::MinMax::max());
 }
 float
-OpenStaHandler::slack(InstanceTerm* term, bool worst) const
+OpenStaHandler::pinSlack(InstanceTerm* term, bool worst) const
 {
     return sta_->pinSlack(term,
                           worst ? sta::MinMax::min() : sta::MinMax::max());
+}
+float
+OpenStaHandler::slack(InstanceTerm* term)
+{
+    return gateDelay(term, loadCapacitance(term)) - required(term);
 }
 float
 OpenStaHandler::slew(InstanceTerm* term) const
@@ -699,11 +705,23 @@ OpenStaHandler::arrival(InstanceTerm* term, int ap_index, bool is_rise) const
         sta_->corners()->findPathAnalysisPt(ap_index));
 }
 float
-OpenStaHandler::required(InstanceTerm* term, bool worst) const
+OpenStaHandler::required(InstanceTerm* term) const
 {
     auto vert = network()->graph()->pinLoadVertex(term);
     auto req  = sta_->vertexRequired(vert, min_max_);
-    //  worst ? sta::MinMax::min() : sta::MinMax::max());
+    if (sta::fuzzyInf(req))
+    {
+        return 0;
+    }
+    return req;
+}
+float
+OpenStaHandler::required(InstanceTerm* term, bool is_rise,
+                         PathAnalysisPoint* path_ap) const
+{
+    auto vert = network()->graph()->pinLoadVertex(term);
+    auto req  = sta_->vertexRequired(
+        vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(), path_ap);
     if (sta::fuzzyInf(req))
     {
         return 0;
@@ -732,13 +750,63 @@ OpenStaHandler::getPaths(bool get_max, int path_count) const
             true, true);
 
     std::vector<std::vector<PathPoint>> result;
-    bool                                first_path = true;
+
+    bool first_path = true;
     for (auto& path_end : *path_ends)
     {
         result.push_back(expandPath(path_end, !first_path));
         first_path = false;
     }
     delete path_ends;
+    return result;
+}
+
+float
+OpenStaHandler::worstSlack() const
+{
+    float        ws;
+    sta::Vertex* vert;
+    sta_->findRequireds();
+
+    sta_->search()->worstSlack(min_max_, ws, vert);
+    return ws;
+}
+std::vector<std::vector<PathPoint>>
+OpenStaHandler::getNegativeSlackPaths(int path_count) const
+{
+    sta_->ensureGraph();
+    sta_->searchPreamble();
+    sta_->findRequireds();
+
+    sta::PathEndSeq* path_ends =
+        sta_->search()->findPathEnds( // from, thrus, to, unconstrained
+            nullptr, nullptr, nullptr, false,
+            // corner, min_max,
+            corner_, sta::MinMaxAll::all(),
+            // group_count, endpoint_count, unique_pins
+            path_count, path_count, true, -sta::INF,
+            0,       // slack_min, slack_max,
+            true,    // sort_by_slack
+            nullptr, // group_names
+            // setup, hold, recovery, removal,
+            true, true, true, true,
+            // clk_gating_setup, clk_gating_hold
+            true, true);
+
+    std::vector<std::vector<PathPoint>> result;
+    bool                                first_path = true;
+    for (auto& path_end : *path_ends)
+    {
+        result.push_back(expandPath(path_end, !first_path));
+        first_path = false;
+    }
+    result.erase(std::remove_if(result.begin(), result.end(),
+                                [&](const std::vector<PathPoint>& t) -> bool {
+                                    return !t.size() ||
+                                           t[t.size() - 1].slack() >= 0;
+                                }),
+                 result.end());
+    // delete path_ends;
     return result;
 }
 std::vector<PathPoint>
@@ -759,11 +827,15 @@ OpenStaHandler::expandPath(sta::Path* path, bool enumed) const
         auto pin           = ref->vertex(sta_)->pin();
         auto is_rising     = ref->transition(sta_) == sta::RiseFall::rise();
         auto arrival       = ref->arrival(sta_);
-        auto required      = enumed ? 0 : ref->required(sta_);
-        auto path_ap_index = ref->pathAnalysisPtIndex(sta_);
-        auto slack         = enumed ? 0 : ref->slack(sta_);
+        auto path_ap       = ref->pathAnalysisPt(sta_);
+        auto path_required = enumed ? 0 : ref->required(sta_);
+        if (!path_required || sta::fuzzyInf(path_required))
+        {
+            path_required = required(pin, is_rising, path_ap);
+        }
+        auto slack = enumed ? path_required - arrival : ref->slack(sta_);
         points.push_back(
-            PathPoint(pin, is_rising, arrival, required, slack, path_ap_index));
+            PathPoint(pin, is_rising, arrival, path_required, slack, path_ap));
     }
     return points;
 }

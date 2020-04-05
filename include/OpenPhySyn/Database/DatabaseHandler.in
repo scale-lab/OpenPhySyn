@@ -86,13 +86,14 @@ virtual float pinAverageRiseTransition(LibraryTerm* from,
 virtual float pinAverageFallTransition(LibraryTerm* from,
                                        LibraryTerm* to) const;
 virtual float loadCapacitance(InstanceTerm* term) const;
-virtual float maxLoad(LibraryCell* cell);
-virtual float targetLoad(LibraryCell* cell);
-virtual float coreArea() const;
-virtual bool  maximumUtilizationViolation() const;
-virtual void  setMaximumArea(float area);
-virtual float maximumArea() const;
-virtual bool  hasMaximumArea() const;
+std::vector<std::vector<PathPoint>> getNegativeSlackPaths(int path_count) const;
+virtual float                       maxLoad(LibraryCell* cell);
+virtual float                       targetLoad(LibraryCell* cell);
+virtual float                       coreArea() const;
+virtual bool                        maximumUtilizationViolation() const;
+virtual void                        setMaximumArea(float area);
+virtual float                       maximumArea() const;
+virtual bool                        hasMaximumArea() const;
 virtual float gateDelay(Instance* inst, InstanceTerm* to, float in_slew = 0,
                         LibraryTerm* from = nullptr, float* drvr_slew = nullptr,
                         int rise_fall = -1);
@@ -189,14 +190,18 @@ virtual std::vector<PathPoint> worstSlackPath(InstanceTerm* term) const;
 virtual std::vector<PathPoint> worstArrivalPath(InstanceTerm* term) const;
 virtual std::vector<PathPoint> bestSlackPath(InstanceTerm* term) const;
 virtual std::vector<PathPoint> bestArrivalPath(InstanceTerm* term) const;
-virtual float slack(InstanceTerm* term, bool is_rise, bool worst) const;
-virtual float slack(InstanceTerm* term, bool worst = true) const;
+virtual float pinSlack(InstanceTerm* term, bool is_rise, bool worst) const;
+virtual float pinSlack(InstanceTerm* term, bool worst = true) const;
+virtual float slack(InstanceTerm* term);
+virtual float worstSlack() const;
 virtual float arrival(InstanceTerm* term, int ap_index,
                       bool is_rise = true) const;
 virtual float slew(InstanceTerm* term) const;
 virtual float slew(InstanceTerm* term, bool is_rise) const;
 virtual float slew(LibraryTerm* term, float cap, float* tr_slew = nullptr);
-virtual float required(InstanceTerm* term, bool worst = true) const;
+virtual float required(InstanceTerm* term) const;
+virtual float required(InstanceTerm* term, bool is_rise,
+                       PathAnalysisPoint* path_ap) const;
 virtual bool  isCommutative(InstanceTerm* first, InstanceTerm* second) const;
 virtual bool  dontUse(LibraryCell* cell) const;
 virtual bool  dontTouch(Instance* cell) const;
