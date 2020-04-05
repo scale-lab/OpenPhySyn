@@ -64,6 +64,7 @@ using namespace psn;
 TimingBufferTransform::TimingBufferTransform()
     : buffer_count_(0),
       resize_count_(0),
+      timerless_rebuffer_count_(0),
       net_count_(0),
       net_index_(0),
       buff_index_(0),
@@ -73,7 +74,7 @@ TimingBufferTransform::TimingBufferTransform()
 {
 }
 
-void
+std::unordered_set<Instance*>
 TimingBufferTransform::bufferPin(
     Psn* psn_inst, InstanceTerm* pin, TimingRepairTarget target,
     std::unique_ptr<TimingBufferTransformOptions>& options)
@@ -82,7 +83,7 @@ TimingBufferTransform::bufferPin(
     if (handler.isTopLevel(pin))
     {
         PSN_LOG_WARN("Not handled yet!");
-        return;
+        return std::unordered_set<Instance*>();
     }
     auto pin_net = handler.net(pin);
     auto st_tree = SteinerTree::create(pin_net, psn_inst);
@@ -90,40 +91,43 @@ TimingBufferTransform::bufferPin(
     {
         PSN_LOG_ERROR("Failed to create steiner tree for {}",
                       handler.name(pin));
-        return;
+        return std::unordered_set<Instance*>();
     }
+
+    bool isSlackRepair = target == TimingRepairTarget::RepairSlack;
+    bool isTimerless   = options->timerless && !isSlackRepair;
 
     auto driver_point = st_tree->driverPoint();
     auto driver_pin   = st_tree->pin(driver_point);
-    int  bc           = st_tree->branchCount();
 
-    float pin_cap        = st_tree->pinsCapacitance();
-    auto  pin_slew_limit = handler.pinSlewLimit(driver_pin);
-    auto  slew_limit     = pin_slew_limit;
-
-    float total_tree_cap = st_tree->totalLoad(handler.capacitancePerMicron());
-    float tree_len       = st_tree->wirelength();
-
-    float original_slew  = handler.slew(driver_pin);
-    float original_delay = handler.gateDelay(driver_pin, total_tree_cap);
-
-    float required_save = original_slew - slew_limit;
+    if (isTimerless)
+    {
+        auto  pin_slew_limit = handler.pinSlewLimit(driver_pin);
+        float original_slew  = handler.slew(driver_pin);
+        float vio_ratio      = pin_slew_limit / original_slew;
+        if (vio_ratio > options->timerless_maximum_violation_ratio)
+        {
+            isTimerless = false;
+            timerless_rebuffer_count_++;
+        }
+    }
 
     auto top_point = st_tree->top();
 
     auto buff_sol =
-        options->timerless
+        isTimerless
             ? bottomUpTimerless(psn_inst, driver_pin, top_point, driver_point,
                                 std::move(st_tree), target, options)
             : bottomUp(psn_inst, driver_pin, top_point, driver_point,
                        std::move(st_tree), target, options);
+    std::unordered_set<Instance*> added_buffers;
     if (buff_sol->bufferTrees().size())
     {
         std::shared_ptr<BufferTree> buff_tree    = nullptr;
         auto                        no_buff_tree = buff_sol->bufferTrees()[0];
         auto                        driver_cell  = handler.instance(pin);
         auto driver_lib = handler.libraryCell(driver_cell);
-        if (options->timerless)
+        if (isTimerless)
         {
             buff_tree = buff_sol->optimalTimerlessDriverTree(psn_inst, pin);
         }
@@ -156,22 +160,12 @@ TimingBufferTransform::bufferPin(
                 buffer_count_ += sol_buf_count;
                 net_count_++;
             }
-            if (options->timerless)
+            if (isTimerless)
             {
-                for (auto& tr : buff_sol->bufferTrees())
-                {
-                    tr->logInfo();
-                }
-                PSN_LOG_INFO("Selected {} [Br: {}]: ",
-                             buff_sol->bufferTrees().size(), bc);
-                buff_tree->logInfo();
-                PSN_LOG_INFO("Slew limit {}, Sol size {}",
-                             handler.pinSlewLimit(pin),
-                             buff_sol->bufferTrees().size());
+                topDown(psn_inst, pin, buff_tree, added_buffers);
 
-                topDown(psn_inst, pin, buff_tree);
-
-                return; // No need for the extra steps beneath for timerless mode
+                return added_buffers; // No need for the extra steps beneath for
+                                      // timerless mode
             }
             if (options->use_best_solution_threshold)
             {
@@ -216,7 +210,7 @@ TimingBufferTransform::bufferPin(
                 std::fabs(gain - options->min_gain) >=
                     -std::numeric_limits<float>::epsilon())
             {
-                topDown(psn_inst, pin, buff_tree);
+                topDown(psn_inst, pin, buff_tree, added_buffers);
                 if (replace_driver)
                 {
                     handler.replaceInstance(driver_cell, replace_driver);
@@ -224,6 +218,7 @@ TimingBufferTransform::bufferPin(
                     current_area_ += handler.area(replace_driver);
                     resize_count_++;
                 }
+                return added_buffers;
             }
             else
             {
@@ -232,6 +227,7 @@ TimingBufferTransform::bufferPin(
             }
         }
     }
+    return added_buffers;
 }
 
 std::shared_ptr<BufferSolution>
@@ -321,21 +317,23 @@ TimingBufferTransform::bottomUpTimerless(
         auto  location       = st_tree->location(pt);
         auto  prev_location  = st_tree->location(prev);
         auto  pin_slew_limit = handler.pinSlewLimit(driver_pin);
-        float original_slew  = handler.slew(driver_pin);
-
-        float slew_limit = pin_slew_limit;
+        // float original_slew  = handler.slew(driver_pin);
+        float slew_limit =
+            options->timerless_slew_limit_factor * pin_slew_limit;
+        // float slew_limit =
+        //     std::max(0.4, ((double)rand() / (RAND_MAX))) * pin_slew_limit;
 
         PSN_LOG_DEBUG("Bottomup (timerless) Point: ({}, {})", location.getX(),
                       location.getY());
         PSN_LOG_TRACE("Prev: ({}, {})", prev_location.getX(),
                       prev_location.getY());
+        PSN_LOG_DEBUG("Slew Limit: ({})", slew_limit);
 
         if (pt_pin && handler.isLoad(pt_pin))
         {
             PSN_LOG_TRACE("{} ({}, {}) bottomUp leaf", handler.name(pt_pin),
                           location.getX(), location.getY());
-            float cap = handler.pinCapacitance(pt_pin);
-            // float                       pin_slew = handler.slew(pt_pin);
+            float                       cap = handler.pinCapacitance(pt_pin);
             float                       pin_slew = 0.0;
             std::shared_ptr<BufferTree> base_buffer_tree =
                 std::make_shared<TimerlessBufferTree>(
@@ -348,7 +346,6 @@ TimingBufferTransform::bottomUpTimerless(
             buff_sol->addTree(base_buffer_tree);
 
             buff_sol->addWireSlewAndCapacitance(wire_res, wire_cap);
-            // buff_sol->addWireDelayAndCapacitance(wire_res, wire_cap);
 
             buff_sol->addLeafTrees(psn_inst, driver_pin, prev_location,
                                    options->buffer_lib, options->inverter_lib,
@@ -376,7 +373,6 @@ TimingBufferTransform::bottomUpTimerless(
                     psn_inst, left, right, location, nullptr, slew_limit);
 
             buff_sol->addWireSlewAndCapacitance(wire_res, wire_cap);
-            // buff_sol->addWireDelayAndCapacitance(wire_res, wire_cap);
 
             buff_sol->addLeafTrees(psn_inst, driver_pin, prev_location,
                                    options->buffer_lib, options->inverter_lib,
@@ -389,7 +385,8 @@ TimingBufferTransform::bottomUpTimerless(
 }
 void
 TimingBufferTransform::topDown(Psn* psn_inst, InstanceTerm* pin,
-                               std::shared_ptr<BufferTree> tree)
+                               std::shared_ptr<BufferTree>    tree,
+                               std::unordered_set<Instance*>& added_buffers)
 {
     auto net = psn_inst->handler()->net(pin);
     if (!net)
@@ -400,11 +397,12 @@ TimingBufferTransform::topDown(Psn* psn_inst, InstanceTerm* pin,
     {
         PSN_LOG_ERROR("No net for {}", psn_inst->handler()->name(pin));
     }
-    topDown(psn_inst, net, tree);
+    topDown(psn_inst, net, tree, added_buffers);
 }
 void
 TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
-                               std::shared_ptr<BufferTree> tree)
+                               std::shared_ptr<BufferTree>    tree,
+                               std::unordered_set<Instance*>& added_buffers)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
     if (!net)
@@ -414,6 +412,7 @@ TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
     }
     if (!tree)
     {
+        PSN_LOG_WARN("Buffer tree is required!");
         return;
     }
     if (tree->isLoadNode())
@@ -456,14 +455,15 @@ TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
         auto buf_net = handler.bufferNet(net, tree->bufferCell(), buffer_name,
                                          buffer_net_name, tree->location());
         current_area_ += handler.area(tree->bufferCell());
-        topDown(psn_inst, buf_net, tree->left());
+        added_buffers.insert(handler.instance(handler.faninPin(buf_net)));
+        topDown(psn_inst, buf_net, tree->left(), added_buffers);
     }
     else if (tree->isBranched())
     {
         PSN_LOG_DEBUG("{}: Buffering left..", handler.name(net));
-        topDown(psn_inst, net, tree->left());
+        topDown(psn_inst, net, tree->left(), added_buffers);
         PSN_LOG_DEBUG("{}: Buffering right..", handler.name(net));
-        topDown(psn_inst, net, tree->right());
+        topDown(psn_inst, net, tree->right(), added_buffers);
     }
 }
 
@@ -519,17 +519,14 @@ TimingBufferTransform::fixCapacitanceViolations(
                               handler.name(pin));
                 bufferPin(psn_inst, pin,
                           TimingRepairTarget::RepairMaxCapacitance, options);
-                if (options->legalization_frequency > 0 &&
+                if (options->legalization_frequency >
                     (buffer_count_ - last_buffer_count >=
                      options->legalization_frequency))
                 {
                     last_buffer_count = buffer_count_;
                     handler.legalize();
                 }
-                if (hasViolation(psn_inst, pin) == 1)
-                {
-                    PSN_LOG_ERROR("{} still not fixed", handler.name(pin));
-                }
+
                 if (handler.hasMaximumArea() &&
                     current_area_ > handler.maximumArea())
                 {
@@ -574,8 +571,25 @@ TimingBufferTransform::fixTransitionViolations(
             {
                 PSN_LOG_DEBUG("Fixing transition violations for pin {}",
                               handler.name(pin));
-                bufferPin(psn_inst, pin,
-                          TimingRepairTarget::RepairMaxTransition, options);
+                auto added_buffers =
+                    bufferPin(psn_inst, pin,
+                              TimingRepairTarget::RepairMaxTransition, options);
+                if (options->timerless && options->timerless_rebuffer &&
+                    hasViolation(psn_inst, pin) == 1)
+                {
+                    PSN_LOG_DEBUG("Rebuffering unfixed violation {}",
+                                  handler.name(pin));
+                    for (auto& buf : added_buffers)
+                    {
+                        current_area_ -= handler.area(buf);
+                    }
+                    buffer_count_ -= added_buffers.size();
+                    handler.ripupBuffers(added_buffers);
+                    bufferPin(psn_inst, pin, TimingRepairTarget::RepairSlack,
+                              options);
+                    timerless_rebuffer_count_++;
+                }
+
                 if (options->legalization_frequency > 0 &&
                     (buffer_count_ - last_buffer_count >=
                      options->legalization_frequency))
@@ -730,6 +744,11 @@ TimingBufferTransform::timingBuffer(
     }
     PSN_LOG_INFO("Placed {} buffers", buffer_count_);
     PSN_LOG_INFO("Resized {} gates", resize_count_);
+    if (options->timerless)
+    {
+        PSN_LOG_INFO("Ripped and rebuffered {} nets",
+                     timerless_rebuffer_count_);
+    }
     PSN_LOG_INFO("Buffered {} nets", net_count_);
     return buffer_count_ + resize_count_;
 }
@@ -737,12 +756,13 @@ TimingBufferTransform::timingBuffer(
 int
 TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
-    buffer_count_           = 0;
-    resize_count_           = 0;
-    net_count_              = 0;
-    transition_violations_  = 0;
-    capacitance_violations_ = 0;
-    current_area_           = psn_inst->handler()->area();
+    buffer_count_             = 0;
+    resize_count_             = 0;
+    timerless_rebuffer_count_ = 0;
+    net_count_                = 0;
+    transition_violations_    = 0;
+    capacitance_violations_   = 0;
+    current_area_             = psn_inst->handler()->area();
 
     std::unique_ptr<TimingBufferTransformOptions> options(
         new TimingBufferTransformOptions);
@@ -970,6 +990,12 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
             PSN_LOG_ERROR(help());
             return -1;
         }
+    }
+    if (options->legalization_frequency &&
+        (options->phase == TimingRepairPhase::PostGlobalPlace))
+    {
+        PSN_LOG_WARN(
+            "Incremental legalization enabled in global placement phase");
     }
     if (options->timerless)
     {

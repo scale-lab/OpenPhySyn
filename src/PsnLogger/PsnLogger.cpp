@@ -62,7 +62,7 @@ PsnLogger::setPattern(std::string pattern)
 void
 PsnLogger::resetDefaultPattern()
 {
-    setPattern("%+");
+    setPattern("[OpenPhySyn] %+");
 }
 
 PsnLogger&

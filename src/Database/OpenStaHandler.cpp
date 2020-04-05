@@ -516,7 +516,12 @@ OpenStaHandler::bufferClusters(float cluster_threshold, bool find_superior,
     auto inv_vector = std::vector<LibraryCell*>(superior_inverter_cells.begin(),
                                                 superior_inverter_cells.end());
 
-    // TO-DO: Add K-Center clustering here
+    auto buffer_cluster = KCenterClustering::cluster<LibraryCell*>(
+        buff_vector, buff_distances, cluster_threshold, 0);
+    auto inverter_cluster = KCenterClustering::cluster<LibraryCell*>(
+        inv_vector, inv_distances, cluster_threshold, 0);
+    return std::pair<std::vector<LibraryCell*>, std::vector<LibraryCell*>>(
+        buffer_cluster, inverter_cluster);
 
     return std::pair<std::vector<LibraryCell*>, std::vector<LibraryCell*>>(
         std::vector<LibraryCell*>(), std::vector<LibraryCell*>());
@@ -1136,6 +1141,58 @@ OpenStaHandler::pinCapacitance(InstanceTerm* term) const
     }
     return 0.0;
 }
+void
+OpenStaHandler::ripupBuffers(std::unordered_set<Instance*> buffers)
+{
+    for (auto& cell : buffers)
+    {
+        ripupBuffer(cell);
+    }
+}
+void
+OpenStaHandler::ripupBuffer(Instance* buffer)
+{
+    auto input_pins  = inputPins(buffer);
+    auto output_pins = outputPins(buffer);
+    if (input_pins.size() == 1 && output_pins.size() == 1)
+    {
+        auto output_pin = output_pins[0];
+        auto input_pin  = input_pins[0];
+        auto source_net = net(input_pin);
+        auto sink_net   = net(output_pin);
+        if (!source_net)
+        {
+            PSN_LOG_ERROR("Cannot find buffer driving net");
+            return;
+        }
+        if (!sink_net)
+        {
+            PSN_LOG_ERROR("Cannot find buffer driven net");
+            return;
+        }
+        auto driven_pins = pins(sink_net);
+        disconnectAll(sink_net);
+        for (auto& p : driven_pins)
+        {
+            if (p != output_pin)
+            {
+                connect(source_net, p);
+            }
+        }
+        disconnect(input_pin);
+        del(buffer);
+        del(sink_net);
+        if (hasWireRC())
+        {
+            calculateParasitics(source_net);
+        }
+    }
+    else
+    {
+        PSN_LOG_ERROR("ripupBuffer() requires buffer cells");
+    }
+}
+
 float
 OpenStaHandler::pinCapacitance(LibraryTerm* term) const
 {

@@ -247,9 +247,13 @@ public:
     float
     bufferSlew(Psn* psn_inst, LibraryCell* buffer_cell, float tr_slew = 0.0)
     {
-        // return psn_inst->handler()->slew(
-        //     psn_inst->handler()->bufferOutputPin(buffer_cell),
-        //     totalCapacitance(), &tr_slew);
+        return psn_inst->handler()->slew(
+            psn_inst->handler()->bufferOutputPin(buffer_cell),
+            totalCapacitance(), &tr_slew);
+    }
+    float
+    bufferFixedInputSlew(Psn* psn_inst, LibraryCell* buffer_cell)
+    {
         return psn_inst->handler()->bufferFixedInputSlew(buffer_cell,
                                                          totalCapacitance());
     }
@@ -277,14 +281,15 @@ public:
     {
         if (isBufferNode())
         {
-            if (tr_slew)
-            {
-                tr_slew = bufferSlew(psn_inst, buffer_cell_, tr_slew);
-            }
-            else
-            {
-                tr_slew = bufferSlew(psn_inst, buffer_cell_);
-            }
+            // if (tr_slew)
+            // {
+            //     tr_slew = bufferSlew(psn_inst, buffer_cell_, tr_slew);
+            // }
+            // else
+            // {
+            //     tr_slew = bufferFixedInputSlew(psn_inst, buffer_cell_);
+            // }
+            tr_slew = bufferSlew(psn_inst, buffer_cell_, slew_limit);
             if (tr_slew > slew_limit)
             {
                 return true;
@@ -658,7 +663,8 @@ public:
                     auto buffer_cost = psn_inst->handler()->area(buff);
                     auto buffer_cap =
                         psn_inst->handler()->bufferInputCapacitance(buff);
-                    float buffer_slew = sol_tree->bufferSlew(psn_inst, buff);
+                    float buffer_slew =
+                        sol_tree->bufferSlew(psn_inst, buff, slew_limit);
                     if (buffer_slew < slew_limit)
                     {
                         auto buffer_opt = std::make_shared<TimerlessBufferTree>(
@@ -692,6 +698,7 @@ public:
                     }
                 }
             }
+
             buffer_trees_.insert(buffer_trees_.end(), new_trees.begin(),
                                  new_trees.end());
             buffer_trees_.erase(
@@ -714,7 +721,6 @@ public:
                         {
                             return true;
                         }
-
                         return false;
                     }),
                 buffer_trees_.end());

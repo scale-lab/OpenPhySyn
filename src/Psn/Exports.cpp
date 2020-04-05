@@ -117,7 +117,6 @@ int
 set_wire_rc(float res_per_micon, float cap_per_micron)
 {
     Psn::instance().setWireRC(res_per_micon, cap_per_micron);
-
     return 1;
 }
 
@@ -242,6 +241,7 @@ transform_internal(std::string transform_name, std::vector<std::string> args)
 {
     return Psn::instance().runTransform(transform_name, args);
 }
+
 void
 help()
 {
