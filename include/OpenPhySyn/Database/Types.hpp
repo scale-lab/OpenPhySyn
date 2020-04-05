@@ -47,6 +47,7 @@ class Term;
 class Port;
 class DatabaseSta;
 class DatabaseStaNetwork;
+class PathAnalysisPt;
 } // namespace sta
 namespace odb
 {
@@ -116,11 +117,12 @@ typedef sta::Net            Net;
 typedef sta::Port           Port;
 typedef sta::LibertyLibrary Liberty;
 
-typedef sta::PortDirection PinDirection;
-typedef sta::Term          Term;
-typedef odb::Point         Point;
-typedef odb::Rect          Rect;
-typedef OpenStaHandler     DatabaseHandler;
+typedef sta::PortDirection  PinDirection;
+typedef sta::Term           Term;
+typedef sta::PathAnalysisPt PathAnalysisPoint;
+typedef odb::Point          Point;
+typedef odb::Rect           Rect;
+typedef OpenStaHandler      DatabaseHandler;
 
 typedef odb::defin              DefParser;
 typedef odb::defout             DefOut;

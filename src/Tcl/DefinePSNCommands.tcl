@@ -224,19 +224,19 @@ namespace eval psn {
         }
     }
 
-    define_cmd_args "repair_timing" {[-maximum_capacitance] [-maximum_transition]\
-				 [-timerless] [-cirtical_path] [-maximize_slack]\
+    define_cmd_args "repair_timing" {[-maximum_capacitance] [-maximum_transition] [-negative_slack]\
+				 [-timerless] [-repair_by_resize] [-repair_by_clone]\
 				 [-auto_buffer_library single|small|medium|large|all]\
 				 [-minimize_buffer_library]\
 				 [-use_inverting_buffer_library] [-buffers buffers]\
 				 [-inverters inverters ] [-iterations iterations] [-area_penalty area_penalty]\
-				 [-legalization_frequency count] [-min_gain gain] [-enable_gate_resize] \
+				 [-legalization_frequency count] [-min_gain gain] [-enable_driver_resize] \
     }
 
     proc repair_timing { args } {
         sta::parse_key_args "repair_timing" args \
         keys {-auto_buffer_library -buffers -inverters -iterations -min_gain -area_penalty -legalization_frequency}\
-        flags {-maximize_slack -timerless -cirtical_path -enable_gate_resize -minimize_buffer_library -use_inverting_buffer_library -maximum_capacitance] -maximum_transition}
+        flags {-negative_slack -timerless repair_by_resize -repair_by_clone -enable_driver_resize -minimize_buffer_library -use_inverting_buffer_library -maximum_capacitance] -maximum_transition}
         
         set buffer_lib_flag ""
         set auto_buf_flag ""
@@ -244,15 +244,24 @@ namespace eval psn {
 
         set has_max_cap [info exists flags(-maximum_capacitance)]
         set has_max_transition [info exists flags(-maximum_transition)]
+        set has_max_ns [info exists flags(-negative_slack)]
 
         set repair_target_flag ""
 
-        if {($has_max_cap && $has_max_transition) || (!$has_max_cap && !$has_max_transition)} {
-            set repair_target_flag "-maximum_capacitance -maximum_transition"
-        } elseif {$has_max_cap} {
+        if {$has_max_cap} {
             set repair_target_flag "-maximum_capacitance"
-        } elseif {$has_max_transition} {
-            set repair_target_flag "-maximum_transition"
+        }
+        if {$has_max_transition} {
+            set repair_target_flag "$repair_target_flag -maximum_transition"
+        }
+        if {$has_max_ns} {
+            set repair_target_flag "$repair_target_flag -negative_slack"
+        }
+        if {[info exists flags(-repair_by_resize)]} {
+            set repair_target_flag "$repair_target_flag -repair_by_resize"
+        }
+        if {[info exists flags(-repair_by_clone)]} {
+            set repair_target_flag "$repair_target_flag -repair_by_clone"
         }
 
         if {[info exists flags(-timerless)]} {
@@ -261,6 +270,7 @@ namespace eval psn {
         if {[info exists flags(-cirtical_path)]} {
             set mode_flag "$mode_flag -cirtical_path"
         }
+        
 
         if {[info exists flags(-maximize_slack)]} {
             if {[info exists flags(-timerless)]} {
@@ -325,8 +335,8 @@ namespace eval psn {
             set area_penalty_flag  "-area_penalty $keys(-area_penalty)"
         }
         set resize_flag ""
-        if {[info exists flags(-enable_gate_resize)]} {
-            set resize_flag  "-enable_gate_resize"
+        if {[info exists flags(-enable_driver_resize)]} {
+            set resize_flag  "-enable_driver_resize"
         }
         set iterations 1
         if {[info exists keys(-iterations)]} {

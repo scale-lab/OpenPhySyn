@@ -69,18 +69,19 @@ public:
         cluster_inverters                 = false;
         minimize_cluster_buffers          = false;
         cluster_threshold                 = 0.0;
-        resize_gates                      = false;
+        driver_resize                     = false;
         repair_capacitance_violations     = false;
         repair_transition_violations      = false;
+        repair_negative_slack             = false;
         timerless                         = false;
         timerless_rebuffer                = false;
         timerless_slew_limit_factor       = 0.9;
         timerless_maximum_violation_ratio = 0.7;
-        cirtical_path                     = false;
-        maximize_slack                    = false;
         ripup_existing_buffer_max_levels  = 3;
         use_library_lookup                = true;
         legalization_frequency            = 0;
+        repair_by_resize                  = false;
+        repair_by_clone                   = false;
         phase                             = TimingRepairPhase::PostGlobalPlace;
         use_best_solution_threshold       = true;
         best_solution_threshold           = 10E-12; // 10ps
@@ -95,15 +96,14 @@ public:
     bool                           cluster_inverters;
     bool                           minimize_cluster_buffers;
     float                          cluster_threshold;
-    bool                           resize_gates;
+    bool                           driver_resize;
     bool                           repair_capacitance_violations;
     bool                           repair_transition_violations;
+    bool                           repair_negative_slack;
     bool                           timerless;
     bool                           timerless_rebuffer;
     float                          timerless_maximum_violation_ratio;
     float                          timerless_slew_limit_factor;
-    bool                           cirtical_path;
-    bool                           maximize_slack;
     int                            ripup_existing_buffer_max_levels;
     bool                           use_library_lookup;
     int                            legalization_frequency;
@@ -111,6 +111,8 @@ public:
     std::vector<LibraryCell*>      inverter_lib;
     IntervalMap<int, LibraryCell*> buffer_lib_lookup;
     IntervalMap<int, LibraryCell*> inverter_lib_lookup;
+    bool                           repair_by_resize;
+    bool                           repair_by_clone;
     TimingRepairPhase              phase;
     bool                           use_best_solution_threshold;
     float                          best_solution_threshold;
@@ -130,7 +132,9 @@ private:
     int   buff_index_;
     int   transition_violations_;
     int   capacitance_violations_;
+    int   slack_violations_;
     float current_area_;
+    float saved_slack_;
     int   hasViolation(Psn* psn_inst, InstanceTerm* pin);
     std::unordered_set<Instance*>
     bufferPin(Psn* psn_inst, InstanceTerm* pin, TimingRepairTarget target,
@@ -163,6 +167,9 @@ private:
     int fixTransitionViolations(
         Psn* psn_inst, std::vector<InstanceTerm*>& driver_pins,
         std::unique_ptr<TimingBufferTransformOptions>& options);
+    int
+    fixNegativeSlack(Psn* psn_inst, std::vector<InstanceTerm*>& driver_pins,
+                     std::unique_ptr<TimingBufferTransformOptions>& options);
 
 public:
     TimingBufferTransform();
