@@ -150,10 +150,12 @@ private:
                            TimingRepairTarget                             target,
                            std::unique_ptr<TimingBufferTransformOptions>& options);
     void topDown(Psn* psn_inst, Net* net, std::shared_ptr<BufferTree> tree,
-                 std::unordered_set<Instance*>& added_buffers);
+                 std::unordered_set<Instance*>& added_buffers,
+                 std::unordered_set<Net*>&      affected_nets);
     void topDown(Psn* psn_inst, InstanceTerm* pin,
                  std::shared_ptr<BufferTree>    tree,
-                 std::unordered_set<Instance*>& added_buffers);
+                 std::unordered_set<Instance*>& added_buffers,
+                 std::unordered_set<Net*>&      affected_nets);
 
     int timingBuffer(Psn*                                           psn_inst,
                      std::unique_ptr<TimingBufferTransformOptions>& options,

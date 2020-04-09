@@ -117,6 +117,7 @@ TimingBufferTransform::bufferPin(
             : bottomUp(psn_inst, driver_pin, top_point, driver_point,
                        std::move(st_tree), target, options);
     std::unordered_set<Instance*> added_buffers;
+    std::unordered_set<Net*>      affected_nets;
     if (buff_sol->bufferTrees().size())
     {
         std::shared_ptr<BufferTree> buff_tree    = nullptr;
@@ -158,8 +159,11 @@ TimingBufferTransform::bufferPin(
             }
             if (isTimerless)
             {
-                topDown(psn_inst, pin, buff_tree, added_buffers);
-
+                topDown(psn_inst, pin, buff_tree, added_buffers, affected_nets);
+                for (auto& net : affected_nets)
+                {
+                    handler.calculateParasitics(net);
+                }
                 return added_buffers; // No need for the extra steps beneath for
                                       // timerless mode
             }
@@ -208,13 +212,17 @@ TimingBufferTransform::bufferPin(
                 std::fabs(gain - options->min_gain) >=
                     -std::numeric_limits<float>::epsilon())
             {
-                topDown(psn_inst, pin, buff_tree, added_buffers);
+                topDown(psn_inst, pin, buff_tree, added_buffers, affected_nets);
                 if (replace_driver)
                 {
                     handler.replaceInstance(driver_cell, replace_driver);
                     current_area_ -= handler.area(driver_lib);
                     current_area_ += handler.area(replace_driver);
                     resize_count_++;
+                }
+                for (auto& net : affected_nets)
+                {
+                    handler.calculateParasitics(net);
                 }
                 return added_buffers;
             }
@@ -384,7 +392,8 @@ TimingBufferTransform::bottomUpTimerless(
 void
 TimingBufferTransform::topDown(Psn* psn_inst, InstanceTerm* pin,
                                std::shared_ptr<BufferTree>    tree,
-                               std::unordered_set<Instance*>& added_buffers)
+                               std::unordered_set<Instance*>& added_buffers,
+                               std::unordered_set<Net*>&      affected_nets)
 {
     auto net = psn_inst->handler()->net(pin);
     if (!net)
@@ -395,12 +404,13 @@ TimingBufferTransform::topDown(Psn* psn_inst, InstanceTerm* pin,
     {
         PSN_LOG_ERROR("No net for {}", psn_inst->handler()->name(pin));
     }
-    topDown(psn_inst, net, tree, added_buffers);
+    topDown(psn_inst, net, tree, added_buffers, affected_nets);
 }
 void
 TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
                                std::shared_ptr<BufferTree>    tree,
-                               std::unordered_set<Instance*>& added_buffers)
+                               std::unordered_set<Instance*>& added_buffers,
+                               std::unordered_set<Net*>&      affected_nets)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
     if (!net)
@@ -437,8 +447,8 @@ TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
             {
                 handler.connect(net, inst, handler.libraryPin(tree_pin));
             }
-            handler.calculateParasitics(net);
-            handler.calculateParasitics(tree_net);
+            affected_nets.insert(net);
+            affected_nets.insert(tree_net);
         }
     }
     else if (tree->isBufferNode())
@@ -452,16 +462,17 @@ TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
         auto buffer_net_name = handler.generateNetName(net_index_);
         auto buf_net = handler.bufferNet(net, tree->bufferCell(), buffer_name,
                                          buffer_net_name, tree->location());
+        affected_nets.insert(buf_net);
         current_area_ += handler.area(tree->bufferCell());
         added_buffers.insert(handler.instance(handler.faninPin(buf_net)));
-        topDown(psn_inst, buf_net, tree->left(), added_buffers);
+        topDown(psn_inst, buf_net, tree->left(), added_buffers, affected_nets);
     }
     else if (tree->isBranched())
     {
         PSN_LOG_DEBUG("{}: Buffering left..", handler.name(net));
-        topDown(psn_inst, net, tree->left(), added_buffers);
+        topDown(psn_inst, net, tree->left(), added_buffers, affected_nets);
         PSN_LOG_DEBUG("{}: Buffering right..", handler.name(net));
-        topDown(psn_inst, net, tree->right(), added_buffers);
+        topDown(psn_inst, net, tree->right(), added_buffers, affected_nets);
     }
 }
 
@@ -861,7 +872,7 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
          "-minimize_buffer_library", "-use_inverting_buffer_library",
          "-timerless", "-repair_by_resize", "-repair_by_clone",
          "-postGlobalPlace", "-postDetailedPlace", "-postRoute",
-         "-legalization_frequency"});
+         "-legalization_frequency", "-fast"});
 
     if (args.size() < 2)
     {
@@ -1058,6 +1069,10 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         {
             PSN_LOG_WARN("Repair by clone is not supported yet");
             options->repair_by_clone = true;
+        }
+        else if (args[i] == "-fast")
+        {
+            options->minimum_upstream_resistance = 600;
         }
         else if (args[i] == "-postGlobalPlace")
         {

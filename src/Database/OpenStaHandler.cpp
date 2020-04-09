@@ -523,9 +523,6 @@ OpenStaHandler::bufferClusters(float cluster_threshold, bool find_superior,
         inv_vector, inv_distances, cluster_threshold, 0);
     return std::pair<std::vector<LibraryCell*>, std::vector<LibraryCell*>>(
         buffer_cluster, inverter_cluster);
-
-    return std::pair<std::vector<LibraryCell*>, std::vector<LibraryCell*>>(
-        std::vector<LibraryCell*>(), std::vector<LibraryCell*>());
 }
 std::vector<LibraryCell*>
 OpenStaHandler::equivalentCells(LibraryCell* cell)
@@ -1669,10 +1666,6 @@ Net*
 OpenStaHandler::createNet(const char* net_name)
 {
     auto net = network()->makeNet(net_name, network()->topInstance());
-    if (net && hasWireRC())
-    {
-        calculateParasitics(net);
-    }
     return net;
 }
 float

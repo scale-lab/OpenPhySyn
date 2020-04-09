@@ -57,10 +57,10 @@ TEST_CASE(
         handler.createClock("core_clock", {"clk_i"}, 10E-09);
         auto result = psn_inst.runTransform(
             "timing_buffer",
-            std::vector<std::string>({"-buffers", "CLKBUF_X1", "BUF_X1",
-                                      "BUF_X2", "BUF_X4", "-enable_gate_resize",
-                                      "-area_penalty", "0.5"}));
-        CHECK(result == 65);
+            std::vector<std::string>(
+                {"-buffers", "CLKBUF_X1", "BUF_X1", "BUF_X2", "BUF_X4",
+                 "-enable_driver_resize", "-area_penalty", "0.5"}));
+        CHECK(result == 302);
     }
     catch (PsnException& e)
     {
