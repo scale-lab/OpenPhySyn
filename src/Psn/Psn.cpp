@@ -44,10 +44,6 @@
 #include "OpenPhySyn/Sta/DatabaseSta.hpp"
 #include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"
 #include "OpenPhySyn/Utils/PsnGlobal.hpp"
-#include "OpenSTA/dcalc/ArcDelayCalc.hh"
-#include "OpenSTA/network/ConcreteNetwork.hh"
-#include "OpenSTA/search/Search.hh"
-#include "OpenSTA/search/Sta.hh"
 #include "PsnException/FileException.hpp"
 #include "PsnException/FluteInitException.hpp"
 #include "PsnException/NoTechException.hpp"
@@ -55,6 +51,10 @@
 #include "PsnException/TransformNotFoundException.hpp"
 #include "Utils/FileUtils.hpp"
 #include "Utils/StringUtils.hpp"
+#include "sta/ArcDelayCalc.hh"
+#include "sta/ConcreteNetwork.hh"
+#include "sta/Search.hh"
+#include "sta/Sta.hh"
 
 extern "C"
 {
@@ -868,11 +868,12 @@ Psn::setWireRC(const char* layer_name)
         PSN_LOG_ERROR("Could not find layer with the name {}.", layer_name);
         return -1;
     }
-    auto  width         = handler()->dbuToMicrons(layer->getWidth());
+    auto  width_dbu     = layer->getWidth();
+    auto  width         = handler()->dbuToMicrons(width_dbu);
     float res_per_micon = (layer->getResistance() / width) * 1E6;
     float cap_per_micron =
-        (handler()->dbuToMicrons(1) * width * layer->getCapacitance() +
-         layer->getEdgeCapacitance() * 2.0) *
+        (handler()->dbuToMicrons(1) * ((width_dbu * layer->getCapacitance()) +
+                                       (2.0 * layer->getEdgeCapacitance()))) *
         1E-12 * 1E6;
     setWireRC(res_per_micon, cap_per_micron);
     return 1;

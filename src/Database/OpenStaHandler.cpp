@@ -43,28 +43,28 @@
 #include "OpenPhySyn/SteinerTree/SteinerTree.hpp"
 #include "OpenPhySyn/Utils/ClusteringUtils.hpp"
 #include "OpenPhySyn/Utils/PsnGlobal.hpp"
-#include "OpenSTA/dcalc/ArcDelayCalc.hh"
-#include "OpenSTA/dcalc/DcalcAnalysisPt.hh"
-#include "OpenSTA/dcalc/GraphDelayCalc.hh"
-#include "OpenSTA/graph/Graph.hh"
-#include "OpenSTA/liberty/FuncExpr.hh"
-#include "OpenSTA/liberty/Liberty.hh"
-#include "OpenSTA/liberty/TableModel.hh"
-#include "OpenSTA/liberty/TimingArc.hh"
-#include "OpenSTA/liberty/TimingModel.hh"
-#include "OpenSTA/liberty/TimingRole.hh"
-#include "OpenSTA/liberty/Transition.hh"
-#include "OpenSTA/network/PortDirection.hh"
-#include "OpenSTA/parasitics/Parasitics.hh"
-#include "OpenSTA/sdc/Sdc.hh"
-#include "OpenSTA/search/Bfs.hh"
-#include "OpenSTA/search/Corner.hh"
-#include "OpenSTA/search/PathEnd.hh"
-#include "OpenSTA/search/PathExpanded.hh"
-#include "OpenSTA/search/Power.hh"
-#include "OpenSTA/search/Search.hh"
-#include "OpenSTA/util/MinMax.hh"
-#include "OpenSTA/util/PatternMatch.hh"
+#include "sta/ArcDelayCalc.hh"
+#include "sta/Bfs.hh"
+#include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
+#include "sta/FuncExpr.hh"
+#include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/Parasitics.hh"
+#include "sta/PathEnd.hh"
+#include "sta/PathExpanded.hh"
+#include "sta/PatternMatch.hh"
+#include "sta/PortDirection.hh"
+#include "sta/Power.hh"
+#include "sta/Sdc.hh"
+#include "sta/Search.hh"
+#include "sta/TableModel.hh"
+#include "sta/TimingArc.hh"
+#include "sta/TimingModel.hh"
+#include "sta/TimingRole.hh"
+#include "sta/Transition.hh"
 
 namespace psn
 {
@@ -1156,9 +1156,9 @@ OpenStaHandler::largestLibraryCell(LibraryCell* cell)
     return largest;
 }
 double
-OpenStaHandler::dbuToMeters(uint dist) const
+OpenStaHandler::dbuToMeters(int dist) const
 {
-    return dist * 1E-9;
+    return static_cast<double>(dist) * 1e-6 / db_->getTech()->getLefUnits();
 }
 double
 OpenStaHandler::dbuToMicrons(uint dist) const

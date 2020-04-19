@@ -33,8 +33,8 @@
 #include <memory>
 #include "OpenPhySyn/Psn/Psn.hpp"
 #include "OpenPhySyn/Utils/PsnGlobal.hpp"
-#include "OpenSTA/liberty/Liberty.hh"
 #include "PsnLogger/PsnLogger.hpp"
+#include "sta/Liberty.hh"
 
 namespace psn
 {

@@ -30,15 +30,15 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include "LibertyReader.hpp"
 #include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"
-#include "OpenSTA/liberty/LeakagePower.hh"
-#include "OpenSTA/liberty/Liberty.hh"
 #include "OpenSTA/liberty/LibertyBuilder.hh"
 #include "OpenSTA/liberty/LibertyReader.hh"
 #include "OpenSTA/liberty/LibertyReaderPvt.hh"
-#include "OpenSTA/network/Network.hh"
-#include "OpenSTA/util/Error.hh"
 #include "PsnException/FileException.hpp"
 #include "PsnException/ParseLibertyException.hpp"
+#include "sta/Error.hh"
+#include "sta/LeakagePower.hh"
+#include "sta/Liberty.hh"
+#include "sta/Network.hh"
 namespace psn
 {
 

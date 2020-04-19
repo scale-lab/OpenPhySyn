@@ -371,6 +371,13 @@ spdlog::spdlog
 ${PUBLIC_LIBRARIES}
 )
 
+# Sometimes linking issues occur when linking OpenSTA with CUDD..
+if (CUDD_LIB)
+set(PUBLIC_LIBRARIES
+${PUBLIC_LIBRARIES}
+${CUDD_LIB}
+)
+endif()
 
 # Compile all sources into a library.
 add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_LIBRARY_WRAP})

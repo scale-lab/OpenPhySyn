@@ -16,8 +16,8 @@
 #include "OpenPhySyn/Sta/DatabaseSta.hpp"
 #include <Sta/DatabaseSdcNetwork.hpp>
 #include <tcl.h>
-#include "Machine.hh"
 #include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"
+#include "OpenSTA/util/Machine.hh"
 #include "StaMain.hh"
 #include "opendb/db.h"
 

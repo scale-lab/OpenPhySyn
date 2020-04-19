@@ -33,13 +33,13 @@
 #include "OpenPhySyn/PsnLogger/PsnLogger.hpp"
 #include "OpenPhySyn/Sta/PathPoint.hpp"
 #include "OpenPhySyn/Utils/PsnGlobal.hpp"
-#include "OpenSTA/dcalc/ArcDelayCalc.hh"
-#include "OpenSTA/dcalc/GraphDelayCalc.hh"
-#include "OpenSTA/liberty/TimingArc.hh"
-#include "OpenSTA/liberty/TimingModel.hh"
-#include "OpenSTA/liberty/TimingRole.hh"
-#include "OpenSTA/search/Corner.hh"
 #include "Utils/StringUtils.hpp"
+#include "sta/ArcDelayCalc.hh"
+#include "sta/Corner.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/TimingArc.hh"
+#include "sta/TimingModel.hh"
+#include "sta/TimingRole.hh"
 
 #include <algorithm>
 #include <cmath>

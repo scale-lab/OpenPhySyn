@@ -29,7 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "OpenPhySyn/Sta/PathPoint.hpp"
-#include "OpenSTA/search/PathAnalysisPt.hh"
+#include "sta/PathAnalysisPt.hh"
 namespace psn
 {
 PathPoint::PathPoint(InstanceTerm* path_pin, bool is_rise, float path_arrival,

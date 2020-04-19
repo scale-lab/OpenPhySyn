@@ -19,7 +19,7 @@
 
 #include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"
 #include "Liberty.hh"
-#include "Machine.hh"
+#include "OpenSTA/util/Machine.hh"
 #include "PatternMatch.hh"
 #include "PortDirection.hh"
 #include "Report.hh"

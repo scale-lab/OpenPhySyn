@@ -39,7 +39,7 @@
 #include "OpenPhySyn/Transform/PsnTransform.hpp"
 #include "OpenPhySyn/Transform/TransformHandler.hpp"
 #include "OpenPhySyn/Transform/TransformInfo.hpp"
-#include "OpenSTA/network/ConcreteNetwork.hh"
+#include "sta/ConcreteNetwork.hh"
 
 #include <unordered_map>
 

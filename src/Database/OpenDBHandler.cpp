@@ -467,7 +467,7 @@ OpenDBHandler::largestLibraryCell(LibraryCell* cell)
     return nullptr;
 }
 double
-OpenDBHandler::dbuToMeters(uint dist) const
+OpenDBHandler::dbuToMeters(int dist) const
 {
     return dist * 1E-9;
 }
