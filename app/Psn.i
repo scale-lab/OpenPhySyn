@@ -92,8 +92,6 @@ DatabaseHandler *handler();
 
 
 %include "external/OpenDB/src/swig/tcl/dbtypes.i"
-%include "external/OpenDB/include/opendb/geom.h"
-%include "external/OpenDB/include/opendb/db.h"
 %include "include/OpenPhySyn/Database/Types.hpp"
 %rename(pt_eq) psn::PointEqual::operator()(const Point& pt1, const Point& pt2);
 %rename(pt_hash) psn::PointHash::operator()(const Point& pt);
