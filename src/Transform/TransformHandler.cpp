@@ -34,7 +34,7 @@ namespace psn
 {
 TransformHandler::TransformHandler(std::string name)
 {
-    handle_ = dlopen(name.c_str(), RTLD_LAZY | RTLD_NODELETE);
+    handle_ = dlopen(name.c_str(), RTLD_NOW | RTLD_NODELETE);
     if (!handle_)
     {
         throw LoadTransformException();

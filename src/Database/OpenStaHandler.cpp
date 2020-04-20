@@ -616,7 +616,7 @@ std::vector<PathPoint>
 OpenStaHandler::worstSlackPath(InstanceTerm* term) const
 {
     sta::PathRef path;
-    sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::min(), path);
+    sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::max(), path);
     return expandPath(&path);
 }
 std::vector<PathPoint>
@@ -631,7 +631,7 @@ std::vector<PathPoint>
 OpenStaHandler::bestSlackPath(InstanceTerm* term) const
 {
     sta::PathRef path;
-    sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::max(), path);
+    sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::min(), path);
     return expandPath(&path);
 }
 std::vector<PathPoint>
@@ -759,6 +759,21 @@ OpenStaHandler::getPaths(bool get_max, int path_count) const
 }
 
 float
+OpenStaHandler::worstSlack(InstanceTerm* term) const
+{
+    float ws;
+    sta_->findRequireds();
+    auto         vert = vertex(term);
+    sta::PathRef ref;
+
+    sta_->vertexWorstSlackPath(vert, sta::MinMax::max(), ref);
+    if (!ref.tag(sta_))
+    {
+        return sta::INF;
+    }
+    return ref.slack(sta_);
+}
+float
 OpenStaHandler::worstSlack() const
 {
     float        ws;
@@ -769,41 +784,38 @@ OpenStaHandler::worstSlack() const
     return ws;
 }
 std::vector<std::vector<PathPoint>>
-OpenStaHandler::getNegativeSlackPaths(int path_count) const
+OpenStaHandler::getNegativeSlackPaths() const
 {
-    sta_->ensureGraph();
-    sta_->searchPreamble();
+    std::vector<std::vector<PathPoint>> result;
+    sta_->ensureLevelized();
+    sta_->search()->findAllArrivals();
+    sta_->search()->findRequireds();
     sta_->findRequireds();
 
-    sta::PathEndSeq* path_ends =
-        sta_->search()->findPathEnds( // from, thrus, to, unconstrained
-            nullptr, nullptr, nullptr, false,
-            // corner, min_max,
-            corner_, sta::MinMaxAll::all(),
-            // group_count, endpoint_count, unique_pins
-            path_count, path_count, true, -sta::INF,
-            0,       // slack_min, slack_max,
-            true,    // sort_by_slack
-            nullptr, // group_names
-            // setup, hold, recovery, removal,
-            true, true, true, true,
-            // clk_gating_setup, clk_gating_hold
-            true, true);
-
-    std::vector<std::vector<PathPoint>> result;
-    bool                                first_path = true;
-    for (auto& path_end : *path_ends)
+    for (auto& vert : *sta_->search()->endpoints())
     {
-        result.push_back(expandPath(path_end, !first_path));
-        first_path = false;
+        sta::PathRef ref;
+        sta_->vertexWorstSlackPath(vert, sta::MinMax::max(), ref);
+        if (ref.tag(sta_))
+        {
+            auto vertSlack = ref.slack(sta_);
+            if (vertSlack < 0.0)
+            {
+                result.push_back(expandPath(&ref));
+            }
+        }
     }
-    result.erase(std::remove_if(result.begin(), result.end(),
-                                [&](const std::vector<PathPoint>& t) -> bool {
-                                    return !t.size() ||
-                                           t[t.size() - 1].slack() >= 0;
-                                }),
-                 result.end());
-    // delete path_ends;
+    std::sort(result.begin(), result.end(),
+              [&](const std::vector<PathPoint>& p1,
+                  const std::vector<PathPoint>& p2) -> bool {
+                  return p1[p1.size() - 1].slack() < p2[p2.size() - 1].slack();
+              });
+    // Remove clock pin
+    for (auto& pth : result)
+    {
+        pth.erase(pth.begin());
+    }
+
     return result;
 }
 std::vector<PathPoint>
@@ -815,7 +827,6 @@ OpenStaHandler::expandPath(sta::PathEnd* path_end, bool enumed) const
 std::vector<PathPoint>
 OpenStaHandler::expandPath(sta::Path* path, bool enumed) const
 {
-
     std::vector<PathPoint> points;
     sta::PathExpanded      expanded(path, sta_);
     for (size_t i = 1; i < expanded.size(); i++)
@@ -2980,7 +2991,6 @@ OpenStaHandler::calculateParasitics()
 bool
 OpenStaHandler::isClock(Net* net) const
 {
-
     auto net_pin = faninPin(net);
     if (net_pin)
     {

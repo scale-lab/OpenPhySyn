@@ -86,7 +86,7 @@ virtual float pinAverageRiseTransition(LibraryTerm* from,
 virtual float pinAverageFallTransition(LibraryTerm* from,
                                        LibraryTerm* to) const;
 virtual float loadCapacitance(InstanceTerm* term) const;
-std::vector<std::vector<PathPoint>> getNegativeSlackPaths(int path_count) const;
+std::vector<std::vector<PathPoint>> getNegativeSlackPaths() const;
 virtual float                       maxLoad(LibraryCell* cell);
 virtual float                       targetLoad(LibraryCell* cell);
 virtual float                       coreArea() const;
@@ -194,6 +194,7 @@ virtual float pinSlack(InstanceTerm* term, bool is_rise, bool worst) const;
 virtual float pinSlack(InstanceTerm* term, bool worst = true) const;
 virtual float slack(InstanceTerm* term);
 virtual float worstSlack() const;
+virtual float worstSlack(InstanceTerm* term) const;
 virtual float arrival(InstanceTerm* term, int ap_index,
                       bool is_rise = true) const;
 virtual float slew(InstanceTerm* term) const;

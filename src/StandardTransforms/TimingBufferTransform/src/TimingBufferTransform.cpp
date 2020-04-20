@@ -82,6 +82,20 @@ TimingBufferTransform::bufferPin(
         return std::unordered_set<Instance*>();
     }
     auto pin_net = handler.net(pin);
+    if (options->ripup_existing_buffer_max_levels)
+    {
+        std::unordered_set<Instance*> fanout_buff;
+        auto connected_insts = handler.fanoutInstances(pin_net);
+        for (auto& inst : connected_insts)
+        {
+            if (options->buffer_lib_set.count(handler.libraryCell(inst)))
+            {
+                fanout_buff.insert(inst);
+            }
+        }
+        handler.ripupBuffers(fanout_buff);
+    }
+    pin_net      = handler.net(pin);
     auto st_tree = SteinerTree::create(pin_net, psn_inst);
     if (!st_tree)
     {
@@ -167,7 +181,7 @@ TimingBufferTransform::bufferPin(
                 return added_buffers; // No need for the extra steps beneath for
                                       // timerless mode
             }
-            if (options->use_best_solution_threshold)
+            if (!isSlackRepair && options->use_best_solution_threshold)
             {
                 float buff_tree_delay =
                     handler.gateDelay(pin, buff_tree->totalCapacitance());
@@ -208,9 +222,10 @@ TimingBufferTransform::bufferPin(
             float gain = new_slack - old_slack;
             saved_slack_ += gain;
 
-            if (buff_tree->cost() <= std::numeric_limits<float>::epsilon() ||
-                std::fabs(gain - options->min_gain) >=
-                    -std::numeric_limits<float>::epsilon())
+            if (isSlackRepair ||
+                (buff_tree->cost() <= std::numeric_limits<float>::epsilon() ||
+                 std::fabs(gain - options->min_gain) >=
+                     -std::numeric_limits<float>::epsilon()))
             {
                 topDown(psn_inst, pin, buff_tree, added_buffers, affected_nets);
                 if (replace_driver)
@@ -556,20 +571,32 @@ TimingBufferTransform::fixNegativeSlack(
 {
     PSN_LOG_DEBUG("Fixing negative slack violations");
     DatabaseHandler& handler              = *(psn_inst->handler());
-    auto             negative_slack_paths = handler.getNegativeSlackPaths(20);
+    auto             negative_slack_paths = handler.getNegativeSlackPaths();
+
     if (!negative_slack_paths.size())
     {
         return 0;
     }
+    PSN_LOG_INFO("Found {} negative slack paths", negative_slack_paths.size());
+
     int                               check_negative_slack_freq = 10;
     std::unordered_set<InstanceTerm*> buffered_pins;
-    float                             worst_slack       = handler.worstSlack();
     int                               iteration         = 0;
     int                               last_buffer_count = buffer_count_;
-    for (auto& pth : negative_slack_paths)
-    {
-        std::reverse(pth.begin(), pth.end());
 
+    // NOTE: This can be done in parallel..
+    int unfixed_paths = 0;
+    for (size_t i = 0; i < negative_slack_paths.size(); i++)
+    {
+        auto& pth = negative_slack_paths[i];
+        std::reverse(pth.begin(), pth.end());
+        auto end_pin = pth[0].pin();
+        // Refresh path
+        pth                     = handler.worstSlackPath(end_pin);
+        negative_slack_paths[i] = pth;
+        std::reverse(pth.begin(), pth.end());
+        float worst_slack = handler.worstSlack(end_pin);
+        float init_slack  = worst_slack;
         for (auto& pt : pth)
         {
             if (worst_slack < 0.0)
@@ -598,7 +625,7 @@ TimingBufferTransform::fixNegativeSlack(
                         iteration++;
                         if (iteration % check_negative_slack_freq == 0)
                         {
-                            worst_slack = handler.worstSlack();
+                            worst_slack = handler.worstSlack(end_pin);
                         }
                     }
                 }
@@ -606,7 +633,23 @@ TimingBufferTransform::fixNegativeSlack(
             else
             {
                 PSN_LOG_DEBUG("Slack is positive");
+                break;
             }
+        }
+        float new_slack = handler.worstSlack(end_pin);
+        if (new_slack < 0.0 && init_slack == new_slack)
+        {
+
+            unfixed_paths++;
+            if (unfixed_paths >= 20)
+            {
+                PSN_LOG_DEBUG("Failed to fix 20 successive paths, giving up");
+                break;
+            }
+        }
+        else
+        {
+            unfixed_paths = 0;
         }
     }
 
@@ -735,6 +778,10 @@ TimingBufferTransform::timingBuffer(
     }
     std::unique(options->buffer_lib.begin(), options->buffer_lib.end());
     std::unique(options->inverter_lib.begin(), options->inverter_lib.end());
+    options->buffer_lib_set = std::unordered_set<LibraryCell*>(
+        options->buffer_lib.begin(), options->buffer_lib.end());
+    options->inverter_lib_set = std::unordered_set<LibraryCell*>(
+        options->inverter_lib.begin(), options->inverter_lib.end());
 
     std::sort(options->buffer_lib.begin(), options->buffer_lib.end(),
               [&](LibraryCell* a, LibraryCell* b) -> bool {
