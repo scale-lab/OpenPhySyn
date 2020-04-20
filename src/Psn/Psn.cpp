@@ -842,6 +842,11 @@ Psn::sourceTclScript(const char* script_path)
     return 1;
 }
 void
+Psn::setLegalizer(Legalizer legalizer)
+{
+    db_handler_->setLegalizer(legalizer);
+}
+void
 Psn::setWireRC(float res_per_micon, float cap_per_micron)
 {
     if (!database() || database()->getChip() == nullptr)

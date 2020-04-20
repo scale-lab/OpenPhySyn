@@ -41,10 +41,12 @@
 #include "OpenPhySyn/Transform/TransformInfo.hpp"
 #include "sta/ConcreteNetwork.hh"
 
+#include <functional>
 #include <unordered_map>
 
 namespace psn
 {
+typedef std::function<bool(int)> Legalizer;
 class Psn
 {
 public:
@@ -80,6 +82,7 @@ public:
     void setProgramOptions(int argc, char* argv[]);
     void processStartupProgramOptions();
     int  sourceTclScript(const char* script_path);
+    virtual void setLegalizer(Legalizer legalizer);
     virtual void setWireRC(float res_per_micon, float cap_per_micron);
     virtual int  setWireRC(const char* layer_name);
     virtual int  linkDesign(const char* design_name);

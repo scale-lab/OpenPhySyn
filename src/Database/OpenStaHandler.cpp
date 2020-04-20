@@ -1566,12 +1566,12 @@ OpenStaHandler::filterPins(std::vector<InstanceTerm*>& terms,
 }
 
 void
-OpenStaHandler::setLegalizer(std::function<bool(float)> legalizer)
+OpenStaHandler::setLegalizer(Legalizer& legalizer)
 {
     legalizer_ = legalizer;
 }
 bool
-OpenStaHandler::legalize(float max_displacement)
+OpenStaHandler::legalize(int max_displacement)
 {
     if (legalizer_)
     {

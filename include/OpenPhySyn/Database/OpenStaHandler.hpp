@@ -61,7 +61,8 @@ namespace psn
 {
 class Psn;
 class SteinerTree;
-typedef int SteinerPoint;
+typedef int                      SteinerPoint;
+typedef std::function<bool(int)> Legalizer;
 class OpenStaHandler
 {
 

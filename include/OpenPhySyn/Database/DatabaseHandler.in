@@ -238,6 +238,6 @@ virtual HandlerType handlerType() const;
 virtual void        calculateParasitics();
 virtual void        calculateParasitics(Net* net);
 virtual void        resetCache();
-virtual void        setLegalizer(std::function<bool(float)> legalizer);
-virtual bool        legalize(float max_displacement = 0.0);
+virtual void        setLegalizer(Legalizer& legalizer);
+virtual bool        legalize(int max_displacement = 0);
 virtual float       bufferFixedInputSlew(LibraryCell* buffer_cell, float cap);
