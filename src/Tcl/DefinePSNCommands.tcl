@@ -236,7 +236,7 @@ namespace eval psn {
     proc repair_timing { args } {
         sta::parse_key_args "repair_timing" args \
         keys {-auto_buffer_library -buffers -inverters -iterations -min_gain -area_penalty -legalization_frequency}\
-        flags {-negative_slack -timerless -maximum_capacitance -maximum_transition repair_by_resize -fast -repair_by_clone -enable_driver_resize -minimize_buffer_library -use_inverting_buffer_library -maximum_capacitance] -maximum_transition}
+        flags {-negative_slack -timerless -maximum_capacitance -maximum_transition -repair_by_resize -fast -repair_by_clone -enable_driver_resize -minimize_buffer_library -use_inverting_buffer_library -maximum_capacitance] -maximum_transition}
         
         set buffer_lib_flag ""
         set auto_buf_flag ""

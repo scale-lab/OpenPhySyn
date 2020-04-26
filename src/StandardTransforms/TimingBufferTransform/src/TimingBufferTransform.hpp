@@ -47,7 +47,7 @@ enum TimingRepairPhase
 {
     PostGlobalPlace,
     PostDetailedPlace,
-    PostRoue
+    PostRoute
 };
 enum TimingRepairTarget
 {
@@ -191,7 +191,7 @@ DEFINE_TRANSFORM(
     "[-use_inverting_buffer_library] [-buffers "
     "<buffer library>] [-inverters "
     "<inverters library>] [-timerless] [-cirtical_path] [-iterations <# "
-    "iterations=1>] [-postGlobalPlace|-postDetailedPlace|-postRoute] "
+    "iterations=1>] [-post_global_place|-post_detailed_Place|-post_route] "
     "[-legalization_frequency <numBuffer>]"
     "[-min_gain "
     "<gain=0ps>] [-enable_gate_resize] [-area_penalty <penalty=0ps/um>]")

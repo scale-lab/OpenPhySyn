@@ -36,6 +36,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <limits>
 #include <sstream>
 
@@ -104,20 +105,22 @@ TimingBufferTransform::bufferPin(
         return std::unordered_set<Instance*>();
     }
 
-    bool isSlackRepair = target == TimingRepairTarget::RepairSlack;
-    bool isTimerless   = options->timerless && !isSlackRepair;
+    bool is_slack_repair = target == TimingRepairTarget::RepairSlack;
+    bool is_trans_repair = target == TimingRepairTarget::RepairMaxTransition;
+    bool is_cap_repair   = target == TimingRepairTarget::RepairMaxCapacitance;
+    bool is_timerless    = options->timerless && !is_slack_repair;
 
     auto driver_point = st_tree->driverPoint();
     auto driver_pin   = st_tree->pin(driver_point);
 
-    if (isTimerless)
+    if (is_timerless)
     {
         auto  pin_slew_limit = handler.pinSlewLimit(driver_pin);
         float original_slew  = handler.slew(driver_pin);
         float vio_ratio      = pin_slew_limit / original_slew;
         if (vio_ratio > options->timerless_maximum_violation_ratio)
         {
-            isTimerless = false;
+            is_timerless = false;
             timerless_rebuffer_count_++;
         }
     }
@@ -125,7 +128,7 @@ TimingBufferTransform::bufferPin(
     auto top_point = st_tree->top();
 
     auto buff_sol =
-        isTimerless
+        is_timerless
             ? bottomUpTimerless(psn_inst, driver_pin, top_point, driver_point,
                                 std::move(st_tree), target, options)
             : bottomUp(psn_inst, driver_pin, top_point, driver_point,
@@ -138,7 +141,7 @@ TimingBufferTransform::bufferPin(
         auto                        no_buff_tree = buff_sol->bufferTrees()[0];
         auto                        driver_cell  = handler.instance(pin);
         auto driver_lib = handler.libraryCell(driver_cell);
-        if (isTimerless)
+        if (is_timerless)
         {
             buff_tree = buff_sol->optimalTimerlessDriverTree(psn_inst, pin);
         }
@@ -171,7 +174,7 @@ TimingBufferTransform::bufferPin(
                 buffer_count_ += sol_buf_count;
                 net_count_++;
             }
-            if (isTimerless)
+            if (is_timerless)
             {
                 topDown(psn_inst, pin, buff_tree, added_buffers, affected_nets);
                 for (auto& net : affected_nets)
@@ -181,7 +184,7 @@ TimingBufferTransform::bufferPin(
                 return added_buffers; // No need for the extra steps beneath for
                                       // timerless mode
             }
-            if (!isSlackRepair && options->use_best_solution_threshold)
+            if (!is_slack_repair && options->use_best_solution_threshold)
             {
                 float buff_tree_delay =
                     handler.gateDelay(pin, buff_tree->totalCapacitance());
@@ -222,12 +225,134 @@ TimingBufferTransform::bufferPin(
             float gain = new_slack - old_slack;
             saved_slack_ += gain;
 
-            if (isSlackRepair ||
+            if (is_slack_repair ||
                 (buff_tree->cost() <= std::numeric_limits<float>::epsilon() ||
                  std::fabs(gain - options->min_gain) >=
                      -std::numeric_limits<float>::epsilon()))
             {
-                topDown(psn_inst, pin, buff_tree, added_buffers, affected_nets);
+                // Try to resize before applying the buffers
+                bool is_fixed = false;
+                if (options->repair_by_resize)
+                {
+                    auto driver_types = handler.equivalentCells(
+                        handler.libraryCell(driver_cell));
+                    float current_area = handler.area(driver_lib);
+                    std::function<bool(InstanceTerm * pin)> vio_check_func;
+                    auto replaced_driver = driver_lib;
+                    if (is_trans_repair)
+                    {
+                        vio_check_func = [&](InstanceTerm* pin) -> bool {
+                            return handler.violatesMaximumTransition(pin);
+                        };
+                    }
+                    if (is_cap_repair)
+                    {
+                        vio_check_func = [&](InstanceTerm* pin) -> bool {
+                            return handler.violatesMaximumCapacitance(pin);
+                        };
+                    }
+                    if (is_slack_repair)
+                    {
+                        vio_check_func = [&](InstanceTerm* pin) -> bool {
+                            return handler.worstSlack(pin) < 0.0;
+                        };
+                    }
+                    int attmepts = 0;
+                    for (auto& driver_size : driver_types)
+                    {
+                        float new_driver_area = handler.area(driver_size);
+                        // Only test larger drivers for now
+                        if (new_driver_area < buff_tree->cost() &&
+                            handler.area(driver_size) > current_area)
+                        {
+                            handler.replaceInstance(driver_cell, driver_size);
+                            is_fixed        = vio_check_func(pin);
+                            replaced_driver = driver_size;
+                            attmepts++;
+                            // Only try three upsizes
+                            if (is_fixed || attmepts > 3)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    if (!is_fixed)
+                    {
+                        // Return to the original size
+                        handler.replaceInstance(driver_cell, driver_lib);
+                        replaced_driver = driver_lib;
+                    }
+                    if (driver_lib != replaced_driver)
+                    {
+                        current_area_ -= handler.area(driver_lib);
+                        current_area_ += handler.area(replaced_driver);
+                        resize_count_++;
+                    }
+                }
+                if (!is_fixed)
+                {
+                    topDown(psn_inst, pin, buff_tree, added_buffers,
+                            affected_nets);
+                }
+                if (options->repair_by_resize && !is_fixed && !is_slack_repair)
+                {
+                    auto driver_types = handler.equivalentCells(
+                        handler.libraryCell(driver_cell));
+                    float current_area = handler.area(driver_lib);
+                    std::function<bool(InstanceTerm * pin)> vio_check_func;
+                    auto replaced_driver = driver_lib;
+                    if (is_trans_repair)
+                    {
+                        vio_check_func = [&](InstanceTerm* pin) -> bool {
+                            return handler.violatesMaximumTransition(pin);
+                        };
+                    }
+                    if (is_cap_repair)
+                    {
+                        vio_check_func = [&](InstanceTerm* pin) -> bool {
+                            return handler.violatesMaximumCapacitance(pin);
+                        };
+                    }
+                    if (is_slack_repair)
+                    {
+                        vio_check_func = [&](InstanceTerm* pin) -> bool {
+                            return handler.worstSlack(pin) < 0.0;
+                        };
+                    }
+                    is_fixed     = vio_check_func(pin);
+                    int attempts = 0;
+                    for (auto& driver_size : driver_types)
+                    {
+                        // Only test larger drivers for now
+                        if (handler.area(driver_size) > current_area)
+                        {
+                            handler.replaceInstance(driver_cell, driver_size);
+                            is_fixed        = vio_check_func(pin);
+                            replaced_driver = driver_size;
+                            attempts++;
+                            // Only try three upsizes
+                            if (is_fixed || attempts > 3)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    if (!is_fixed &&
+                        !is_slack_repair) // Keep the larger driver
+                                          // when repairing negative slack
+                    {
+                        // Return to the original size
+                        replaced_driver = driver_lib;
+                        handler.replaceInstance(driver_cell, driver_lib);
+                    }
+                    if (driver_lib != replaced_driver)
+                    {
+                        current_area_ -= handler.area(driver_lib);
+                        current_area_ += handler.area(replaced_driver);
+                        resize_count_++;
+                    }
+                }
+
                 if (replace_driver)
                 {
                     handler.replaceInstance(driver_cell, replace_driver);
@@ -653,7 +778,8 @@ TimingBufferTransform::fixNegativeSlack(
         }
     }
 
-    return buffer_count_;
+    return buffer_count_ + resize_count_;
+    ;
 }
 int
 TimingBufferTransform::fixTransitionViolations(
@@ -918,7 +1044,7 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
          "-min_gain", "-area_penalty", "-auto_buffer_library",
          "-minimize_buffer_library", "-use_inverting_buffer_library",
          "-timerless", "-repair_by_resize", "-repair_by_clone",
-         "-postGlobalPlace", "-postDetailedPlace", "-postRoute",
+         "-post_global_place", "-post_detailed_place", "-post_route",
          "-legalization_frequency", "-fast"});
 
     if (args.size() < 2)
@@ -1109,7 +1235,6 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         }
         else if (args[i] == "-repair_by_resize")
         {
-            PSN_LOG_WARN("Repair by resize is not supported yet");
             options->repair_by_resize = true;
         }
         else if (args[i] == "-repair_by_clone")
@@ -1121,21 +1246,21 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         {
             options->minimum_upstream_resistance = 600;
         }
-        else if (args[i] == "-postGlobalPlace")
+        else if (args[i] == "-post_global_place")
         {
             options->phase = TimingRepairPhase::PostGlobalPlace;
         }
-        else if (args[i] == "-postDetailedPlace")
+        else if (args[i] == "-post_detailed_place")
         {
             PSN_LOG_ERROR(
                 "Post detailed placement timing repair is not supported");
             options->phase = TimingRepairPhase::PostDetailedPlace;
             return -1;
         }
-        else if (args[i] == "-postRoute")
+        else if (args[i] == "-post_route")
         {
             PSN_LOG_ERROR("Post routing timing repair is not supported");
-            options->phase = TimingRepairPhase::PostRoue;
+            options->phase = TimingRepairPhase::PostRoute;
             return -1;
         }
         else
