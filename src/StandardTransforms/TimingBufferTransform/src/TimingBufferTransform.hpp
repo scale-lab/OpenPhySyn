@@ -128,10 +128,12 @@ class TimingBufferTransform : public PsnTransform
 private:
     int   buffer_count_;
     int   resize_count_;
-    int   timerless_rebuffer_count_;
+    int   clone_count_;
     int   net_count_;
+    int   timerless_rebuffer_count_;
     int   net_index_;
     int   buff_index_;
+    int   clone_index_;
     int   transition_violations_;
     int   capacitance_violations_;
     int   slack_violations_;
@@ -158,6 +160,13 @@ private:
                  std::shared_ptr<BufferTree>    tree,
                  std::unordered_set<Instance*>& added_buffers,
                  std::unordered_set<Net*>&      affected_nets);
+
+    void topDownClone(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
+                      SteinerPoint k, float c_limit);
+    void topDownConnect(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
+                        SteinerPoint k, Net* net);
+    void cloneInstance(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
+                       SteinerPoint k);
 
     int timingBuffer(Psn*                                           psn_inst,
                      std::unique_ptr<TimingBufferTransformOptions>& options,

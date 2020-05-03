@@ -161,7 +161,7 @@ has_liberty()
 }
 
 std::vector<std::string>
-capacitance_violations()
+transition_violations()
 {
     std::vector<std::string> names;
     if (!Psn::instance().hasDesign())
@@ -176,7 +176,7 @@ capacitance_violations()
     return names;
 }
 std::vector<std::string>
-transition_violations()
+capacitance_violations()
 {
     std::vector<std::string> names;
     if (!Psn::instance().hasDesign())

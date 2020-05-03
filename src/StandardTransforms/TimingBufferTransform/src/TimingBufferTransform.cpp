@@ -59,10 +59,12 @@ using namespace psn;
 TimingBufferTransform::TimingBufferTransform()
     : buffer_count_(0),
       resize_count_(0),
-      timerless_rebuffer_count_(0),
+      clone_count_(0),
       net_count_(0),
+      timerless_rebuffer_count_(0),
       net_index_(0),
       buff_index_(0),
+      clone_index_(0),
       transition_violations_(0),
       capacitance_violations_(0),
       slack_violations_(0),
@@ -293,6 +295,19 @@ TimingBufferTransform::bufferPin(
                 {
                     topDown(psn_inst, pin, buff_tree, added_buffers,
                             affected_nets);
+                }
+                if (!is_fixed && options->repair_by_clone && is_cap_repair)
+                {
+                    st_tree      = SteinerTree::create(pin_net, psn_inst);
+                    driver_point = st_tree->driverPoint();
+                    driver_pin   = st_tree->pin(driver_point);
+
+                    auto vio_check_func = [&](InstanceTerm* pin) -> bool {
+                        return handler.violatesMaximumCapacitance(pin);
+                    };
+                    topDownClone(psn_inst, st_tree, driver_point,
+                                 1.5 * handler.targetLoad(driver_lib));
+                    is_fixed = vio_check_func(pin);
                 }
                 if (options->repair_by_resize && !is_fixed && !is_slack_repair)
                 {
@@ -613,6 +628,134 @@ TimingBufferTransform::topDown(Psn* psn_inst, Net* net,
         topDown(psn_inst, net, tree->left(), added_buffers, affected_nets);
         PSN_LOG_DEBUG("{}: Buffering right..", handler.name(net));
         topDown(psn_inst, net, tree->right(), added_buffers, affected_nets);
+    }
+}
+
+void
+TimingBufferTransform::topDownClone(Psn*                          psn_inst,
+                                    std::unique_ptr<SteinerTree>& tree,
+                                    SteinerPoint k, float c_limit)
+{
+    DatabaseHandler& handler = *(psn_inst->handler());
+    float cap_per_micron     = psn_inst->handler()->capacitancePerMicron();
+
+    SteinerPoint drvr = tree->driverPoint();
+
+    float src_wire_len = handler.dbuToMeters(tree->distance(drvr, k));
+    float src_wire_cap = src_wire_len * cap_per_micron;
+    if (src_wire_cap > c_limit)
+    {
+        return;
+    }
+
+    SteinerPoint left  = tree->left(k);
+    SteinerPoint right = tree->right(k);
+    if (left != SteinerNull)
+    {
+        float cap_left = tree->subtreeLoad(cap_per_micron, left) + src_wire_cap;
+        bool  is_leaf =
+            tree->left(left) == SteinerNull && tree->right(left) == SteinerNull;
+        if (cap_left < c_limit || is_leaf)
+        {
+            cloneInstance(psn_inst, tree, left);
+        }
+        else
+        {
+            topDownClone(psn_inst, tree, left, c_limit);
+        }
+    }
+
+    if (right != SteinerNull)
+    {
+        float cap_right =
+            tree->subtreeLoad(cap_per_micron, right) + src_wire_cap;
+        bool is_leaf = tree->left(right) == SteinerNull &&
+                       tree->right(right) == SteinerNull;
+        if (cap_right < c_limit || is_leaf)
+        {
+            cloneInstance(psn_inst, tree, right);
+        }
+        else
+        {
+            topDownClone(psn_inst, tree, right, c_limit);
+        }
+    }
+}
+void
+TimingBufferTransform::topDownConnect(Psn*                          psn_inst,
+                                      std::unique_ptr<SteinerTree>& tree,
+                                      SteinerPoint k, Net* net)
+{
+    DatabaseHandler& handler = *(psn_inst->handler());
+    if (k == SteinerNull)
+    {
+        return;
+    }
+
+    if (tree->left(k) == SteinerNull && tree->right(k) == SteinerNull)
+    {
+        handler.connect(net, tree->pin(k));
+    }
+    else
+    {
+        topDownConnect(psn_inst, tree, tree->left(k), net);
+        topDownConnect(psn_inst, tree, tree->right(k), net);
+    }
+}
+
+void
+TimingBufferTransform::cloneInstance(Psn*                          psn_inst,
+                                     std::unique_ptr<SteinerTree>& tree,
+                                     SteinerPoint                  k)
+{
+    DatabaseHandler& handler = *(psn_inst->handler());
+
+    SteinerPoint drvr       = tree->driverPoint();
+    auto         output_pin = tree->pin(drvr);
+    auto         inst       = handler.instance(output_pin);
+    Net*         output_net = handler.net(output_pin);
+
+    std::string clone_net_name = handler.generateNetName(net_index_);
+    Net*        clone_net      = handler.createNet(clone_net_name.c_str());
+    auto        output_port    = handler.libraryPin(output_pin);
+
+    topDownConnect(psn_inst, tree, k, clone_net);
+    std::vector<Net*> para_nets;
+    para_nets.push_back(clone_net);
+
+    int fanout_count = handler.fanoutPins(handler.net(output_pin)).size();
+    if (fanout_count == 0)
+    {
+        handler.connect(clone_net, output_pin);
+        handler.del(output_net);
+    }
+    else
+    {
+        std::string instance_name =
+            handler.generateInstanceName("clone_", clone_index_);
+        auto cell = handler.libraryCell(inst);
+
+        Instance* cloned_inst =
+            handler.createInstance(instance_name.c_str(), cell);
+        handler.setLocation(cloned_inst, handler.location(output_pin));
+        handler.connect(clone_net, cloned_inst, output_port);
+        current_area_ += handler.area(cloned_inst);
+        clone_count_++;
+        auto pins = handler.pins(inst);
+        for (auto& p : pins)
+        {
+            if (handler.isInput(p) && p != output_pin)
+            {
+                Net* target_net  = handler.net(p);
+                auto target_port = handler.libraryPin(p);
+                handler.connect(target_net, cloned_inst, target_port);
+                para_nets.push_back(target_net);
+            }
+        }
+    }
+    for (auto& net : para_nets)
+    {
+        handler.calculateParasitics(net);
     }
 }
 
@@ -1026,6 +1169,7 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     resize_count_             = 0;
     timerless_rebuffer_count_ = 0;
     net_count_                = 0;
+    clone_count_              = 0;
     transition_violations_    = 0;
     capacitance_violations_   = 0;
     slack_violations_         = 0;
@@ -1239,7 +1383,6 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         }
         else if (args[i] == "-repair_by_clone")
         {
-            PSN_LOG_WARN("Repair by clone is not supported yet");
             options->repair_by_clone = true;
         }
         else if (args[i] == "-fast")
