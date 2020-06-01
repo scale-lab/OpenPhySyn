@@ -52,7 +52,7 @@ TEST_CASE("Should perform power-driven pin swapping")
         handler.createClock("core_clock", {"clk"}, 10E-09);
         auto result = psn_inst.runTransform(
             "pin_swap", std::vector<std::string>({"true", "50"}));
-        CHECK(result == 20);
+        CHECK(result == 18);
     }
     catch (PsnException& e)
     {
