@@ -26,7 +26,9 @@ option(OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED "Build Gate Clone transform" ON)
 option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
 option(OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED "Build Constant Propagation transform" ON)
 option(OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED "Build Timing Buffer transform" ON)
+option(OPENPHYSYN_TRANSFORM_PROCESS_DESIGN_ENABLED "Build Process Design transform" OFF)
 option(OPENPHYSYN_READLINE_ENABLED "Enable Tcl Readline" ON)
+option(OPENPHYSYN_OPENDP_ENABLED "Enable OpenDP" OFF)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-error")
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -120,6 +122,11 @@ set(SPD_LOG_HOME
   ${PROJECT_SOURCE_DIR}/external/spdlog
 )
 
+if (${OPENPHYSYN_OPENDP_ENABLED})
+set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/external/opendp)
+add_subdirectory(${OPENDP_HOME})
+add_definitions(-DOPENPHYSYN_OPENDP_ENABLED)
+endif()
 
 # Build cxxopts
 set(CXXOPTS_HOME
@@ -193,6 +200,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/PsnLogger/PsnLogger.cpp
     ${PSN_HOME}/src/Database/OpenDBHandler.cpp
     ${PSN_HOME}/src/Database/OpenStaHandler.cpp
+    ${PSN_HOME}/src/Database/LibraryMapping.cpp
     ${PSN_HOME}/src/DefReader/DefReader.cpp
     ${PSN_HOME}/src/DefWriter/DefWriter.cpp
     ${PSN_HOME}/src/LefReader/LefReader.cpp
@@ -362,6 +370,7 @@ set(PRIVATE_INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/external
 )
 
+
 set(PUBLIC_LIBRARIES
 opendb
 OpenSTA
@@ -376,6 +385,17 @@ if (CUDD_LIB)
 set(PUBLIC_LIBRARIES
 ${PUBLIC_LIBRARIES}
 ${CUDD_LIB}
+)
+endif()
+
+if (${OPENPHYSYN_OPENDP_ENABLED})
+set(PRIVATE_INCLUDE_DIRS
+  ${PRIVATE_INCLUDE_DIRS}
+  ${OPENDP_HOME}/include
+)
+set(PUBLIC_LIBRARIES
+${PUBLIC_LIBRARIES}
+opendp
 )
 endif()
 

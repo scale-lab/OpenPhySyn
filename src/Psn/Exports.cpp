@@ -171,7 +171,11 @@ transition_violations()
     }
     for (auto& pin : Psn::instance().handler()->maximumTransitionViolations())
     {
-        names.push_back(Psn::instance().handler()->name(pin));
+        if (Psn::instance().handler()->net(pin) &&
+            !Psn::instance().handler()->isTopLevel(pin))
+        {
+            names.push_back(Psn::instance().handler()->name(pin));
+        }
     }
     return names;
 }
@@ -186,7 +190,11 @@ capacitance_violations()
     }
     for (auto& pin : Psn::instance().handler()->maximumCapacitanceViolations())
     {
-        names.push_back(Psn::instance().handler()->name(pin));
+        if (Psn::instance().handler()->net(pin) &&
+            !Psn::instance().handler()->isTopLevel(pin))
+        {
+            names.push_back(Psn::instance().handler()->name(pin));
+        }
     }
     return names;
 }

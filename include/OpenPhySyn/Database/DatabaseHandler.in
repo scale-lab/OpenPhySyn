@@ -121,14 +121,43 @@ virtual LibraryTerm* libraryPin(const char* cell_name,
 virtual LibraryTerm* libraryPin(LibraryCell* cell, const char* pin_name) const;
 virtual LibraryTerm* bufferInputPin(LibraryCell* buffer_cell) const;
 virtual LibraryTerm* bufferOutputPin(LibraryCell* buffer_cell) const;
-virtual std::vector<LibraryTerm*> libraryPins(Instance* inst) const;
-virtual std::vector<LibraryTerm*> libraryPins(LibraryCell* cell) const;
+virtual std::unordered_set<InstanceTerm*> commutativePins(InstanceTerm* term);
+virtual std::vector<LibraryTerm*>         libraryPins(Instance* inst) const;
+virtual std::vector<LibraryTerm*>         libraryPins(LibraryCell* cell) const;
 virtual std::vector<LibraryTerm*> libraryInputPins(LibraryCell* cell) const;
 virtual std::vector<LibraryTerm*> libraryOutputPins(LibraryCell* cell) const;
 virtual std::vector<LibraryCell*> tiehiCells() const;
 virtual std::vector<LibraryCell*> tieloCells() const;
 virtual std::vector<LibraryCell*> inverterCells() const;
 virtual std::vector<LibraryCell*> bufferCells() const;
+virtual std::vector<LibraryCell*> nandCells(int in_size = 0);
+virtual std::vector<LibraryCell*> andCells(int in_size = 0);
+virtual std::vector<LibraryCell*> orCells(int in_size = 0);
+virtual std::vector<LibraryCell*> norCells(int in_size = 0);
+virtual std::vector<LibraryCell*> xorCells(int in_size = 0);
+virtual std::vector<LibraryCell*> xnorCells(int in_size = 0);
+virtual int                       isAND(LibraryCell* cell);
+virtual int                       isNAND(LibraryCell* cell);
+virtual int                       isOR(LibraryCell* cell);
+virtual int                       isNOR(LibraryCell* cell);
+virtual int                       isXOR(LibraryCell* cell);
+virtual int                       isXNOR(LibraryCell* cell);
+virtual bool                      isXORXNOR(LibraryCell* cell);
+virtual bool                      isANDOR(LibraryCell* cell);
+virtual bool                      isNANDNOR(LibraryCell* cell);
+virtual bool                      isAnyANDOR(LibraryCell* cell);
+virtual LibraryCell*              closestDriver(LibraryCell*              cell,
+                                                std::vector<LibraryCell*> candidates,
+                                                float                     scale = 1.0);
+virtual LibraryCell*              halfDrivingPowerCell(Instance* inst);
+virtual LibraryCell*              halfDrivingPowerCell(LibraryCell* cell);
+
+virtual std::vector<LibraryCell*> cellSuperset(LibraryCell* cell,
+                                               int          in_size = 0);
+
+virtual std::vector<LibraryCell*> inverseCells(LibraryCell* cell);
+virtual std::vector<LibraryCell*> invertedEquivalent(LibraryCell* cell);
+LibraryCell* minimumDrivingInverter(LibraryCell* cell, float extra_cap = 0.0);
 virtual std::pair<std::vector<LibraryCell*>, std::vector<LibraryCell*>>
                                   bufferClusters(float cluster_threshold, bool find_superior = true,
                                                  bool include_inverting = true);
@@ -186,7 +215,9 @@ virtual unsigned int           fanoutCount(Net* net,
                                            bool include_top_level = false) const;
 virtual std::vector<PathPoint> criticalPath(int path_count = 1) const;
 virtual std::vector<std::vector<PathPoint>> bestPath(int path_count = 1) const;
-virtual std::vector<PathPoint> worstSlackPath(InstanceTerm* term) const;
+virtual std::vector<PathPoint>              worstSlackPath(InstanceTerm* term,
+                                                           bool          trim = false) const;
+virtual InstanceTerm*                       worstSlackPin() const;
 virtual std::vector<PathPoint> worstArrivalPath(InstanceTerm* term) const;
 virtual std::vector<PathPoint> bestSlackPath(InstanceTerm* term) const;
 virtual std::vector<PathPoint> bestArrivalPath(InstanceTerm* term) const;
@@ -204,10 +235,25 @@ virtual float required(InstanceTerm* term) const;
 virtual float required(InstanceTerm* term, bool is_rise,
                        PathAnalysisPoint* path_ap) const;
 virtual bool  isCommutative(InstanceTerm* first, InstanceTerm* second) const;
+virtual bool  isCommutative(LibraryTerm* first, LibraryTerm* second) const;
+virtual bool  isBuffer(LibraryCell* cell) const;
+virtual bool  isInverter(LibraryCell* cell) const;
 virtual bool  dontUse(LibraryCell* cell) const;
 virtual bool  dontTouch(Instance* cell) const;
 virtual void  resetDelays();
 virtual void  resetDelays(InstanceTerm* term);
+virtual void  buildLibraryMappings(int                        max_length,
+                                   std::vector<LibraryCell*>& buffer_lib,
+                                   std::vector<LibraryCell*>& inverter_lib);
+virtual void  buildLibraryMappings(int max_length);
+virtual void  resetLibraryMapping();
+virtual std::shared_ptr<LibraryCellMapping>
+getLibraryCellMapping(LibraryCell* cell);
+virtual std::shared_ptr<LibraryCellMapping>
+getLibraryCellMapping(Instance* inst);
+virtual std::unordered_set<LibraryCell*>
+                               truthTableToCells(std::string table_id);
+virtual std::string            cellToTruthTable(LibraryCell* cell);
 virtual std::vector<Net*>      nets() const;
 virtual std::vector<Instance*> instances() const;
 virtual Block*                 top() const;
@@ -232,7 +278,8 @@ evaluateFunctionExpression(InstanceTerm*                          term,
 virtual int
                     evaluateFunctionExpression(LibraryTerm*                           term,
                                                std::unordered_map<LibraryTerm*, int>& inputs) const;
-virtual void        setWireRC(float res_per_micon, float cap_per_micron);
+virtual void        setWireRC(float res_per_micon, float cap_per_micron,
+                              bool reset_delays = true);
 virtual bool        hasWireRC();
 virtual HandlerType handlerType() const;
 virtual void        calculateParasitics();

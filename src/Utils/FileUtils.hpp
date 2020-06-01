@@ -43,7 +43,8 @@ public:
     static bool isDirectory(const std::string& path);
     static bool createDirectory(const std::string& path);
     static bool createDirectoryIfNotExists(const std::string& path);
-    static std::vector<std::string> readDirectory(const std::string& path);
+    static std::vector<std::string> readDirectory(const std::string& path,
+                                                  bool ignore_hidden = false);
     static std::string              readFile(const std::string& path);
     static std::string              homePath();
     static std::string              joinPath(const std::string& first_path,

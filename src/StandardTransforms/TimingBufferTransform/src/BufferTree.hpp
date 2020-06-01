@@ -30,6 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "OpenPhySyn/Database/DatabaseHandler.hpp"
+#include "OpenPhySyn/Database/LibraryMapping.hpp"
 #include "OpenPhySyn/Database/Types.hpp"
 #include "OpenPhySyn/Psn/Psn.hpp"
 #include "OpenPhySyn/SteinerTree/SteinerTree.hpp"
@@ -51,19 +52,21 @@ class BufferTree
     float capacitance_;
     float required_or_slew_; // required time for timing-driven and slew for
                              // timerless
-    float                       wire_capacitance_;
-    float                       wire_delay_or_slew_;
-    float                       cost_;
-    Point                       location_;
-    std::shared_ptr<BufferTree> left_, right_;
-    LibraryCell*                buffer_cell_;
-    InstanceTerm*               pin_;
-    LibraryTerm*                library_pin_;
-    LibraryCell*                upstream_buffer_cell_;
-    LibraryCell*                driver_cell_;
-    int                         polarity_;
-    int                         buffer_count_;
-    BufferMode                  mode_;
+    float                                   wire_capacitance_;
+    float                                   wire_delay_or_slew_;
+    float                                   cost_;
+    Point                                   location_;
+    std::shared_ptr<BufferTree>             left_, right_;
+    LibraryCell*                            buffer_cell_;
+    InstanceTerm*                           pin_;
+    LibraryTerm*                            library_pin_;
+    LibraryCell*                            upstream_buffer_cell_;
+    LibraryCell*                            driver_cell_;
+    int                                     polarity_;
+    int                                     buffer_count_;
+    BufferMode                              mode_;
+    std::shared_ptr<LibraryCellMappingNode> library_mapping_node_;
+    Point                                   driver_location_;
 
 public:
     BufferTree(float cap = 0.0, float req = 0.0, float cost = 0.0,
@@ -86,7 +89,9 @@ public:
           driver_cell_(nullptr),
           polarity_(polarity),
           buffer_count_(0),
-          mode_(buffer_mode)
+          mode_(buffer_mode),
+          library_mapping_node_(nullptr),
+          driver_location_(0, 0)
 
     {
     }
@@ -111,7 +116,9 @@ public:
           driver_cell_(nullptr),
           polarity_(0),
           buffer_count_(left->bufferCount() + right->bufferCount()),
-          mode_(left->mode())
+          mode_(left->mode()),
+          library_mapping_node_(nullptr),
+          driver_location_(0, 0)
 
     {
         required_or_slew_ =
@@ -191,6 +198,31 @@ public:
     {
         return pin_;
     }
+
+    void
+    setDriverLocation(Point loc)
+    {
+        driver_location_ = loc;
+    }
+
+    Point
+    driverLocation() const
+    {
+        return driver_location_;
+    }
+
+    void
+    setLibraryMappingNode(std::shared_ptr<LibraryCellMappingNode> node)
+    {
+        library_mapping_node_ = node;
+    }
+
+    std::shared_ptr<LibraryCellMappingNode>
+    libraryMappingNode() const
+    {
+        return library_mapping_node_;
+    }
+
     void
     setCapacitance(float cap)
     {
@@ -727,6 +759,151 @@ public:
         }
     }
     void
+    addLeafTreesWithResynthesis(
+        Psn* psn_inst, InstanceTerm*, Point pt,
+        std::vector<LibraryCell*>&                            buffer_lib,
+        std::vector<LibraryCell*>&                            inverter_lib,
+        std::vector<std::shared_ptr<LibraryCellMappingNode>>& mappings_terminals)
+    {
+        if (!buffer_trees_.size())
+        {
+            return;
+        }
+        DatabaseHandler& handler = *(psn_inst->handler());
+
+        for (auto& buff : buffer_lib)
+        {
+            auto optimal_tree  = *(buffer_trees_.begin());
+            auto buff_required = optimal_tree->bufferRequired(psn_inst, buff);
+            for (auto& tree : buffer_trees_)
+            {
+                auto req = tree->bufferRequired(psn_inst, buff);
+                if (req > buff_required)
+                {
+                    optimal_tree  = tree;
+                    buff_required = req;
+                }
+            }
+            auto buffer_cost = psn_inst->handler()->area(buff);
+            auto buffer_cap = psn_inst->handler()->bufferInputCapacitance(buff);
+            auto buffer_opt = std::make_shared<BufferTree>(
+                buffer_cap, buff_required, optimal_tree->cost() + buffer_cost,
+                pt, nullptr, nullptr, buff);
+            buffer_opt->setBufferCount(optimal_tree->bufferCount() + 1);
+            buffer_opt->setLeft(optimal_tree);
+            buffer_trees_.push_back(buffer_opt);
+        }
+        for (auto& inv : inverter_lib)
+        {
+            auto optimal_tree  = *(buffer_trees_.begin());
+            auto buff_required = optimal_tree->bufferRequired(psn_inst, inv);
+            for (auto& tree : buffer_trees_)
+            {
+                auto req = tree->bufferRequired(psn_inst, inv);
+                if (req > buff_required)
+                {
+                    optimal_tree  = tree;
+                    buff_required = req;
+                }
+            }
+            if (optimal_tree && (optimal_tree->polarity() == 0 ||
+                                 optimal_tree->polarity() == 1))
+            {
+                auto buffer_cost = psn_inst->handler()->area(inv);
+                auto buffer_cap =
+                    psn_inst->handler()->inverterInputCapacitance(inv);
+                auto buffer_opt = std::make_shared<BufferTree>(
+                    buffer_cap, buff_required,
+                    optimal_tree->cost() + buffer_cost, pt, nullptr, nullptr,
+                    inv);
+
+                buffer_opt->setPolarity(!optimal_tree->polarity());
+                buffer_opt->setBufferCount(optimal_tree->bufferCount() + 1);
+
+                buffer_opt->setLeft(optimal_tree);
+                buffer_trees_.push_back(buffer_opt);
+            }
+        }
+        for (auto& term : mappings_terminals)
+        {
+            auto cells      = handler.truthTableToCells(term->id());
+            bool is_buff    = term->isBuffer();
+            bool is_inv     = term->isInverter();
+            bool has_parent = term->parent() != nullptr;
+            if (has_parent)
+            {
+                if (is_buff)
+                {
+                    for (auto& buff : buffer_lib)
+                    {
+                        auto optimal_tree = *(buffer_trees_.begin());
+                        auto buff_required =
+                            optimal_tree->bufferRequired(psn_inst, buff);
+                        for (auto& tree : buffer_trees_)
+                        {
+                            auto req = tree->bufferRequired(psn_inst, buff);
+                            if (req > buff_required)
+                            {
+                                optimal_tree  = tree;
+                                buff_required = req;
+                            }
+                        }
+                        auto buffer_cost = psn_inst->handler()->area(buff);
+                        auto buffer_cap =
+                            psn_inst->handler()->bufferInputCapacitance(buff);
+                        auto buffer_opt = std::make_shared<BufferTree>(
+                            buffer_cap, buff_required,
+                            optimal_tree->cost() + buffer_cost, pt, nullptr,
+                            nullptr, buff);
+                        buffer_opt->setBufferCount(optimal_tree->bufferCount() +
+                                                   1);
+                        buffer_opt->setLeft(optimal_tree);
+                        buffer_opt->setLibraryMappingNode(term);
+                        buffer_trees_.push_back(buffer_opt);
+                    }
+                }
+                else if (is_inv)
+                {
+                    for (auto& inv : inverter_lib)
+                    {
+                        auto optimal_tree = *(buffer_trees_.begin());
+                        auto buff_required =
+                            optimal_tree->bufferRequired(psn_inst, inv);
+                        for (auto& tree : buffer_trees_)
+                        {
+                            auto req = tree->bufferRequired(psn_inst, inv);
+                            if (req > buff_required)
+                            {
+                                optimal_tree  = tree;
+                                buff_required = req;
+                            }
+                        }
+                        if (optimal_tree && (optimal_tree->polarity() == 0 ||
+                                             optimal_tree->polarity() == 1))
+                        {
+                            auto buffer_cost = psn_inst->handler()->area(inv);
+                            auto buffer_cap =
+                                psn_inst->handler()->inverterInputCapacitance(
+                                    inv);
+                            auto buffer_opt = std::make_shared<BufferTree>(
+                                buffer_cap, buff_required,
+                                optimal_tree->cost() + buffer_cost, pt, nullptr,
+                                nullptr, inv);
+
+                            buffer_opt->setPolarity(!optimal_tree->polarity());
+                            buffer_opt->setBufferCount(
+                                optimal_tree->bufferCount() + 1);
+
+                            buffer_opt->setLeft(optimal_tree);
+                            buffer_opt->setLibraryMappingNode(term);
+                            buffer_trees_.push_back(buffer_opt);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    void
     addUpstreamReferences(Psn*                        psn_inst,
                           std::shared_ptr<BufferTree> base_buffer_tree)
     {
@@ -818,6 +995,129 @@ public:
         }
         return max_tree;
     }
+    std::shared_ptr<BufferTree>
+    optimalDriverTreeWithResynthesis(Psn* psn_inst, InstanceTerm* driver_pin,
+                                     float  area_penalty,
+                                     float* tree_slack = nullptr)
+    {
+        if (!buffer_trees_.size())
+        {
+            return nullptr;
+        }
+        DatabaseHandler& handler = *(psn_inst->handler());
+
+        auto first_tree = buffer_trees_[0];
+        std::sort(buffer_trees_.begin(), buffer_trees_.end(),
+                  [&](const std::shared_ptr<BufferTree>& a,
+                      const std::shared_ptr<BufferTree>& b) -> bool {
+                      float a_delay = psn_inst->handler()->gateDelay(
+                          driver_pin, a->totalCapacitance());
+                      float a_slack = a->totalRequiredOrSlew() - a_delay;
+                      float b_delay = psn_inst->handler()->gateDelay(
+                          driver_pin, b->totalCapacitance());
+                      float b_slack = b->totalRequiredOrSlew() - b_delay;
+                      return a_slack > b_slack ||
+                             (isEqual(a_slack, b_slack, 1E-6F) &&
+                              a->cost() < b->cost());
+                  });
+
+        float                       max_slack    = -1E+30F;
+        float                       max_cost     = -1E+30F;
+        std::shared_ptr<BufferTree> max_tree     = nullptr;
+        auto                        inst         = handler.instance(driver_pin);
+        auto                        original_lib = handler.libraryCell(inst);
+        auto                        original_cost = handler.area(original_lib);
+        auto                        original_libs_set =
+            handler.truthTableToCells(handler.cellToTruthTable(original_lib));
+        auto original_libs = std::vector<LibraryCell*>(
+            original_libs_set.begin(), original_libs_set.end());
+        float orig_max_cap = handler.largestInputCapacitance(original_lib);
+        float orig_penalty = handler.bufferChainDelayPenalty(orig_max_cap) +
+                             area_penalty * handler.area(original_lib);
+        std::sort(original_libs.begin(), original_libs.end(),
+                  [&](LibraryCell* a, LibraryCell* b) -> bool {
+                      return handler.area(a) > handler.area(b);
+                  });
+
+        int position = -1;
+        for (size_t i = 0; i < original_libs.size(); i++)
+        {
+            if (original_libs[i] == original_lib)
+            {
+                position = i;
+                break;
+            }
+        }
+        if (position == -1)
+        {
+            throw "wrong mapping";
+        }
+        for (auto& tree : buffer_trees_)
+        {
+            if (tree->libraryMappingNode())
+            {
+                auto parent = tree->libraryMappingNode()->parent();
+                if (parent->parent())
+                {
+                    continue;
+                }
+                auto   drivers_set = handler.truthTableToCells(parent->id());
+                auto   drivers = std::vector<LibraryCell*>(drivers_set.begin(),
+                                                         drivers_set.end());
+                size_t adjusted_position = std::max(0, position);
+                adjusted_position =
+                    std::min(adjusted_position, drivers.size() - 1);
+                auto driver_range = std::vector<LibraryCell*>({
+                    // drivers[(position - 1) % drivers.size()],
+                    drivers[(adjusted_position) % drivers.size()],
+                    // drivers[(position + 1) % drivers.size()],
+                });
+                for (auto& d_type : driver_range)
+                {
+                    if (handler.isSingleOutputCombinational(d_type))
+                    {
+                        auto  d_pin = handler.libraryOutputPins(d_type)[0];
+                        float delay =
+                            handler.gateDelay(d_pin, tree->totalCapacitance());
+                        float slack = tree->totalRequiredOrSlew() - delay;
+                        float cost =
+                            tree->cost() + handler.area(d_type) - original_cost;
+                        if (isGreater(slack, max_slack) ||
+                            (isEqual(slack, max_slack) && cost < max_cost))
+                        {
+                            max_slack = slack;
+                            max_tree  = tree;
+                            max_cost  = tree->cost();
+                            max_tree->setDriverCell(d_type);
+                            if (tree_slack)
+                            {
+                                *tree_slack = max_slack;
+                            }
+                        }
+                    }
+                }
+            }
+            if (tree->polarity())
+            {
+                continue;
+            }
+            float delay =
+                handler.gateDelay(driver_pin, tree->totalCapacitance());
+            float slack = tree->totalRequiredOrSlew() - delay - orig_penalty;
+
+            if (isGreater(slack, max_slack))
+            {
+                max_slack = slack;
+                max_tree  = tree;
+                max_cost  = tree->cost();
+                if (tree_slack)
+                {
+                    *tree_slack = max_slack;
+                }
+            }
+        }
+        return max_tree;
+    }
 
     std::shared_ptr<BufferTree>
     optimalTimerlessDriverTree(Psn* psn_inst, InstanceTerm* driver_pin)
@@ -904,14 +1204,14 @@ public:
                  threshold * std::max(std::abs(first), std::abs(second)));
     }
     static bool
-    isLess(float first, float second, float threshold)
+    isLess(float first, float second, float threshold = 1E-6F)
     {
         return first < second &&
                !(std::abs(first - second) <
                  threshold * std::max(std::abs(first), std::abs(second)));
     }
     static bool
-    isEqual(float first, float second, float threshold)
+    isEqual(float first, float second, float threshold = 1E-6F)
     {
         return std::abs(first - second) <
                threshold * std::max(std::abs(first), std::abs(second));

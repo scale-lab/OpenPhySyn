@@ -48,6 +48,7 @@ class Port;
 class DatabaseSta;
 class DatabaseStaNetwork;
 class PathAnalysisPt;
+class Vertex;
 } // namespace sta
 namespace odb
 {
@@ -90,6 +91,7 @@ typedef odb::defin          DefParser;
 typedef odb::defout         DefOut;
 typedef odb::lefin          LefParser;
 typedef sta::LibertyLibrary Liberty;
+typedef sta::Vertex         Vertex;
 
 typedef odb::dbSet<Library>      LibrarySet;
 typedef odb::dbSet<Net>          NetSet;
@@ -116,6 +118,7 @@ typedef odb::dbTech         LibraryTechnology;
 typedef sta::Net            Net;
 typedef sta::Port           Port;
 typedef sta::LibertyLibrary Liberty;
+typedef sta::Vertex         Vertex;
 
 typedef sta::PortDirection  PinDirection;
 typedef sta::Term           Term;

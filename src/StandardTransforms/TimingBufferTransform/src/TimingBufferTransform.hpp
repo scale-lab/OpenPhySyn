@@ -82,6 +82,7 @@ public:
         legalization_frequency            = 0;
         repair_by_resize                  = false;
         repair_by_clone                   = false;
+        repair_by_resynthesis             = false;
         phase                             = TimingRepairPhase::PostGlobalPlace;
         use_best_solution_threshold       = true;
         best_solution_threshold           = 10E-12; // 10ps
@@ -115,6 +116,7 @@ public:
     IntervalMap<int, LibraryCell*>   inverter_lib_lookup;
     bool                             repair_by_resize;
     bool                             repair_by_clone;
+    bool                             repair_by_resynthesis;
     TimingRepairPhase                phase;
     bool                             use_best_solution_threshold;
     float                            best_solution_threshold;
@@ -144,10 +146,16 @@ private:
     bufferPin(Psn* psn_inst, InstanceTerm* pin, TimingRepairTarget target,
               std::unique_ptr<TimingBufferTransformOptions>& options);
     std::shared_ptr<BufferSolution>
-    bottomUp(Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt,
-             SteinerPoint prev, std::shared_ptr<SteinerTree> st_tree,
-             TimingRepairTarget                             target,
-             std::unique_ptr<TimingBufferTransformOptions>& options);
+                                    bottomUp(Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt,
+                                             SteinerPoint prev, std::shared_ptr<SteinerTree> st_tree,
+                                             TimingRepairTarget                             target,
+                                             std::unique_ptr<TimingBufferTransformOptions>& options);
+    std::shared_ptr<BufferSolution> bottomUpWithResynthesis(
+        Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt,
+        SteinerPoint prev, std::shared_ptr<SteinerTree> st_tree,
+        TimingRepairTarget                                    target,
+        std::unique_ptr<TimingBufferTransformOptions>&        options,
+        std::vector<std::shared_ptr<LibraryCellMappingNode>>& mapping_terminals);
     std::shared_ptr<BufferSolution>
          bottomUpTimerless(Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt,
                            SteinerPoint prev, std::shared_ptr<SteinerTree> st_tree,
@@ -199,7 +207,8 @@ DEFINE_TRANSFORM(
     "<single|small|medium|large|all>] [-minimize_buffer_library] "
     "[-use_inverting_buffer_library] [-buffers "
     "<buffer library>] [-inverters "
-    "<inverters library>] [-timerless] [-cirtical_path] [-iterations <# "
+    "<inverters library>] [-repair_by_resize] [-repair_by_clone] "
+    "[-repair_by_resynthesis] [-timerless] [-iterations <# "
     "iterations=1>] [-post_global_place|-post_detailed_Place|-post_route] "
     "[-legalization_frequency <numBuffer>]"
     "[-min_gain "

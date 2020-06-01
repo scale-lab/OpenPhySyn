@@ -30,6 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "TimingBufferTransform.hpp"
+#include "OpenPhySyn/Database/LibraryMapping.hpp"
 #include "OpenPhySyn/PsnLogger/PsnLogger.hpp"
 #include "OpenPhySyn/Utils/PsnGlobal.hpp"
 #include "OpenPhySyn/Utils/StringUtils.hpp"
@@ -48,11 +49,11 @@
 // * Buffer library pruning. [Done]
 // * Squeeze pruning. [TODO]
 // * Preslack pruning. [Done]
-// * Timerless buffering. [InProgress]
+// * Timerless buffering. [Done]
 // * Rip buffers at sink pins. [TODO]
 // * Rip inverters at sink pins. [TODO]
 // * Layout aware buffering. [TODO]
-// * Logic aware buffering. [TODO]
+// * Logic aware buffering. [InProgress]
 
 using namespace psn;
 
@@ -114,6 +115,7 @@ TimingBufferTransform::bufferPin(
 
     auto driver_point = st_tree->driverPoint();
     auto driver_pin   = st_tree->pin(driver_point);
+    auto driver_cell  = handler.instance(pin);
 
     if (is_timerless)
     {
@@ -129,19 +131,34 @@ TimingBufferTransform::bufferPin(
 
     auto top_point = st_tree->top();
 
-    auto buff_sol =
-        is_timerless
-            ? bottomUpTimerless(psn_inst, driver_pin, top_point, driver_point,
-                                std::move(st_tree), target, options)
-            : bottomUp(psn_inst, driver_pin, top_point, driver_point,
-                       std::move(st_tree), target, options);
+    std::shared_ptr<BufferSolution> buff_sol;
+    psn::LibraryCell*               replace_driver;
+    auto mapping = handler.getLibraryCellMapping(driver_cell);
+    bool remap   = mapping && options->repair_by_resynthesis;
+    if (is_timerless)
+    {
+        buff_sol =
+            bottomUpTimerless(psn_inst, driver_pin, top_point, driver_point,
+                              std::move(st_tree), target, options);
+    }
+    else if (remap)
+    {
+        auto terminals = mapping->terminals();
+        buff_sol = bottomUpWithResynthesis(psn_inst, driver_pin, top_point,
+                                           driver_point, std::move(st_tree),
+                                           target, options, terminals);
+    }
+    else
+    {
+        buff_sol = bottomUp(psn_inst, driver_pin, top_point, driver_point,
+                            std::move(st_tree), target, options);
+    }
     std::unordered_set<Instance*> added_buffers;
     std::unordered_set<Net*>      affected_nets;
     if (buff_sol->bufferTrees().size())
     {
         std::shared_ptr<BufferTree> buff_tree    = nullptr;
         auto                        no_buff_tree = buff_sol->bufferTrees()[0];
-        auto                        driver_cell  = handler.instance(pin);
         auto driver_lib = handler.libraryCell(driver_cell);
         if (is_timerless)
         {
@@ -162,6 +179,11 @@ TimingBufferTransform::bufferPin(
                 buff_tree = buff_sol->optimalDriverTree(
                     psn_inst, pin, driver_types, options->area_penalty);
             }
+        }
+        else if (remap)
+        {
+            buff_tree = buff_sol->optimalDriverTreeWithResynthesis(
+                psn_inst, pin, options->area_penalty);
         }
         else
         {
@@ -212,10 +234,15 @@ TimingBufferTransform::bufferPin(
                 }
             }
 
-            auto replace_driver = (buff_tree->hasDriverCell() &&
-                                   buff_tree->driverCell() != driver_lib)
-                                      ? buff_tree->driverCell()
-                                      : nullptr;
+            replace_driver = (buff_tree->hasDriverCell() &&
+                              buff_tree->driverCell() != driver_lib)
+                                 ? buff_tree->driverCell()
+                                 : nullptr;
+            if (replace_driver)
+            {
+                PSN_LOG_DEBUG("Replace {} with {}", handler.name(driver_lib),
+                              handler.name(replace_driver));
+            }
             float old_delay =
                 handler.gateDelay(pin, no_buff_tree->totalCapacitance());
             float old_slack = no_buff_tree->totalRequiredOrSlew() - old_delay;
@@ -227,10 +254,9 @@ TimingBufferTransform::bufferPin(
             float gain = new_slack - old_slack;
             saved_slack_ += gain;
 
-            if (is_slack_repair ||
-                (buff_tree->cost() <= std::numeric_limits<float>::epsilon() ||
-                 std::fabs(gain - options->min_gain) >=
-                     -std::numeric_limits<float>::epsilon()))
+            if (buff_tree->cost() <= std::numeric_limits<float>::epsilon() ||
+                std::fabs(gain - options->min_gain) >=
+                    -std::numeric_limits<float>::epsilon())
             {
                 // Try to resize before applying the buffers
                 bool is_fixed = false;
@@ -455,6 +481,80 @@ TimingBufferTransform::bottomUp(
             buff_sol->addWireDelayAndCapacitance(wire_res, wire_cap);
             buff_sol->addLeafTrees(psn_inst, driver_pin, prev_location,
                                    options->buffer_lib, options->inverter_lib);
+
+            return buff_sol;
+        }
+    }
+    return nullptr;
+}
+
+std::shared_ptr<BufferSolution>
+TimingBufferTransform::bottomUpWithResynthesis(
+    Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt, SteinerPoint prev,
+    std::shared_ptr<SteinerTree> st_tree, TimingRepairTarget target,
+    std::unique_ptr<TimingBufferTransformOptions>&        options,
+    std::vector<std::shared_ptr<LibraryCellMappingNode>>& mapping_terminals)
+{
+    DatabaseHandler& handler = *(psn_inst->handler());
+    if (pt != SteinerNull)
+    {
+        auto  pt_pin        = st_tree->pin(pt);
+        float wire_length   = handler.dbuToMeters(st_tree->distance(prev, pt));
+        float wire_res      = wire_length * handler.resistancePerMicron();
+        float wire_cap      = wire_length * handler.capacitancePerMicron();
+        auto  location      = st_tree->location(pt);
+        auto  prev_location = st_tree->location(prev);
+        PSN_LOG_DEBUG("Bottomup Point: ({}, {})", location.getX(),
+                      location.getY());
+        PSN_LOG_TRACE("Prev: ({}, {})", prev_location.getX(),
+                      prev_location.getY());
+
+        if (pt_pin && handler.isLoad(pt_pin))
+        {
+            PSN_LOG_TRACE("{} ({}, {}) bottomUp leaf", handler.name(pt_pin),
+                          location.getX(), location.getY());
+            float                       cap = handler.pinCapacitance(pt_pin);
+            float                       req = handler.required(pt_pin);
+            std::shared_ptr<BufferTree> base_buffer_tree =
+                std::make_shared<BufferTree>(cap, req, 0, location,
+                                             handler.libraryPin(driver_pin),
+                                             pt_pin);
+            std::shared_ptr<BufferSolution> buff_sol =
+                std::make_shared<BufferSolution>();
+            buff_sol->addTree(base_buffer_tree);
+
+            buff_sol->addWireDelayAndCapacitance(wire_res, wire_cap);
+
+            buff_sol->addLeafTreesWithResynthesis(
+                psn_inst, driver_pin, prev_location, options->buffer_lib,
+                options->inverter_lib, mapping_terminals);
+            buff_sol->addUpstreamReferences(psn_inst, base_buffer_tree);
+
+            return buff_sol;
+        }
+        else if (!pt_pin)
+        {
+            PSN_LOG_TRACE("({}, {}) bottomUp ---> left", location.getX(),
+                          location.getY());
+            auto left = bottomUp(psn_inst, driver_pin, st_tree->left(pt), pt,
+                                 st_tree, target, options);
+            PSN_LOG_TRACE("({}, {}) bottomUp ---> right", location.getX(),
+                          location.getY());
+            auto right = bottomUp(psn_inst, driver_pin, st_tree->right(pt), pt,
+                                  st_tree, target, options);
+
+            PSN_LOG_TRACE("({}, {}) bottomUp merging", location.getX(),
+                          location.getY());
+            std::shared_ptr<BufferSolution> buff_sol =
+                std::make_shared<BufferSolution>(
+                    psn_inst, left, right, location,
+                    options->buffer_lib[options->buffer_lib.size() / 2],
+                    options->minimum_upstream_resistance);
+
+            buff_sol->addWireDelayAndCapacitance(wire_res, wire_cap);
+            buff_sol->addLeafTreesWithResynthesis(
+                psn_inst, driver_pin, prev_location, options->buffer_lib,
+                options->inverter_lib, mapping_terminals);
 
             return buff_sol;
         }
@@ -1061,6 +1161,8 @@ TimingBufferTransform::timingBuffer(
                   return handler.area(a) < handler.area(b);
               });
 
+    handler.buildLibraryMappings(4, options->buffer_lib, options->inverter_lib);
+
     auto buf_names_vec = std::vector<std::string>(buffer_lib_names.begin(),
                                                   buffer_lib_names.end());
     auto inv_names_vec = std::vector<std::string>(inverter_lib_names.begin(),
@@ -1188,8 +1290,8 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
          "-min_gain", "-area_penalty", "-auto_buffer_library",
          "-minimize_buffer_library", "-use_inverting_buffer_library",
          "-timerless", "-repair_by_resize", "-repair_by_clone",
-         "-post_global_place", "-post_detailed_place", "-post_route",
-         "-legalization_frequency", "-fast"});
+         "-repair_by_resynthesis", "-post_global_place", "-post_detailed_place",
+         "-post_route", "-legalization_frequency", "-fast"});
 
     if (args.size() < 2)
     {
@@ -1384,6 +1486,10 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         else if (args[i] == "-repair_by_clone")
         {
             options->repair_by_clone = true;
+        }
+        else if (args[i] == "-repair_by_resynthesis")
+        {
+            options->repair_by_resynthesis = true;
         }
         else if (args[i] == "-fast")
         {

@@ -107,6 +107,8 @@ public:
 
     virtual int initializeFlute();
 
+    static void setupLegalizer();
+
     static void initialize(Database* db = nullptr, bool load_transforms = true,
                            Tcl_Interp* interp     = nullptr,
                            bool        init_flute = true);

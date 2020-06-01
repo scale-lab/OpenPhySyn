@@ -55,6 +55,12 @@
 #include "sta/ConcreteNetwork.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
+#include "sta/Units.hh"
+
+#ifdef OPENPHYSYN_OPENDP_ENABLED
+#include "opendp/MakeOpendp.h"
+#include "opendp/Opendp.h"
+#endif
 
 extern "C"
 {
@@ -102,6 +108,7 @@ Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp,
     {
         psn_instance_->initializeFlute();
     }
+    setupLegalizer();
     is_initialized_ = true;
 }
 
@@ -136,6 +143,8 @@ Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
     {
         psn_instance_->initializeFlute();
     }
+
+    setupLegalizer();
     is_initialized_ = true;
 }
 
@@ -233,6 +242,7 @@ Psn::readLef(const char* path, bool import_library, bool import_tech)
         {
             return 0;
         }
+
         return 1;
     }
     catch (PsnException& e)
@@ -370,7 +380,7 @@ Psn::loadTransforms()
             continue;
         }
         std::vector<std::string> transforms_paths =
-            FileUtils::readDirectory(transform_parent_path);
+            FileUtils::readDirectory(transform_parent_path, true);
         for (auto& path : transforms_paths)
         {
             PSN_LOG_DEBUG("Loading transform {}", path);
@@ -451,6 +461,19 @@ Psn::runTransform(std::string transform_name, std::vector<std::string> args)
     }
 }
 
+void
+Psn::setupLegalizer()
+{
+#ifdef OPENPHYSYN_OPENDP_ENABLED
+    ord::makeOpendp();
+    psn_instance_->setLegalizer([=](int max_displacment) -> bool {
+        opendp::Opendp* opendp = opendp::Opendp::instance;
+        // opendp->detailedPlacement(max_displacment);
+        return true;
+    });
+#endif
+}
+
 Tcl_Interp*
 Psn::interpreter() const
 {
@@ -525,6 +548,10 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
             return TCL_ERROR;
         }
     }
+
+#ifdef OPENPHYSYN_OPENDP_ENABLED
+    ord::initOpendp(psn_instance_->interpreter(), psn_instance_->database());
+#endif
 
     return TCL_OK;
 }
@@ -854,6 +881,11 @@ Psn::setWireRC(float res_per_micon, float cap_per_micron)
         PSN_LOG_ERROR("Could not find any loaded design.");
         return;
     }
+    res_per_micon = (sta_->units()->resistanceUnit()->scale() * res_per_micon) /
+                    (sta_->units()->distanceUnit()->scale() * 1.0);
+    cap_per_micron =
+        (sta_->units()->capacitanceUnit()->scale() * cap_per_micron) /
+        (sta_->units()->distanceUnit()->scale() * 1.0);
     handler()->setWireRC(res_per_micon, cap_per_micron);
 }
 int
@@ -880,7 +912,7 @@ Psn::setWireRC(const char* layer_name)
         (handler()->dbuToMicrons(1) * ((width_dbu * layer->getCapacitance()) +
                                        (2.0 * layer->getEdgeCapacitance()))) *
         1E-12 * 1E6;
-    setWireRC(res_per_micon, cap_per_micron);
+    handler()->setWireRC(res_per_micon, cap_per_micron);
     return 1;
 }
 int

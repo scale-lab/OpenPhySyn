@@ -33,6 +33,7 @@
 #include <cstring>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include "OpenPhySyn/Utils/StringUtils.hpp"
 
 #ifdef _WIN32
 #include <direct.h>
@@ -135,6 +136,23 @@ std::string
 path::generic_string() const
 {
     return path_str_;
+}
+std::string
+path::string() const
+{
+    return path_str_;
+}
+path
+path::filename() const
+{
+
+    auto parts =
+        StringUtils::split(path_str_, std::string(1, path::separator()));
+    if (parts.size())
+    {
+        return path(parts[parts.size() - 1]);
+    }
+    return path("");
 }
 
 path::operator std::string() const

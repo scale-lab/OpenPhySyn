@@ -30,23 +30,24 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #ifdef USE_OPENSTA_DB_HANDLER
 
-// Temproary fix for OpenSTA
-#define THROW_DCL throw()
-
 #include "OpenPhySyn/Database/OpenStaHandler.hpp"
 #include <algorithm>
 #include <cmath>
 #include <set>
+#include "OpenPhySyn/Database/LibraryMapping.hpp"
+#include "OpenPhySyn/Database/Types.hpp"
 #include "OpenPhySyn/PsnLogger/PsnLogger.hpp"
 #include "OpenPhySyn/Sta/DatabaseSta.hpp"
 #include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"
 #include "OpenPhySyn/SteinerTree/SteinerTree.hpp"
 #include "OpenPhySyn/Utils/ClusteringUtils.hpp"
 #include "OpenPhySyn/Utils/PsnGlobal.hpp"
+#include "opendb/geom.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
+#include "sta/EquivCells.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
@@ -76,7 +77,8 @@ OpenStaHandler::OpenStaHandler(Psn* psn_inst, DatabaseSta* sta)
       has_target_loads_(false),
       psn_(psn_inst),
       has_wire_rc_(false),
-      maximum_area_valid_(false)
+      maximum_area_valid_(false),
+      has_library_cell_mappings_(false)
 {
     // Use default corner for now
     corner_        = sta_->findCorner("default");
@@ -311,6 +313,554 @@ OpenStaHandler::bufferCells() const
     return cells;
 }
 
+void
+OpenStaHandler::populatePrimitiveCellCache()
+{
+
+    std::unordered_map<int, std::string> and_truth;
+    std::unordered_map<int, std::string> nand_truth;
+    std::unordered_map<int, std::string> or_truth;
+    std::unordered_map<int, std::string> nor_truth;
+    std::unordered_map<int, std::string> xor_truth;
+    std::unordered_map<int, std::string> xnor_truth;
+
+    for (int i = 2; i <= 16; i++)
+    {
+        std::string and_fn;
+        std::string nand_fn;
+        std::string or_fn;
+        std::string nor_fn;
+        std::string xor_fn;
+        std::string xnor_fn;
+        for (int j = 0; j < std::pow(2, i); j++)
+        {
+            std::bitset<64> inp(j);
+            bool            and_result = inp.test(0);
+            bool            or_result  = inp.test(0);
+            bool            xor_result = inp.test(0);
+            for (int m = 1; m < i; m++)
+            {
+                and_result &= inp.test(m);
+                or_result |= inp.test(m);
+                xor_result ^= inp.test(m);
+            }
+            bool nor_result  = !or_result;
+            bool nand_result = !and_result;
+            bool xnor_result = !xor_result;
+            and_fn           = std::to_string((int)and_result) + and_fn;
+            or_fn            = std::to_string((int)or_result) + or_fn;
+            nand_fn          = std::to_string((int)nand_result) + nand_fn;
+            nor_fn           = std::to_string((int)nor_result) + nor_fn;
+            xor_fn           = std::to_string((int)xor_result) + xor_fn;
+            xnor_fn          = std::to_string((int)xnor_result) + xnor_fn;
+        }
+        for (int j = and_fn.size(); j < 64; j++)
+        {
+            and_fn  = "0" + and_fn;
+            or_fn   = "0" + or_fn;
+            nand_fn = "0" + nand_fn;
+            nor_fn  = "0" + nor_fn;
+            xor_fn  = "0" + xor_fn;
+            xnor_fn = "0" + xnor_fn;
+        }
+        and_truth[i]  = and_fn;
+        nand_truth[i] = nand_fn;
+        or_truth[i]   = or_fn;
+        nor_truth[i]  = nor_fn;
+        xor_truth[i]  = xor_fn;
+        xnor_truth[i] = xnor_fn;
+    }
+
+    for (auto& lib : allLibs())
+    {
+        sta::LibertyCellIterator cell_iter(lib);
+        while (cell_iter.hasNext())
+        {
+            auto lib_cell = cell_iter.next();
+            if (nand_cells_.count(lib_cell->libertyCell()) ||
+                and_cells_.count(lib_cell->libertyCell()) ||
+                nor_cells_.count(lib_cell->libertyCell()) ||
+                or_cells_.count(lib_cell->libertyCell()) ||
+                xor_cells_.count(lib_cell->libertyCell()))
+            {
+                continue;
+            }
+
+            auto input_pins = libraryInputPins(lib_cell);
+            if (isSingleOutputCombinational(lib_cell) && input_pins.size() < 32)
+            {
+                auto           output_pins = libraryOutputPins(lib_cell);
+                auto           input_pins  = libraryInputPins(lib_cell);
+                auto           output_pin  = output_pins[0];
+                sta::FuncExpr* output_func = output_pin->function();
+                if (output_func)
+                {
+                    auto table = std::bitset<64>(computeTruthTable(lib_cell));
+                    if (input_pins.size() >= 2 && input_pins.size() <= 16)
+                    {
+                        if (nand_truth[input_pins.size()] == table.to_string())
+                        {
+                            nand_cells_.insert(lib_cell);
+                            auto equiv_cells = equivalentCells(lib_cell);
+                            for (auto& eq : equiv_cells)
+                            {
+                                nand_cells_.insert(eq);
+                            }
+                        }
+                        else if (and_truth[input_pins.size()] ==
+                                 table.to_string())
+                        {
+                            and_cells_.insert(lib_cell);
+                            auto equiv_cells = equivalentCells(lib_cell);
+                            for (auto& eq : equiv_cells)
+                            {
+                                and_cells_.insert(eq);
+                            }
+                        }
+                        else if (or_truth[input_pins.size()] ==
+                                 table.to_string())
+                        {
+                            or_cells_.insert(lib_cell);
+                            auto equiv_cells = equivalentCells(lib_cell);
+                            for (auto& eq : equiv_cells)
+                            {
+                                or_cells_.insert(eq);
+                            }
+                        }
+                        else if (nor_truth[input_pins.size()] ==
+                                 table.to_string())
+                        {
+                            nor_cells_.insert(lib_cell);
+                            auto equiv_cells = equivalentCells(lib_cell);
+                            for (auto& eq : equiv_cells)
+                            {
+                                nor_cells_.insert(eq);
+                            }
+                        }
+                        else if (xor_truth[input_pins.size()] ==
+                                 table.to_string())
+                        {
+                            xor_cells_.insert(lib_cell);
+                            auto equiv_cells = equivalentCells(lib_cell);
+                            for (auto& eq : equiv_cells)
+                            {
+                                xor_cells_.insert(eq);
+                            }
+                        }
+                        else if (xnor_truth[input_pins.size()] ==
+                                 table.to_string())
+                        {
+                            xnor_cells_.insert(lib_cell);
+                            auto equiv_cells = equivalentCells(lib_cell);
+                            for (auto& eq : equiv_cells)
+                            {
+                                xnor_cells_.insert(eq);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+std::vector<LibraryCell*>
+OpenStaHandler::nandCells(int in_size)
+{
+    if (!nand_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (!in_size)
+    {
+        return std::vector<LibraryCell*>(nand_cells_.begin(),
+                                         nand_cells_.end());
+    }
+    else
+    {
+        std::vector<LibraryCell*> cells;
+        for (auto& cell : nand_cells_)
+        {
+            if (libraryInputPins(cell).size() == in_size)
+            {
+                cells.push_back(cell);
+            }
+        }
+        return cells;
+    }
+}
+std::vector<LibraryCell*>
+OpenStaHandler::andCells(int in_size)
+{
+    if (!and_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (!in_size)
+    {
+        return std::vector<LibraryCell*>(and_cells_.begin(), and_cells_.end());
+    }
+    else
+    {
+        std::vector<LibraryCell*> cells;
+        for (auto& cell : and_cells_)
+        {
+            if (libraryInputPins(cell).size() == in_size)
+            {
+                cells.push_back(cell);
+            }
+        }
+        return cells;
+    }
+}
+std::vector<LibraryCell*>
+OpenStaHandler::orCells(int in_size)
+{
+    if (!or_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (!in_size)
+    {
+        return std::vector<LibraryCell*>(or_cells_.begin(), or_cells_.end());
+    }
+    else
+    {
+        std::vector<LibraryCell*> cells;
+        for (auto& cell : or_cells_)
+        {
+            if (libraryInputPins(cell).size() == in_size)
+            {
+                cells.push_back(cell);
+            }
+        }
+        return cells;
+    }
+}
+std::vector<LibraryCell*>
+OpenStaHandler::norCells(int in_size)
+{
+    if (!nor_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (!in_size)
+    {
+        return std::vector<LibraryCell*>(nor_cells_.begin(), nor_cells_.end());
+    }
+    else
+    {
+        std::vector<LibraryCell*> cells;
+        for (auto& cell : nor_cells_)
+        {
+            if (libraryInputPins(cell).size() == in_size)
+            {
+                cells.push_back(cell);
+            }
+        }
+        return cells;
+    }
+}
+std::vector<LibraryCell*>
+OpenStaHandler::xorCells(int in_size)
+{
+    if (!xor_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (!in_size)
+    {
+        return std::vector<LibraryCell*>(xor_cells_.begin(), xor_cells_.end());
+    }
+    else
+    {
+        std::vector<LibraryCell*> cells;
+        for (auto& cell : xor_cells_)
+        {
+            if (libraryInputPins(cell).size() == in_size)
+            {
+                cells.push_back(cell);
+            }
+        }
+        return cells;
+    }
+}
+std::vector<LibraryCell*>
+OpenStaHandler::xnorCells(int in_size)
+{
+    if (!xnor_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (!in_size)
+    {
+        return std::vector<LibraryCell*>(xnor_cells_.begin(),
+                                         xnor_cells_.end());
+    }
+    else
+    {
+        std::vector<LibraryCell*> cells;
+        for (auto& cell : xnor_cells_)
+        {
+            if (libraryInputPins(cell).size() == in_size)
+            {
+                cells.push_back(cell);
+            }
+        }
+        return cells;
+    }
+}
+int
+OpenStaHandler::isAND(LibraryCell* cell)
+{
+    if (!and_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (and_cells_.count(cell))
+    {
+        return libraryInputPins(cell).size();
+    }
+    return 0;
+}
+int
+OpenStaHandler::isNAND(LibraryCell* cell)
+{
+    if (!nand_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (nand_cells_.count(cell))
+    {
+        return libraryInputPins(cell).size();
+    }
+    return 0;
+}
+int
+OpenStaHandler::isOR(LibraryCell* cell)
+{
+    if (!or_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (or_cells_.count(cell))
+    {
+        return libraryInputPins(cell).size();
+    }
+    return 0;
+}
+int
+OpenStaHandler::isNOR(LibraryCell* cell)
+{
+    if (!nor_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (nor_cells_.count(cell))
+    {
+        return libraryInputPins(cell).size();
+    }
+    return 0;
+}
+int
+OpenStaHandler::isXOR(LibraryCell* cell)
+{
+    if (!xor_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (xor_cells_.count(cell))
+    {
+        return libraryInputPins(cell).size();
+    }
+    return 0;
+}
+int
+OpenStaHandler::isXNOR(LibraryCell* cell)
+{
+    if (!xnor_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (xnor_cells_.count(cell))
+    {
+        return libraryInputPins(cell).size();
+    }
+    return 0;
+}
+bool
+OpenStaHandler::isXORXNOR(LibraryCell* cell)
+{
+    return isXOR(cell) || isXNOR(cell);
+}
+bool
+OpenStaHandler::isANDOR(LibraryCell* cell)
+{
+    return isAND(cell) || isOR(cell);
+}
+bool
+OpenStaHandler::isNANDNOR(LibraryCell* cell)
+{
+    return isNAND(cell) || isNOR(cell);
+}
+bool
+OpenStaHandler::isAnyANDOR(LibraryCell* cell)
+{
+    return isANDOR(cell) || isNANDNOR(cell);
+}
+
+LibraryCell*
+OpenStaHandler::closestDriver(LibraryCell*              cell,
+                              std::vector<LibraryCell*> candidates, float scale)
+{
+    if (!candidates.size() || !isSingleOutputCombinational(cell))
+    {
+        return nullptr;
+    }
+    auto         output_pin    = libraryOutputPins(cell)[0];
+    auto         current_limit = scale * maxLoad(output_pin);
+    LibraryCell* closest       = nullptr;
+    auto         diff          = sta::INF;
+    for (auto& cand : candidates)
+    {
+        auto limit = maxLoad(libraryOutputPins(cand)[0]);
+        if (limit == current_limit)
+        {
+            return cand;
+        }
+
+        auto new_diff = std::fabs(limit - current_limit);
+        if (new_diff < diff)
+        {
+            diff    = new_diff;
+            closest = cand;
+        }
+    }
+    return closest;
+}
+LibraryCell*
+OpenStaHandler::halfDrivingPowerCell(Instance* inst)
+{
+    return halfDrivingPowerCell(libraryCell(inst));
+}
+LibraryCell*
+OpenStaHandler::halfDrivingPowerCell(LibraryCell* cell)
+{
+    return closestDriver(cell, equivalentCells(cell), 0.5);
+}
+std::vector<LibraryCell*>
+OpenStaHandler::inverseCells(LibraryCell* cell)
+{
+    if (isAND(cell))
+    {
+        return nandCells(libraryInputPins(cell).size());
+    }
+    else if (isOR(cell))
+    {
+        return norCells(libraryInputPins(cell).size());
+    }
+    else if (isNOR(cell))
+    {
+        return orCells(libraryInputPins(cell).size());
+    }
+    else if (isNAND(cell))
+    {
+        return andCells(libraryInputPins(cell).size());
+    }
+    else if (isBuffer(cell))
+    {
+        return inverterCells();
+    }
+    else if (isInverter(cell))
+    {
+        return bufferCells();
+    }
+    return std::vector<LibraryCell*>();
+}
+std::vector<LibraryCell*>
+OpenStaHandler::cellSuperset(LibraryCell* cell, int in_size)
+{
+    if (isAND(cell))
+    {
+        return andCells(in_size);
+    }
+    else if (isOR(cell))
+    {
+        return orCells(in_size);
+    }
+    else if (isNOR(cell))
+    {
+        return norCells(in_size);
+    }
+    else if (isNAND(cell))
+    {
+        return nandCells(in_size);
+    }
+    else if (isBuffer(cell))
+    {
+        return bufferCells();
+    }
+    else if (isInverter(cell))
+    {
+        return inverterCells();
+    }
+    return std::vector<LibraryCell*>();
+}
+std::vector<LibraryCell*>
+OpenStaHandler::invertedEquivalent(LibraryCell* cell)
+{
+    if (isAND(cell))
+    {
+        return norCells(libraryInputPins(cell).size());
+    }
+    else if (isOR(cell))
+    {
+        return nandCells(libraryInputPins(cell).size());
+    }
+    else if (isNOR(cell))
+    {
+        return andCells(libraryInputPins(cell).size());
+    }
+    else if (isNAND(cell))
+    {
+        return norCells(libraryInputPins(cell).size());
+    }
+    return std::vector<LibraryCell*>();
+}
+
+LibraryCell*
+OpenStaHandler::minimumDrivingInverter(LibraryCell* cell, float extra_cap)
+{
+    auto invs = inverterCells();
+    std::sort(invs.begin(), invs.end(),
+              [&](LibraryCell* b1, LibraryCell* b2) -> bool {
+                  return area(b1) < area(b2);
+              });
+    LibraryCell* smallest = nullptr;
+    for (auto& inv : invs)
+    {
+        bool can_drive = true;
+        auto out_pin   = bufferOutputPin(inv);
+        auto limit     = maxLoad(out_pin);
+        if (out_pin)
+        {
+            for (auto& in_pin : libraryInputPins(cell))
+            {
+                if (portCapacitance(in_pin) + extra_cap > limit)
+                {
+                    can_drive = false;
+                    break;
+                }
+            }
+            if (can_drive)
+            {
+                smallest = inv;
+                break;
+            }
+        }
+    }
+    return smallest;
+}
 // cluster_threshold:
 // 1   : Single buffer cell
 // 3/4 : Small set
@@ -524,6 +1074,36 @@ OpenStaHandler::bufferClusters(float cluster_threshold, bool find_superior,
     return std::pair<std::vector<LibraryCell*>, std::vector<LibraryCell*>>(
         buffer_cluster, inverter_cluster);
 }
+std::unordered_set<InstanceTerm*>
+OpenStaHandler::commutativePins(InstanceTerm* term)
+{
+    std::unordered_set<LibraryTerm*> comm_lib_pins;
+    LibraryTerm*                     lib_pin = libraryPin(term);
+    if (!commutative_pins_cache_.count(lib_pin))
+    {
+        comm_lib_pins.insert(lib_pin);
+        for (auto inp : libraryInputPins(lib_pin->libertyCell()))
+        {
+            if (inp != lib_pin && isCommutative(lib_pin, inp))
+            {
+                comm_lib_pins.insert(inp);
+            }
+        }
+        commutative_pins_cache_[lib_pin] = comm_lib_pins;
+    }
+    comm_lib_pins = commutative_pins_cache_[lib_pin];
+    std::unordered_set<InstanceTerm*> comm;
+
+    for (auto& pn : inputPins(instance(term)))
+    {
+        if (pn != term && comm_lib_pins.count(libraryPin(pn)))
+        {
+            comm.insert(pn);
+        }
+    }
+
+    return comm;
+}
 std::vector<LibraryCell*>
 OpenStaHandler::equivalentCells(LibraryCell* cell)
 {
@@ -613,11 +1193,24 @@ OpenStaHandler::criticalPath(int path_count) const
     return std::vector<PathPoint>();
 }
 std::vector<PathPoint>
-OpenStaHandler::worstSlackPath(InstanceTerm* term) const
+OpenStaHandler::worstSlackPath(InstanceTerm* term, bool trim) const
 {
     sta::PathRef path;
+    sta_->search()->endpointsInvalid();
     sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::max(), path);
-    return expandPath(&path);
+    auto expanded = expandPath(&path);
+    if (trim && !path.isNull())
+    {
+        for (int i = expanded.size() - 1; i >= 0; i--)
+        {
+            if (expanded[i].pin() == term)
+            {
+                expanded.resize(i + 1);
+                break;
+            }
+        }
+    }
+    return expanded;
 }
 std::vector<PathPoint>
 OpenStaHandler::worstArrivalPath(InstanceTerm* term) const
@@ -757,6 +1350,16 @@ OpenStaHandler::getPaths(bool get_max, int path_count) const
     delete path_ends;
     return result;
 }
+InstanceTerm*
+OpenStaHandler::worstSlackPin() const
+{
+    float   ws;
+    Vertex* vert;
+    sta_->findRequireds();
+
+    sta_->worstSlack(min_max_, ws, vert);
+    return vert->pin();
+}
 
 float
 OpenStaHandler::worstSlack(InstanceTerm* term) const
@@ -776,11 +1379,11 @@ OpenStaHandler::worstSlack(InstanceTerm* term) const
 float
 OpenStaHandler::worstSlack() const
 {
-    float        ws;
-    sta::Vertex* vert;
+    float   ws;
+    Vertex* vert;
     sta_->findRequireds();
 
-    sta_->search()->worstSlack(min_max_, ws, vert);
+    sta_->worstSlack(min_max_, ws, vert);
     return ws;
 }
 std::vector<std::vector<PathPoint>>
@@ -789,7 +1392,6 @@ OpenStaHandler::getNegativeSlackPaths() const
     std::vector<std::vector<PathPoint>> result;
     sta_->ensureLevelized();
     sta_->search()->findAllArrivals();
-    sta_->search()->findRequireds();
     sta_->findRequireds();
 
     for (auto& vert : *sta_->search()->endpoints())
@@ -851,37 +1453,36 @@ OpenStaHandler::expandPath(sta::Path* path, bool enumed) const
 bool
 OpenStaHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
 {
-    auto inst = instance(first);
-    if (inst != instance(second))
-    {
-        return false;
-    }
+    return isCommutative(libraryPin(first), libraryPin(second));
+}
+bool
+OpenStaHandler::isCommutative(LibraryTerm* first, LibraryTerm* second) const
+{
+
     if (first == second)
     {
         return true;
     }
-    auto cell_lib = libraryCell(inst);
+    auto cell_lib = first->libertyCell();
     if (cell_lib->isClockGate() || cell_lib->isPad() || cell_lib->isMacro() ||
         cell_lib->hasSequentials())
     {
         return false;
     }
-    auto                      first_lib   = libraryPin(first);
-    auto                      second_lib  = libraryPin(second);
-    auto                      output_pins = outputPins(inst, false);
-    auto                      input_pins  = inputPins(inst, false);
+    auto                      output_pins = libraryOutputPins(cell_lib);
+    auto                      input_pins  = libraryInputPins(cell_lib);
     std::vector<LibraryTerm*> remaining_pins;
     for (auto& pin : input_pins)
     {
         if (pin != first && pin != second)
         {
-            remaining_pins.push_back(libraryPin(pin));
+            remaining_pins.push_back(pin);
         }
     }
     for (auto& out : output_pins)
     {
-        sta::FuncExpr* func = libraryPin(out)->function();
-        if (func->hasPort(first_lib) && func->hasPort(second_lib))
+        sta::FuncExpr* func = out->function();
+        if (func->hasPort(first) && func->hasPort(second))
         {
             std::unordered_map<LibraryTerm*, int> sim_vals;
             for (int i = 0; i < 2; i++)
@@ -891,9 +1492,9 @@ OpenStaHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
 
                     for (int m = 0; m < std::pow(2, remaining_pins.size()); m++)
                     {
-                        sim_vals[first_lib]  = i;
-                        sim_vals[second_lib] = j;
-                        int temp             = m;
+                        sim_vals[first]  = i;
+                        sim_vals[second] = j;
+                        int temp         = m;
                         for (auto& rp : remaining_pins)
                         {
                             sim_vals[rp] = temp & 1;
@@ -902,8 +1503,8 @@ OpenStaHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
                         int first_result =
                             evaluateFunctionExpression(out, sim_vals);
 
-                        sim_vals[first_lib]  = j;
-                        sim_vals[second_lib] = i;
+                        sim_vals[first]  = j;
+                        sim_vals[second] = i;
                         int second_result =
                             evaluateFunctionExpression(out, sim_vals);
                         if (first_result != second_result ||
@@ -927,17 +1528,17 @@ OpenStaHandler::levelDriverPins() const
     auto handler_network = network();
 
     std::vector<InstanceTerm*> terms;
-    std::vector<sta::Vertex*>  vertices;
+    std::vector<Vertex*>       vertices;
     sta::VertexIterator        itr(handler_network->graph());
     while (itr.hasNext())
     {
-        sta::Vertex* vtx = itr.next();
+        Vertex* vtx = itr.next();
         if (vtx->isDriver(handler_network))
             vertices.push_back(vtx);
     }
     std::sort(
         vertices.begin(), vertices.end(),
-        [=](const sta::Vertex* v1, const sta::Vertex* v2) -> bool {
+        [=](const Vertex* v1, const Vertex* v2) -> bool {
             return (v1->level() < v2->level()) ||
                    (v1->level() == v2->level() &&
                     sta::stringLess(handler_network->pathName(v1->pin()),
@@ -1250,7 +1851,7 @@ OpenStaHandler::ripupBuffer(Instance* buffer)
             PSN_LOG_ERROR("Cannot find buffer driven net");
             return;
         }
-        auto driven_pins = pins(sink_net);
+        auto driven_pins = fanoutPins(sink_net, true);
         disconnectAll(sink_net);
         for (auto& p : driven_pins)
         {
@@ -1641,7 +2242,7 @@ OpenStaHandler::swapPins(InstanceTerm* first, InstanceTerm* second)
 Instance*
 OpenStaHandler::createInstance(const char* inst_name, LibraryCell* cell)
 {
-    return network()->makeInstance(cell, inst_name, network()->topInstance());
+    return sta_->makeInstance(inst_name, cell, network()->topInstance());
 }
 
 void
@@ -1676,7 +2277,7 @@ OpenStaHandler::createClock(const char*              clock_name,
 Net*
 OpenStaHandler::createNet(const char* net_name)
 {
-    auto net = network()->makeNet(net_name, network()->topInstance());
+    auto net = sta_->makeNet(net_name, network()->topInstance());
     return net;
 }
 float
@@ -1717,10 +2318,15 @@ OpenStaHandler::connect(Net* net, Instance* inst, Port* port) const
 std::vector<Net*>
 OpenStaHandler::nets() const
 {
-    sta::NetSeq       all_nets;
-    sta::PatternMatch pattern("*");
-    network()->findNetsMatching(network()->topInstance(), &pattern, &all_nets);
-    return static_cast<std::vector<Net*>>(all_nets);
+    std::vector<Net*> all_nets;
+    sta::NetIterator* net_iter =
+        network()->netIterator(network()->topInstance());
+    while (net_iter->hasNext())
+    {
+        all_nets.push_back(net_iter->next());
+    }
+    delete net_iter;
+    return all_nets;
 }
 std::vector<Instance*>
 OpenStaHandler::instances() const
@@ -1944,17 +2550,59 @@ OpenStaHandler::isSingleOutputCombinational(Instance* inst) const
     }
     return isSingleOutputCombinational(libraryCell(inst));
 }
+bool
+OpenStaHandler::isBuffer(LibraryCell* cell) const
+{
+    return cell->isBuffer();
+}
+bool
+OpenStaHandler::isInverter(LibraryCell* cell) const
+{
+    auto out_pins = libraryOutputPins(cell);
+    return isSingleOutputCombinational(cell) && out_pins[0]->function() &&
+           out_pins[0]->function()->op() == sta::FuncExpr::op_not &&
+           libraryInputPins(cell).size() == 1;
+}
 void
 OpenStaHandler::replaceInstance(Instance* inst, LibraryCell* cell)
 {
-    auto current_name = name(cell);
-    auto db_lib_cell  = db_->findMaster(current_name.c_str());
-    if (db_lib_cell)
+    bool both_inv  = isInverter(libraryCell(inst)) && isInverter(cell);
+    bool both_buff = isBuffer(libraryCell(inst)) && isBuffer(cell);
+
+    if (!both_inv && !both_buff && isSingleOutputCombinational(inst) &&
+        isSingleOutputCombinational(cell) && inputPins(inst).size() == 1 &&
+        libraryInputPins(cell).size() == 1)
     {
-        auto db_inst     = network()->staToDb(inst);
-        auto db_inst_lib = db_inst->getMaster();
-        auto sta_cell    = network()->dbToSta(db_lib_cell);
-        sta_->replaceCell(inst, sta_cell);
+        // Manually replace inverters/buffers
+        auto in_pin     = inputPins(inst)[0];
+        auto out_pin    = outputPins(inst)[0];
+        auto input_net  = net(in_pin);
+        auto output_net = net(out_pin);
+        disconnect(in_pin);
+        disconnect(out_pin);
+        auto current_loc  = location(inst);
+        auto current_name = name(inst);
+        auto db_inst      = network()->staToDb(inst);
+        auto current_rot  = db_inst->getOrient();
+        del(inst);
+        auto new_inst    = createInstance(current_name.c_str(), cell);
+        auto new_db_inst = network()->staToDb(new_inst);
+        new_db_inst->setOrient(current_rot);
+        setLocation(new_inst, current_loc);
+        connect(input_net, inputPins(new_inst)[0]);
+        connect(output_net, outputPins(new_inst)[0]);
+    }
+    else
+    {
+        auto current_name = name(cell);
+        auto db_lib_cell  = db_->findMaster(current_name.c_str());
+        if (db_lib_cell)
+        {
+            auto db_inst     = network()->staToDb(inst);
+            auto db_inst_lib = db_inst->getMaster();
+            auto sta_cell    = network()->dbToSta(db_lib_cell);
+            sta_->replaceCell(inst, sta_cell);
+        }
     }
 }
 
@@ -1990,13 +2638,16 @@ OpenStaHandler::isCombinational(LibraryCell* cell) const
 }
 
 void
-OpenStaHandler::setWireRC(float res_per_micon, float cap_per_micron)
+OpenStaHandler::setWireRC(float res_per_micon, float cap_per_micron,
+                          bool reset_delays)
 {
-    sta_->ensureGraph();
-    sta_->ensureLevelized();
-    sta_->graphDelayCalc()->delaysInvalid();
-    sta_->search()->arrivalsInvalid();
-
+    if (reset_delays)
+    {
+        sta_->ensureGraph();
+        sta_->ensureLevelized();
+        sta_->graphDelayCalc()->delaysInvalid();
+        sta_->search()->arrivalsInvalid();
+    }
     res_per_micron_ = res_per_micon;
     cap_per_micron_ = cap_per_micron;
     has_wire_rc_    = true;
@@ -2064,7 +2715,7 @@ OpenStaHandler::violatesMaximumCapacitance(InstanceTerm* term,
 bool
 OpenStaHandler::violatesMaximumTransition(InstanceTerm* term) const
 {
-    sta::Vertex *vert, *bi;
+    Vertex *vert, *bi;
     sta_->graph()->pinVertices(term, vert, bi);
     float limit;
     bool  exists;
@@ -2202,6 +2853,7 @@ OpenStaHandler::resetCache()
     has_target_loads_        = false;
     maximum_area_valid_      = false;
     target_load_map_.clear();
+    resetLibraryMapping();
 }
 void
 OpenStaHandler::findTargetLoads()
@@ -2211,10 +2863,10 @@ OpenStaHandler::findTargetLoads()
     has_target_loads_ = true;
 }
 
-sta::Vertex*
+Vertex*
 OpenStaHandler::vertex(InstanceTerm* term) const
 {
-    sta::Vertex *vertex, *bidirect_drvr_vertex;
+    Vertex *vertex, *bidirect_drvr_vertex;
     sta_->graph()->pinVertices(term, vertex, bidirect_drvr_vertex);
     return vertex;
 }
@@ -2495,6 +3147,342 @@ OpenStaHandler::largestInputCapacitance(LibraryCell* cell)
     return max_cap;
 }
 
+std::shared_ptr<LibraryCellMapping>
+OpenStaHandler::getLibraryCellMapping(LibraryCell* cell)
+{
+    if (!cell || !truth_tables_.count(cell) ||
+        !library_cell_mappings_.count(truth_tables_[cell]))
+    {
+        return nullptr;
+    }
+    auto mapping = library_cell_mappings_[truth_tables_[cell]];
+    return mapping;
+}
+std::shared_ptr<LibraryCellMapping>
+OpenStaHandler::getLibraryCellMapping(Instance* inst)
+{
+    return getLibraryCellMapping(libraryCell(inst));
+}
+std::unordered_set<LibraryCell*>
+OpenStaHandler::truthTableToCells(std::string table_id)
+{
+    if (!function_to_cell_.count(table_id))
+    {
+        return std::unordered_set<LibraryCell*>();
+    }
+    return function_to_cell_[table_id];
+}
+
+std::string
+OpenStaHandler::cellToTruthTable(LibraryCell* cell)
+{
+    if (!cell || !truth_tables_.count(cell) ||
+        !library_cell_mappings_.count(truth_tables_[cell]))
+    {
+        return "";
+    }
+    return truth_tables_[cell];
+}
+void
+OpenStaHandler::buildLibraryMappings(int max_length)
+{
+    auto buffer_lib   = bufferCells();
+    auto inverter_lib = inverterCells();
+    buildLibraryMappings(max_length, buffer_lib, inverter_lib);
+}
+void
+OpenStaHandler::buildLibraryMappings(int                        max_length,
+                                     std::vector<LibraryCell*>& buffer_lib,
+                                     std::vector<LibraryCell*>& inverter_lib)
+{
+    resetLibraryMapping();
+    std::unordered_map<LibraryCell*, std::bitset<64>> truth_tables_sim;
+
+    std::unordered_map<sta::FuncExpr*, std::bitset<64>> function_cache;
+
+    std::vector<LibraryCell*> all_cells;
+    std::unordered_set<std::string>
+         all_tables; // Table represented as <input size>_<simulation values>
+    auto all_libs = allLibs();
+    std::unordered_map<int,
+                       std::vector<std::vector<std::string>>>
+                                          chain_length_map; // Key is the chain length
+    std::vector<std::vector<std::string>> all_chains;
+    std::unordered_map<std::vector<std::string>*, int>
+        chain_max_length; // Max length for a given chain before it outputs
+                          // constants.
+
+    // Calculate truth tables
+    for (auto& lib : all_libs)
+    {
+        sta::LibertyCellIterator cell_iter(lib);
+        while (cell_iter.hasNext())
+        {
+            auto lib_cell   = cell_iter.next();
+            auto input_pins = libraryInputPins(lib_cell);
+            if (!dontUse(lib_cell) && isSingleOutputCombinational(lib_cell) &&
+                input_pins.size() < 32)
+            {
+                auto           output_pins = libraryOutputPins(lib_cell);
+                auto           output_pin  = output_pins[0];
+                sta::FuncExpr* output_func = output_pin->function();
+                if (output_func)
+                {
+                    std::bitset<64> table = 0;
+                    if (function_cache.count(output_func))
+                    {
+                        table = function_cache[output_func];
+                    }
+                    else
+                    {
+                        table = std::bitset<64>(computeTruthTable(lib_cell));
+                        function_cache[output_func] = table;
+                    }
+                    all_cells.push_back(lib_cell);
+                    std::string table_id = std::to_string(input_pins.size()) +
+                                           "_" + table.to_string();
+                    truth_tables_sim[lib_cell] = table;
+                    truth_tables_[lib_cell]    = table_id;
+                    function_to_cell_[table_id].insert(lib_cell);
+                    if (!all_tables.count(table_id))
+                    {
+                        chain_length_map[1].push_back(std::vector<std::string>(
+                            {table_id})); // Base chain, consisting of
+                                          // the
+                        // single cell.
+
+                        all_tables.insert(table_id);
+                    }
+                }
+                else
+                {
+                    truth_tables_[lib_cell] = "";
+                }
+            }
+            else
+            {
+                truth_tables_[lib_cell] = "";
+            }
+        }
+    }
+
+    for (int chain_length = 2; chain_length <= max_length;
+         chain_length++) // Chains of length 1 are already added above
+    {
+        for (auto& chain : chain_length_map[chain_length - 1])
+        {
+            if (!chain_max_length.count(&chain) ||
+                chain_max_length[&chain] >= chain_length)
+            {
+                auto starting_table_id = chain[0];
+                auto random_cell =
+                    *(function_to_cell_[starting_table_id].begin());
+                auto starting_input_pins  = libraryInputPins(random_cell);
+                auto starting_output_pins = libraryOutputPins(random_cell);
+                int  table                = 0;
+                sta::FuncExpr* starting_output_func =
+                    starting_output_pins[0]->function();
+                int prev_output;
+                for (int i = 0; i < std::pow(2, starting_input_pins.size());
+                     ++i)
+                {
+                    std::unordered_map<LibraryTerm*, int> sim_vals;
+                    std::bitset<64>                       input_bits(i);
+                    for (size_t j = 0; j < starting_input_pins.size(); j++)
+                    {
+                        sim_vals[starting_input_pins[j]] =
+                            input_bits.test(starting_input_pins.size() - j - 1);
+                    }
+                    prev_output = evaluateFunctionExpression(
+                        starting_output_func, sim_vals);
+                    for (size_t m = 1; m < chain.size(); m++)
+                    {
+                        sim_vals.clear();
+                        auto node_table_id = chain[m];
+                        auto node_random_cell =
+                            *(function_to_cell_[node_table_id].begin());
+                        // PSN_LOG_INFO("CHN NEXT {}",
+                        // name(node_random_cell));
+
+                        auto node_input_pins =
+                            libraryInputPins(node_random_cell);
+                        auto node_output_pins =
+                            libraryOutputPins(node_random_cell);
+                        sta::FuncExpr* node_output_func =
+                            node_output_pins[0]->function();
+                        for (auto& in_pin : node_input_pins)
+                        {
+                            sim_vals[in_pin] = prev_output;
+                        }
+                        prev_output = evaluateFunctionExpression(
+                            node_output_func, sim_vals);
+                    }
+                    table |= prev_output << i;
+                }
+                if (table && ~table) // Not a constant
+                {
+                    for (auto& new_table : all_tables)
+                    {
+                        // Only accept buffer/inverter for now
+                        if (new_table.substr(0, 2) == "1_")
+                        {
+                            std::bitset<64> table_bits(table);
+
+                            auto new_table_random_cell =
+                                *(function_to_cell_[new_table].begin());
+                            auto new_table_input_pins =
+                                libraryInputPins(new_table_random_cell);
+                            auto new_table_output_pins =
+                                libraryOutputPins(new_table_random_cell);
+                            int            table = 0;
+                            sta::FuncExpr* new_table_output_func =
+                                new_table_output_pins[0]->function();
+                            std::unordered_map<LibraryTerm*, int> sim_vals;
+
+                            int new_chain_table = 0;
+                            for (int i = 0;
+                                 i < std::pow(2, starting_input_pins.size());
+                                 ++i)
+                            {
+                                for (auto& in_pin : new_table_input_pins)
+                                {
+                                    sim_vals[in_pin] = table_bits.test(i);
+                                }
+                                new_chain_table |=
+                                    evaluateFunctionExpression(
+                                        new_table_output_func, sim_vals)
+                                    << i;
+                            }
+                            if (new_chain_table &&
+                                ~new_chain_table) // Not a constant
+                            {
+                                auto new_chain = chain;
+                                new_chain.push_back(new_table);
+                                chain_length_map[chain_length].push_back(
+                                    new_chain);
+
+                                std::string chain_id =
+                                    std::to_string(starting_input_pins.size()) +
+                                    "_" +
+                                    std::bitset<64>(new_chain_table)
+                                        .to_string();
+                                if (function_to_cell_.count(
+                                        chain_id)) // We found an equivalent
+                                                   // cell to this chain
+                                {
+                                    if (!library_cell_mappings_.count(chain_id))
+                                    {
+                                        library_cell_mappings_[chain_id] =
+                                            std::make_shared<LibraryCellMapping>(
+                                                chain_id);
+                                    }
+                                    auto& mapping =
+                                        library_cell_mappings_[chain_id];
+                                    if (!mapping->mappings()->count(
+                                            new_chain[0]))
+                                    {
+                                        auto root_cell = std::make_shared<
+                                            LibraryCellMappingNode>(
+                                            name(*(
+                                                function_to_cell_[new_chain[0]]
+                                                    .begin())),
+                                            new_chain[0], nullptr,
+                                            new_chain[0] == chain_id, false,
+                                            isBuffer(*(
+                                                function_to_cell_[new_chain[0]]
+                                                    .begin())),
+                                            isInverter(*(
+                                                function_to_cell_[new_chain[0]]
+                                                    .begin())),
+                                            0);
+                                        root_cell->setSelf(root_cell);
+                                        mapping->mappings()->insert(
+                                            {new_chain[0], root_cell});
+                                    }
+                                    auto it =
+                                        mapping->mappings()->at(new_chain[0]);
+                                    for (size_t i = 1; i < new_chain.size();
+                                         i++)
+                                    {
+                                        if (!it->children().count(new_chain[i]))
+                                        {
+                                            auto new_node = std::make_shared<
+                                                LibraryCellMappingNode>(
+                                                name(*(function_to_cell_
+                                                           [new_chain[i]]
+                                                               .begin())),
+                                                new_chain[i], it.get(), false,
+                                                false,
+                                                isBuffer(*(function_to_cell_
+                                                               [new_chain[i]]
+                                                                   .begin())),
+                                                isInverter(*(function_to_cell_
+                                                                 [new_chain[i]]
+                                                                     .begin())),
+                                                it->level() + 1);
+                                            it->children()[new_chain[i]] =
+                                                new_node;
+                                            new_node->setSelf(new_node);
+                                        }
+                                        if (new_chain[i] == new_chain[i - 1])
+                                        {
+                                            it->setRecurring(true);
+                                        }
+                                        it = it->children()[new_chain[i]];
+                                        if (i == new_chain.size() - 1)
+                                        {
+                                            it->setTerminal(true);
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                chain_max_length[&chain] = chain_length;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    chain_max_length[&chain] = chain_length - 1;
+                }
+            }
+        }
+    }
+
+    has_library_cell_mappings_ = true;
+}
+int
+OpenStaHandler::computeTruthTable(LibraryCell* lib_cell)
+{
+    int            table       = 0;
+    auto           output_pins = libraryOutputPins(lib_cell);
+    auto           input_pins  = libraryInputPins(lib_cell);
+    auto           output_pin  = output_pins[0];
+    sta::FuncExpr* output_func = output_pin->function();
+    for (int i = 0; i < std::pow(2, input_pins.size()); ++i)
+    {
+        std::unordered_map<LibraryTerm*, int> sim_vals;
+        std::bitset<64>                       input_bits(i);
+        for (size_t j = 0; j < input_pins.size(); j++)
+        {
+            sim_vals[input_pins[j]] =
+                input_bits.test(input_pins.size() - j - 1);
+        }
+        table |= evaluateFunctionExpression(output_func, sim_vals) << i;
+    }
+    return table;
+}
+void
+OpenStaHandler::resetLibraryMapping()
+{
+    has_library_cell_mappings_ = false;
+    library_cell_mappings_.clear();
+    function_to_cell_.clear();
+    truth_tables_.clear();
+}
+
 /* The following is borrowed from James Cherry's Resizer Code */
 
 // Find a target slew for the libraries and then
@@ -2611,6 +3599,8 @@ OpenStaHandler::gateDelay(LibraryCell* lib_cell, InstanceTerm* to,
                         sta::ArcDelay gate_delay;
                         sta::Slew     tmp_slew;
                         sta::Slew*    slew = drvr_slew ? drvr_slew : &tmp_slew;
+                        in_slew =
+                            target_slews_[arc->toTrans()->asRiseFall()->index()];
                         sta_->arcDelayCalc()->gateDelay(
                             lib_cell, arc, in_slew, load_cap, nullptr, 0.0,
                             pvt_, dcalc_ap_, gate_delay, *slew);
@@ -2705,7 +3695,7 @@ OpenStaHandler::clockNets() const
     sta_->search()->findClkVertexPins(clk_pins);
     for (auto pin : clk_pins)
     {
-        sta::Vertex *vert, *bi_vert;
+        Vertex *vert, *bi_vert;
         network()->graph()->pinVertices(pin, vert, bi_vert);
         bfs.enqueue(vert);
         if (bi_vert)
@@ -2982,7 +3972,8 @@ OpenStaHandler::calculateParasitics()
 {
     for (auto& net : nets())
     {
-        if (!isClock(net))
+        if (!isClock(net) && !network()->isPower(net) &&
+            !network()->isGround(net))
         {
             calculateParasitics(net);
         }

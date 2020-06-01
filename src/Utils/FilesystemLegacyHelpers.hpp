@@ -49,6 +49,8 @@ public:
     path(const std::string& raw_path);
     path        operator/(path const& other_path) const;
     std::string generic_string() const;
+    std::string string() const;
+    path        filename() const;
 
     operator std::string() const;
 

@@ -101,12 +101,16 @@ FileUtils::createDirectoryIfNotExists(const std::string& path)
     }
 }
 std::vector<std::string>
-FileUtils::readDirectory(const std::string& path)
+FileUtils::readDirectory(const std::string& path, bool ignore_hidden)
 {
     std::vector<std::string> paths;
     for (const auto& entry : fs::directory_iterator(path))
     {
-        paths.push_back(entry.path());
+        auto filename = entry.path().filename().string();
+        if (!ignore_hidden || filename[0] != '.')
+        {
+            paths.push_back(entry.path());
+        }
     }
     return paths;
 }

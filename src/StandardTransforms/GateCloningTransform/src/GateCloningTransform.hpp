@@ -45,11 +45,13 @@ private:
     void cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
                    bool clone_largest_only);
     void topDownClone(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
-                      SteinerPoint k, float c_limit);
+                      SteinerPoint k, SteinerPoint prev, float c_limit,
+                      LibraryCell* driver_cell);
     void topDownConnect(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
                         SteinerPoint k, Net* net);
     void cloneInstance(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
-                       SteinerPoint k);
+                       SteinerPoint k, SteinerPoint prev,
+                       LibraryCell* driver_cell);
     int  net_index_;
     int  clone_index_;
     int  clone_count_;

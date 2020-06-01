@@ -34,9 +34,11 @@
 #include "OpenPhySyn/Database/Types.hpp"
 #include "OpenPhySyn/Sta/PathPoint.hpp"
 
+#include <bitset>
 #include <functional>
 #include <memory>
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -61,6 +63,7 @@ namespace psn
 {
 class Psn;
 class SteinerTree;
+class LibraryCellMapping;
 typedef int                      SteinerPoint;
 typedef std::function<bool(int)> Legalizer;
 class OpenStaHandler
@@ -78,11 +81,13 @@ public:
     virtual int evaluateFunctionExpression(
         sta::FuncExpr*                         func,
         std::unordered_map<LibraryTerm*, int>& inputs) const;
+    Vertex* vertex(InstanceTerm* term) const;
 
 private:
     std::vector<Liberty*> allLibs() const;
-    DatabaseSta*          sta_;
-    Database*             db_;
+
+    DatabaseSta* sta_;
+    Database*    db_;
 
     const sta::MinMax*        min_max_;
     bool                      has_buffer_inverter_seq_;
@@ -96,19 +101,40 @@ private:
     float                     maximum_area_;
     bool                      maximum_area_valid_;
 
+    std::unordered_set<LibraryCell*> nand_cells_;
+    std::unordered_set<LibraryCell*> and_cells_;
+    std::unordered_set<LibraryCell*> nor_cells_;
+    std::unordered_set<LibraryCell*> or_cells_;
+    std::unordered_set<LibraryCell*> xor_cells_;
+    std::unordered_set<LibraryCell*> xnor_cells_;
+
     std::unordered_set<LibraryCell*> dont_use_;
 
     std::unordered_map<LibraryCell*, float> buffer_penalty_map_;
     std::unordered_map<LibraryCell*, float> inverting_buffer_penalty_map_;
     std::unordered_set<LibraryCell*>        non_inverting_buffer_;
     std::unordered_set<LibraryCell*>        inverting_buffer_;
+    std::unordered_map<LibraryTerm*, std::unordered_set<LibraryTerm*>>
+        commutative_pins_cache_;
 
     std::unordered_map<float, float>
         penalty_cache_; // TODO Convert into indexing table
 
+    std::unordered_map<std::string, std::shared_ptr<LibraryCellMapping>>
+                                                  library_cell_mappings_;
+    std::unordered_map<LibraryCell*, std::string> truth_tables_;
+    std::unordered_map<std::string, std::unordered_set<LibraryCell*>>
+        function_to_cell_; // Mapping from truth table to cells
+
+    bool has_library_cell_mappings_;
+
+    void populatePrimitiveCellCache();
+
+    int computeTruthTable(LibraryCell* cell);
+
     std::unordered_map<LibraryCell*, float> target_load_map_;
 
-    sta::Vertex* vertex(InstanceTerm* term) const;
+    // Vertex* vertex(InstanceTerm* term) const;
 
     void computeBuffersDelayPenalty(bool include_inverting = true);
 
