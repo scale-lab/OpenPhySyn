@@ -57,7 +57,7 @@ private:
     std::string id_;
     std::unordered_map<std::string, std::shared_ptr<LibraryCellMappingNode>>*
         mappings_;
-    friend class OpenStaHandler;
+    friend class DatabaseHandler;
 };
 
 // LibraryCellMappingNode represents a node in LibraryCellMapping coverage tree
@@ -108,6 +108,6 @@ private:
     std::shared_ptr<LibraryCellMappingNode> self_;
     std::unordered_map<std::string, std::shared_ptr<LibraryCellMappingNode>>
         children_;
-    friend class OpenStaHandler;
+    friend class DatabaseHandler;
 };
 } // namespace psn

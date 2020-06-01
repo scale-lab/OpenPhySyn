@@ -32,97 +32,19 @@
 #include <cstring>
 #include <memory>
 #include <unordered_set>
-#include "BufferTree.hpp"
 #include "OpenPhySyn/Database/DatabaseHandler.hpp"
+#include "OpenPhySyn/Database/LibraryMapping.hpp"
 #include "OpenPhySyn/Database/Types.hpp"
+#include "OpenPhySyn/Optimize/BufferTree.hpp"
 #include "OpenPhySyn/Psn/Psn.hpp"
 #include "OpenPhySyn/SteinerTree/SteinerTree.hpp"
 #include "OpenPhySyn/Transform/PsnTransform.hpp"
-#include "OpenPhySyn/Utils/IntervalMap.hpp"
 
 namespace psn
 {
 
-enum TimingRepairPhase
-{
-    PostGlobalPlace,
-    PostDetailedPlace,
-    PostRoute
-};
-enum TimingRepairTarget
-{
-    RepairMaxCapacitance,
-    RepairMaxTransition,
-    RepairSlack,
-};
-
-class TimingBufferTransformOptions
-{
-public:
-    TimingBufferTransformOptions()
-        : buffer_lib_lookup(0), inverter_lib_lookup(0)
-    {
-        max_iterations                    = 1;
-        min_gain                          = 0;
-        area_penalty                      = 0.0;
-        cluster_buffers                   = false;
-        cluster_inverters                 = false;
-        minimize_cluster_buffers          = false;
-        cluster_threshold                 = 0.0;
-        driver_resize                     = false;
-        repair_capacitance_violations     = false;
-        repair_transition_violations      = false;
-        repair_negative_slack             = false;
-        timerless                         = false;
-        timerless_rebuffer                = false;
-        timerless_slew_limit_factor       = 0.9;
-        timerless_maximum_violation_ratio = 0.7;
-        ripup_existing_buffer_max_levels  = 0;
-        use_library_lookup                = true;
-        legalization_frequency            = 0;
-        repair_by_resize                  = false;
-        repair_by_clone                   = false;
-        repair_by_resynthesis             = false;
-        phase                             = TimingRepairPhase::PostGlobalPlace;
-        use_best_solution_threshold       = true;
-        best_solution_threshold           = 10E-12; // 10ps
-        best_solution_threshold_range     = 3;      // Check the top 3 solutions
-        minimum_upstream_resistance       = 120;
-    }
-    float                            initial_area;
-    int                              max_iterations;
-    float                            min_gain;
-    float                            area_penalty;
-    bool                             cluster_buffers;
-    bool                             cluster_inverters;
-    bool                             minimize_cluster_buffers;
-    float                            cluster_threshold;
-    bool                             driver_resize;
-    bool                             repair_capacitance_violations;
-    bool                             repair_transition_violations;
-    bool                             repair_negative_slack;
-    bool                             timerless;
-    bool                             timerless_rebuffer;
-    float                            timerless_maximum_violation_ratio;
-    float                            timerless_slew_limit_factor;
-    int                              ripup_existing_buffer_max_levels;
-    bool                             use_library_lookup;
-    int                              legalization_frequency;
-    std::vector<LibraryCell*>        buffer_lib;
-    std::vector<LibraryCell*>        inverter_lib;
-    std::unordered_set<LibraryCell*> buffer_lib_set;
-    std::unordered_set<LibraryCell*> inverter_lib_set;
-    IntervalMap<int, LibraryCell*>   buffer_lib_lookup;
-    IntervalMap<int, LibraryCell*>   inverter_lib_lookup;
-    bool                             repair_by_resize;
-    bool                             repair_by_clone;
-    bool                             repair_by_resynthesis;
-    TimingRepairPhase                phase;
-    bool                             use_best_solution_threshold;
-    float                            best_solution_threshold;
-    size_t                           best_solution_threshold_range;
-    float                            minimum_upstream_resistance;
-};
+class BufferTree;
+class BufferSolution;
 
 class TimingBufferTransform : public PsnTransform
 {
@@ -141,52 +63,24 @@ private:
     int   slack_violations_;
     float current_area_;
     float saved_slack_;
-    int   hasViolation(Psn* psn_inst, InstanceTerm* pin);
     std::unordered_set<Instance*>
-    bufferPin(Psn* psn_inst, InstanceTerm* pin, TimingRepairTarget target,
-              std::unique_ptr<TimingBufferTransformOptions>& options);
-    std::shared_ptr<BufferSolution>
-                                    bottomUp(Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt,
-                                             SteinerPoint prev, std::shared_ptr<SteinerTree> st_tree,
-                                             TimingRepairTarget                             target,
-                                             std::unique_ptr<TimingBufferTransformOptions>& options);
-    std::shared_ptr<BufferSolution> bottomUpWithResynthesis(
-        Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt,
-        SteinerPoint prev, std::shared_ptr<SteinerTree> st_tree,
-        TimingRepairTarget                                    target,
-        std::unique_ptr<TimingBufferTransformOptions>&        options,
-        std::vector<std::shared_ptr<LibraryCellMappingNode>>& mapping_terminals);
+    bufferPin(Psn* psn_inst, InstanceTerm* pin, RepairTarget target,
+              std::unique_ptr<OptimizationOptions>& options);
 
-    void topDown(Psn* psn_inst, Net* net, std::shared_ptr<BufferTree> tree,
-                 std::unordered_set<Instance*>& added_buffers,
-                 std::unordered_set<Net*>&      affected_nets);
-    void topDown(Psn* psn_inst, InstanceTerm* pin,
-                 std::shared_ptr<BufferTree>    tree,
-                 std::unordered_set<Instance*>& added_buffers,
-                 std::unordered_set<Net*>&      affected_nets);
-
-    void topDownClone(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
-                      SteinerPoint k, float c_limit);
-    void topDownConnect(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
-                        SteinerPoint k, Net* net);
-    void cloneInstance(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
-                       SteinerPoint k);
-
-    int timingBuffer(Psn*                                           psn_inst,
-                     std::unique_ptr<TimingBufferTransformOptions>& options,
-                     std::unordered_set<std::string> buffer_lib_names =
+    int timingBuffer(Psn*                                  psn_inst,
+                     std::unique_ptr<OptimizationOptions>& options,
+                     std::unordered_set<std::string>       buffer_lib_names =
                          std::unordered_set<std::string>(),
                      std::unordered_set<std::string> inverter_lib_names =
                          std::unordered_set<std::string>());
-    int fixCapacitanceViolations(
-        Psn* psn_inst, std::vector<InstanceTerm*>& driver_pins,
-        std::unique_ptr<TimingBufferTransformOptions>& options);
-    int fixTransitionViolations(
-        Psn* psn_inst, std::vector<InstanceTerm*>& driver_pins,
-        std::unique_ptr<TimingBufferTransformOptions>& options);
-    int
-    fixNegativeSlack(Psn* psn_inst, std::vector<InstanceTerm*>& driver_pins,
-                     std::unique_ptr<TimingBufferTransformOptions>& options);
+    int fixCapacitanceViolations(Psn*                        psn_inst,
+                                 std::vector<InstanceTerm*>& driver_pins,
+                                 std::unique_ptr<OptimizationOptions>& options);
+    int fixTransitionViolations(Psn*                        psn_inst,
+                                std::vector<InstanceTerm*>& driver_pins,
+                                std::unique_ptr<OptimizationOptions>& options);
+    int fixNegativeSlack(Psn* psn_inst, std::vector<InstanceTerm*>& driver_pins,
+                         std::unique_ptr<OptimizationOptions>& options);
 
 public:
     TimingBufferTransform();
@@ -203,8 +97,8 @@ DEFINE_TRANSFORM(
     "<single|small|medium|large|all>] [-minimize_buffer_library] "
     "[-use_inverting_buffer_library] [-buffers "
     "<buffer library>] [-inverters "
-    "<inverters library>] [-repair_by_resize] [-repair_by_clone] "
-    "[-repair_by_resynthesis] [-timerless] [-iterations <# "
+    "<inverters library>] [-repair_by_resynthesis] [-iterations "
+    "<# "
     "iterations=1>] [-post_global_place|-post_detailed_Place|-post_route] "
     "[-legalization_frequency <numBuffer>]"
     "[-min_gain "

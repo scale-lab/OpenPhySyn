@@ -45,13 +45,8 @@ endif()
 # Tool build configuration
 option(OPENROAD_BUILD "Indicates if the tool is being built as a module in the top level application" OFF)
 option(OPENPHYSYN_TF_ENABLED "Build and use cpp-taskflow" OFF)
-set(OPENPHYSYN_DATABASE_HANDLER "OpenSTA" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
 
-if (${OPENPHYSYN_DATABASE_HANDLER} STREQUAL "OpenDB")
-add_definitions(-DUSE_OPENDB_DB_HANDLER)
-else()
 add_definitions(-DUSE_OPENSTA_DB_HANDLER)
-endif()
 
 
 set(SWIG_FLAGS "-w467,72,503,509")
@@ -198,8 +193,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Psn/ProgramOptions.cpp
     ${PSN_HOME}/src/SteinerTree/SteinerTree.cpp
     ${PSN_HOME}/src/PsnLogger/PsnLogger.cpp
-    ${PSN_HOME}/src/Database/OpenDBHandler.cpp
-    ${PSN_HOME}/src/Database/OpenStaHandler.cpp
+    ${PSN_HOME}/src/Database/DatabaseHandler.cpp
     ${PSN_HOME}/src/Database/LibraryMapping.cpp
     ${PSN_HOME}/src/DefReader/DefReader.cpp
     ${PSN_HOME}/src/DefWriter/DefWriter.cpp
@@ -213,6 +207,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Utils/StringUtils.cpp
     ${PSN_HOME}/src/Utils/ClusteringUtils.cpp
     ${PSN_HOME}/src/Utils/PsnGlobal.cpp
+    ${PSN_HOME}/src/Optimize/BufferTree.cpp
     ${PSN_HOME}/src/PsnException/Error.cpp
     ${PSN_HOME}/src/PsnException/FileException.cpp
     ${PSN_HOME}/src/PsnException/FluteInitException.cpp
