@@ -198,6 +198,36 @@ public:
     {
         return pin_;
     }
+    bool
+    checkLimits(Psn* psn_inst, LibraryTerm* driver_pin, float slew_limit,
+                float cap_limit)
+    {
+        if (totalCapacitance() == 0 || totalRequiredOrSlew() == 0)
+        {
+            return true;
+        }
+        DatabaseHandler& handler = *(psn_inst->handler());
+
+        bool left_check =
+            left() == nullptr ||
+            left()->checkLimits(psn_inst,
+                                hasBufferCell()
+                                    ? handler.bufferOutputPin(bufferCell())
+                                    : nullptr,
+                                slew_limit, cap_limit);
+        bool right_check =
+            right() == nullptr ||
+            right()->checkLimits(psn_inst,
+                                 hasBufferCell()
+                                     ? handler.bufferOutputPin(bufferCell())
+                                     : nullptr,
+                                 slew_limit, cap_limit);
+        bool self_check =
+            totalCapacitance() < cap_limit &&
+            (driver_pin == nullptr ||
+             handler.slew(driver_pin, totalCapacitance()) < slew_limit);
+        return left_check && self_check && right_check;
+    }
 
     void
     setDriverLocation(Point loc)
@@ -950,18 +980,20 @@ public:
         return optimal_tree;
     }
     std::shared_ptr<BufferTree>
-    optimalDriverTree(Psn* psn_inst, InstanceTerm* driver_pin,
-                      std::vector<LibraryCell*> driver_types,
-                      float                     area_penalty)
+    optimalDriverTreeWithResize(Psn* psn_inst, InstanceTerm* driver_pin,
+                                std::vector<LibraryCell*> driver_types,
+                                float                     area_penalty)
     {
         if (!buffer_trees_.size())
         {
             return nullptr;
         }
-        float max_slack;
-        auto  max_tree = optimalDriverTree(psn_inst, driver_pin, &max_slack);
-        auto  inst     = psn_inst->handler()->instance(driver_pin);
-        auto  original_lib = psn_inst->handler()->libraryCell(inst);
+        float                       max_slack;
+        std::shared_ptr<BufferTree> temp_tree;
+        auto                        max_tree =
+            optimalDriverTree(psn_inst, driver_pin, temp_tree, &max_slack);
+        auto inst         = psn_inst->handler()->instance(driver_pin);
+        auto original_lib = psn_inst->handler()->libraryCell(inst);
         max_tree->setDriverCell(original_lib);
         for (auto& drv_type : driver_types)
         {
@@ -1079,6 +1111,11 @@ public:
                         auto  d_pin = handler.libraryOutputPins(d_type)[0];
                         float delay =
                             handler.gateDelay(d_pin, tree->totalCapacitance());
+                        // float max_cap =
+                        // handler.largestInputCapacitance(d_type); float
+                        // penalty =
+                        //     handler.bufferChainDelayPenalty(max_cap) +
+                        //     area_penalty * handler.area(d_type);
                         float slack = tree->totalRequiredOrSlew() - delay;
                         float cost =
                             tree->cost() + handler.area(d_type) - original_cost;
@@ -1148,7 +1185,8 @@ public:
     }
     std::shared_ptr<BufferTree>
     optimalDriverTree(Psn* psn_inst, InstanceTerm* driver_pin,
-                      float* tree_slack = nullptr)
+                      std::shared_ptr<BufferTree>& inverted_sol,
+                      float*                       tree_slack = nullptr)
     {
         if (!buffer_trees_.size())
         {
@@ -1176,6 +1214,10 @@ public:
         {
             if (tree->polarity())
             {
+                if (inverted_sol == nullptr)
+                {
+                    inverted_sol = tree;
+                }
                 continue;
             }
             float delay = psn_inst->handler()->gateDelay(
@@ -1194,6 +1236,125 @@ public:
             }
         }
         return max_tree;
+    }
+    std::shared_ptr<BufferTree>
+    optimalCapacitanceTree(Psn* psn_inst, InstanceTerm* driver_pin,
+                           std::shared_ptr<BufferTree>& inverted_sol,
+                           float                        cap_limit)
+    {
+        if (!buffer_trees_.size())
+        {
+            return nullptr;
+        }
+
+        auto first_tree = buffer_trees_[0];
+        std::sort(buffer_trees_.begin(), buffer_trees_.end(),
+                  [&](const std::shared_ptr<BufferTree>& a,
+                      const std::shared_ptr<BufferTree>& b) -> bool {
+                      return a->cost() < b->cost();
+                  });
+
+        std::shared_ptr<BufferTree> max_tree = nullptr;
+        for (auto& tree : buffer_trees_)
+        {
+            if (tree->totalCapacitance() < cap_limit)
+            {
+                max_tree = tree;
+                break;
+            }
+        }
+        return max_tree;
+    }
+    std::shared_ptr<BufferTree>
+    optimalSlewTree(Psn* psn_inst, InstanceTerm* driver_pin,
+                    std::shared_ptr<BufferTree>& inverted_sol, float slew_limit)
+    {
+        if (!buffer_trees_.size())
+        {
+            return nullptr;
+        }
+        DatabaseHandler& handler = *(psn_inst->handler());
+
+        auto first_tree = buffer_trees_[0];
+        std::sort(buffer_trees_.begin(), buffer_trees_.end(),
+                  [&](const std::shared_ptr<BufferTree>& a,
+                      const std::shared_ptr<BufferTree>& b) -> bool {
+                      return a->cost() < b->cost();
+                  });
+
+        std::shared_ptr<BufferTree> max_tree = nullptr;
+        for (auto& tree : buffer_trees_)
+        {
+            if (handler.slew(handler.libraryPin(driver_pin),
+                             tree->totalCapacitance()) < slew_limit)
+            {
+                max_tree = tree;
+                break;
+            }
+        }
+        return max_tree;
+    }
+
+    std::shared_ptr<BufferTree>
+    optimalCostTree(Psn* psn_inst, InstanceTerm* driver_pin,
+                    std::shared_ptr<BufferTree>& inverted_sol, float slew_limit,
+                    float cap_limit)
+    {
+        if (!buffer_trees_.size())
+        {
+            return nullptr;
+        }
+        DatabaseHandler& handler = *(psn_inst->handler());
+
+        auto first_tree = buffer_trees_[0];
+        std::sort(buffer_trees_.begin(), buffer_trees_.end(),
+                  [&](const std::shared_ptr<BufferTree>& a,
+                      const std::shared_ptr<BufferTree>& b) -> bool {
+                      return a->cost() < b->cost();
+                  });
+
+        std::shared_ptr<BufferTree> max_tree  = nullptr;
+        float                       max_slack = -1E+30F;
+        size_t                      i         = 0;
+        std::shared_ptr<BufferTree> second_best;
+        for (auto& tree : buffer_trees_)
+        {
+            if (tree->polarity())
+            {
+                if (inverted_sol == nullptr)
+                {
+                    inverted_sol = tree;
+                }
+                continue;
+            }
+
+            if (tree->checkLimits(psn_inst, handler.libraryPin(driver_pin),
+                                  slew_limit, cap_limit))
+            {
+                float delay =
+                    handler.gateDelay(driver_pin, tree->totalCapacitance());
+                float slack = tree->totalRequiredOrSlew() - delay;
+                if (second_best == nullptr)
+                {
+                    second_best = tree;
+                    max_slack   = slack;
+                }
+                else
+                {
+                    if (slack > max_slack)
+                    {
+                        max_tree = tree;
+                    }
+                    else
+                    {
+                        max_tree = second_best;
+                    }
+                    break;
+                }
+            }
+            i++;
+        }
+        return max_tree == nullptr ? second_best : max_tree;
     }
 
     static bool

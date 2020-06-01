@@ -156,11 +156,7 @@ private:
         TimingRepairTarget                                    target,
         std::unique_ptr<TimingBufferTransformOptions>&        options,
         std::vector<std::shared_ptr<LibraryCellMappingNode>>& mapping_terminals);
-    std::shared_ptr<BufferSolution>
-         bottomUpTimerless(Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt,
-                           SteinerPoint prev, std::shared_ptr<SteinerTree> st_tree,
-                           TimingRepairTarget                             target,
-                           std::unique_ptr<TimingBufferTransformOptions>& options);
+
     void topDown(Psn* psn_inst, Net* net, std::shared_ptr<BufferTree> tree,
                  std::unordered_set<Instance*>& added_buffers,
                  std::unordered_set<Net*>&      affected_nets);

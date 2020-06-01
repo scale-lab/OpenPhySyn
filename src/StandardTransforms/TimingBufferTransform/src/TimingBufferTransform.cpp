@@ -111,37 +111,21 @@ TimingBufferTransform::bufferPin(
     bool is_slack_repair = target == TimingRepairTarget::RepairSlack;
     bool is_trans_repair = target == TimingRepairTarget::RepairMaxTransition;
     bool is_cap_repair   = target == TimingRepairTarget::RepairMaxCapacitance;
-    bool is_timerless    = options->timerless && !is_slack_repair;
 
     auto driver_point = st_tree->driverPoint();
     auto driver_pin   = st_tree->pin(driver_point);
     auto driver_cell  = handler.instance(pin);
 
-    if (is_timerless)
-    {
-        auto  pin_slew_limit = handler.pinSlewLimit(driver_pin);
-        float original_slew  = handler.slew(driver_pin);
-        float vio_ratio      = pin_slew_limit / original_slew;
-        if (vio_ratio > options->timerless_maximum_violation_ratio)
-        {
-            is_timerless = false;
-            timerless_rebuffer_count_++;
-        }
-    }
-
     auto top_point = st_tree->top();
 
     std::shared_ptr<BufferSolution> buff_sol;
-    psn::LibraryCell*               replace_driver;
-    auto mapping = handler.getLibraryCellMapping(driver_cell);
-    bool remap   = mapping && options->repair_by_resynthesis;
-    if (is_timerless)
-    {
-        buff_sol =
-            bottomUpTimerless(psn_inst, driver_pin, top_point, driver_point,
-                              std::move(st_tree), target, options);
-    }
-    else if (remap)
+    std::shared_ptr<BufferTree>     inv_buff_tree = nullptr;
+
+    psn::LibraryCell* replace_driver;
+    auto              mapping = handler.getLibraryCellMapping(driver_cell);
+    bool              remap   = mapping && options->repair_by_resynthesis;
+
+    if (remap)
     {
         auto terminals = mapping->terminals();
         buff_sol = bottomUpWithResynthesis(psn_inst, driver_pin, top_point,
@@ -160,23 +144,21 @@ TimingBufferTransform::bufferPin(
         std::shared_ptr<BufferTree> buff_tree    = nullptr;
         auto                        no_buff_tree = buff_sol->bufferTrees()[0];
         auto driver_lib = handler.libraryCell(driver_cell);
-        if (is_timerless)
+        if (options->driver_resize && driver_cell &&
+            handler.outputPins(driver_cell).size() == 1)
         {
-            buff_tree = buff_sol->optimalTimerlessDriverTree(psn_inst, pin);
-        }
-        else if (options->driver_resize && driver_cell &&
-                 handler.outputPins(driver_cell).size() == 1)
-        {
-            buff_tree = buff_sol->optimalDriverTree(psn_inst, pin);
+            buff_tree =
+                buff_sol->optimalDriverTree(psn_inst, pin, inv_buff_tree, 0);
             auto driver_types =
                 handler.equivalentCells(handler.libraryCell(driver_cell));
             if (driver_types.size() == 1)
             {
-                buff_tree = buff_sol->optimalDriverTree(psn_inst, pin);
+                buff_tree = buff_sol->optimalDriverTree(psn_inst, pin,
+                                                        inv_buff_tree, 0);
             }
             else
             {
-                buff_tree = buff_sol->optimalDriverTree(
+                buff_tree = buff_sol->optimalDriverTreeWithResize(
                     psn_inst, pin, driver_types, options->area_penalty);
             }
         }
@@ -187,7 +169,8 @@ TimingBufferTransform::bufferPin(
         }
         else
         {
-            buff_tree = buff_sol->optimalDriverTree(psn_inst, pin);
+            buff_tree =
+                buff_sol->optimalDriverTree(psn_inst, pin, inv_buff_tree, 0);
         }
 
         if (buff_tree)
@@ -197,16 +180,6 @@ TimingBufferTransform::bufferPin(
             {
                 buffer_count_ += sol_buf_count;
                 net_count_++;
-            }
-            if (is_timerless)
-            {
-                topDown(psn_inst, pin, buff_tree, added_buffers, affected_nets);
-                for (auto& net : affected_nets)
-                {
-                    handler.calculateParasitics(net);
-                }
-                return added_buffers; // No need for the extra steps beneath for
-                                      // timerless mode
             }
             if (!is_slack_repair && options->use_best_solution_threshold)
             {
@@ -562,88 +535,6 @@ TimingBufferTransform::bottomUpWithResynthesis(
     return nullptr;
 }
 
-std::shared_ptr<BufferSolution>
-TimingBufferTransform::bottomUpTimerless(
-    Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt, SteinerPoint prev,
-    std::shared_ptr<SteinerTree> st_tree, TimingRepairTarget target,
-    std::unique_ptr<TimingBufferTransformOptions>& options)
-{
-    DatabaseHandler& handler = *(psn_inst->handler());
-    if (pt != SteinerNull)
-    {
-        auto  pt_pin         = st_tree->pin(pt);
-        float wire_length    = handler.dbuToMeters(st_tree->distance(prev, pt));
-        float wire_res       = wire_length * handler.resistancePerMicron();
-        float wire_cap       = wire_length * handler.capacitancePerMicron();
-        auto  location       = st_tree->location(pt);
-        auto  prev_location  = st_tree->location(prev);
-        auto  pin_slew_limit = handler.pinSlewLimit(driver_pin);
-        // float original_slew  = handler.slew(driver_pin);
-        float slew_limit =
-            options->timerless_slew_limit_factor * pin_slew_limit;
-        // float slew_limit =
-        //     std::max(0.4, ((double)rand() / (RAND_MAX))) * pin_slew_limit;
-
-        PSN_LOG_DEBUG("Bottomup (timerless) Point: ({}, {})", location.getX(),
-                      location.getY());
-        PSN_LOG_TRACE("Prev: ({}, {})", prev_location.getX(),
-                      prev_location.getY());
-        PSN_LOG_DEBUG("Slew Limit: ({})", slew_limit);
-
-        if (pt_pin && handler.isLoad(pt_pin))
-        {
-            PSN_LOG_TRACE("{} ({}, {}) bottomUp leaf", handler.name(pt_pin),
-                          location.getX(), location.getY());
-            float                       cap = handler.pinCapacitance(pt_pin);
-            float                       pin_slew = 0.0;
-            std::shared_ptr<BufferTree> base_buffer_tree =
-                std::make_shared<TimerlessBufferTree>(
-                    cap, pin_slew, 0, location, handler.libraryPin(driver_pin),
-                    pt_pin);
-
-            std::shared_ptr<BufferSolution> buff_sol =
-                std::make_shared<TimerlessBufferSolution>();
-
-            buff_sol->addTree(base_buffer_tree);
-
-            buff_sol->addWireSlewAndCapacitance(wire_res, wire_cap);
-
-            buff_sol->addLeafTrees(psn_inst, driver_pin, prev_location,
-                                   options->buffer_lib, options->inverter_lib,
-                                   slew_limit);
-
-            return buff_sol;
-        }
-        else if (!pt_pin)
-        {
-            PSN_LOG_TRACE("({}, {}) bottomUp ---> left", location.getX(),
-                          location.getY());
-            auto left =
-                bottomUpTimerless(psn_inst, driver_pin, st_tree->left(pt), pt,
-                                  st_tree, target, options);
-            PSN_LOG_TRACE("({}, {}) bottomUp ---> right", location.getX(),
-                          location.getY());
-            auto right =
-                bottomUpTimerless(psn_inst, driver_pin, st_tree->right(pt), pt,
-                                  st_tree, target, options);
-
-            PSN_LOG_TRACE("({}, {}) bottomUp merging", location.getX(),
-                          location.getY());
-            std::shared_ptr<BufferSolution> buff_sol =
-                std::make_shared<TimerlessBufferSolution>(
-                    psn_inst, left, right, location, nullptr, slew_limit);
-
-            buff_sol->addWireSlewAndCapacitance(wire_res, wire_cap);
-
-            buff_sol->addLeafTrees(psn_inst, driver_pin, prev_location,
-                                   options->buffer_lib, options->inverter_lib,
-                                   slew_limit);
-
-            return buff_sol;
-        }
-    }
-    return nullptr;
-}
 void
 TimingBufferTransform::topDown(Psn* psn_inst, InstanceTerm* pin,
                                std::shared_ptr<BufferTree>    tree,
@@ -1059,21 +950,6 @@ TimingBufferTransform::fixTransitionViolations(
                 auto added_buffers =
                     bufferPin(psn_inst, pin,
                               TimingRepairTarget::RepairMaxTransition, options);
-                if (options->timerless && options->timerless_rebuffer &&
-                    hasViolation(psn_inst, pin) == 1)
-                {
-                    PSN_LOG_DEBUG("Rebuffering unfixed violation {}",
-                                  handler.name(pin));
-                    for (auto& buf : added_buffers)
-                    {
-                        current_area_ -= handler.area(buf);
-                    }
-                    buffer_count_ -= added_buffers.size();
-                    handler.ripupBuffers(added_buffers);
-                    bufferPin(psn_inst, pin, TimingRepairTarget::RepairSlack,
-                              options);
-                    timerless_rebuffer_count_++;
-                }
 
                 if (options->legalization_frequency > 0 &&
                     (buffer_count_ - last_buffer_count >=
