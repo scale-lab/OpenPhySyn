@@ -224,7 +224,7 @@ namespace eval psn {
         }
     }
 
-    define_cmd_args "repair_timing" {[-maximum_capacitance] [-maximum_transition] [-negative_slack]\
+    define_cmd_args "timing_buffer" {[-maximum_capacitance] [-maximum_transition] [-negative_slack]\
 				 [-timerless] [-repair_by_resize] [-repair_by_clone]\
 				 [-auto_buffer_library single|small|medium|large|all]\
 				 [-minimize_buffer_library] [-fast]\
@@ -233,8 +233,8 @@ namespace eval psn {
 				 [-legalization_frequency count] [-min_gain gain] [-enable_driver_resize] \
     }
 
-    proc repair_timing { args } {
-        sta::parse_key_args "repair_timing" args \
+    proc timing_buffer { args } {
+        sta::parse_key_args "timing_buffer" args \
         keys {-auto_buffer_library -buffers -inverters -iterations -min_gain -area_penalty -legalization_frequency}\
         flags {-negative_slack -timerless -maximum_capacitance -maximum_transition -repair_by_resize -fast -repair_by_clone -repair_by_resynthesis -enable_driver_resize -minimize_buffer_library -use_inverting_buffer_library -maximum_capacitance] -maximum_transition}
         

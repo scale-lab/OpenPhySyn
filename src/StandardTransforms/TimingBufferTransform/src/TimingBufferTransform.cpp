@@ -103,7 +103,7 @@ TimingBufferTransform::bufferPin(Psn* psn_inst, InstanceTerm* pin,
     auto st_tree = SteinerTree::create(pin_net, psn_inst);
     if (!st_tree)
     {
-        PSN_LOG_ERROR("Failed to create steiner tree for {}",
+        PSN_LOG_DEBUG("Failed to create steiner tree for {}",
                       handler.name(pin));
         return std::unordered_set<Instance*>();
     }
