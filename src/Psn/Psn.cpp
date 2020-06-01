@@ -874,19 +874,20 @@ Psn::setLegalizer(Legalizer legalizer)
     db_handler_->setLegalizer(legalizer);
 }
 void
-Psn::setWireRC(float res_per_micon, float cap_per_micron)
+Psn::setWireRC(float res_per_micron, float cap_per_micron)
 {
     if (!database() || database()->getChip() == nullptr)
     {
         PSN_LOG_ERROR("Could not find any loaded design.");
         return;
     }
-    res_per_micon = (sta_->units()->resistanceUnit()->scale() * res_per_micon) /
-                    (sta_->units()->distanceUnit()->scale() * 1.0);
+    res_per_micron =
+        (sta_->units()->resistanceUnit()->scale() * res_per_micron) /
+        (sta_->units()->distanceUnit()->scale() * 1.0);
     cap_per_micron =
         (sta_->units()->capacitanceUnit()->scale() * cap_per_micron) /
         (sta_->units()->distanceUnit()->scale() * 1.0);
-    handler()->setWireRC(res_per_micon, cap_per_micron);
+    handler()->setWireRC(res_per_micron, cap_per_micron);
 }
 int
 Psn::setWireRC(const char* layer_name)
@@ -905,14 +906,15 @@ Psn::setWireRC(const char* layer_name)
         PSN_LOG_ERROR("Could not find layer with the name {}.", layer_name);
         return -1;
     }
-    auto  width_dbu     = layer->getWidth();
-    auto  width         = handler()->dbuToMicrons(width_dbu);
-    float res_per_micon = (layer->getResistance() / width) * 1E6;
+    auto  width_dbu      = layer->getWidth();
+    auto  width          = handler()->dbuToMicrons(width_dbu);
+    float res_per_micron = (layer->getResistance() / width) * 1E6;
     float cap_per_micron =
         (handler()->dbuToMicrons(1) * ((width_dbu * layer->getCapacitance()) +
                                        (2.0 * layer->getEdgeCapacitance()))) *
         1E-12 * 1E6;
-    handler()->setWireRC(res_per_micon, cap_per_micron);
+
+    handler()->setWireRC(res_per_micron, cap_per_micron);
     return 1;
 }
 int

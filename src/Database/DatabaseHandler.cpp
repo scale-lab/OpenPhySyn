@@ -79,11 +79,14 @@ DatabaseHandler::DatabaseHandler(Psn* psn_inst, DatabaseSta* sta)
       has_library_cell_mappings_(false)
 {
     // Use default corner for now
-    corner_        = sta_->findCorner("default");
-    min_max_       = sta::MinMax::max();
-    dcalc_ap_      = corner_->findDcalcAnalysisPt(min_max_);
-    pvt_           = dcalc_ap_->operatingConditions();
-    parasitics_ap_ = corner_->findParasiticAnalysisPt(min_max_);
+    corner_                  = sta_->findCorner("default");
+    min_max_                 = sta::MinMax::max();
+    dcalc_ap_                = corner_->findDcalcAnalysisPt(min_max_);
+    pvt_                     = dcalc_ap_->operatingConditions();
+    parasitics_ap_           = corner_->findParasiticAnalysisPt(min_max_);
+    legalizer_               = nullptr;
+    res_per_micron_callback_ = nullptr;
+    cap_per_micron_callback_ = nullptr;
     resetDelays();
 }
 
@@ -170,7 +173,7 @@ std::set<InstanceTerm*>
 DatabaseHandler::clockPins() const
 {
     std::set<InstanceTerm*> clock_pins;
-    auto                    clk_iter = new sta::ClockIterator(network()->sdc());
+    auto                    clk_iter = new sta::ClockIterator(sta_->sdc());
     while (clk_iter->hasNext())
     {
         auto clk  = clk_iter->next();
@@ -2291,6 +2294,10 @@ DatabaseHandler::resistancePerMicron() const
     {
         PSN_LOG_WARN("Wire RC is not set or invalid");
     }
+    if (res_per_micron_callback_)
+    {
+        return res_per_micron_callback_();
+    }
     return res_per_micron_;
 }
 float
@@ -2299,6 +2306,10 @@ DatabaseHandler::capacitancePerMicron() const
     if (!has_wire_rc_)
     {
         PSN_LOG_WARN("Wire RC is not set or invalid");
+    }
+    if (cap_per_micron_callback_)
+    {
+        return cap_per_micron_callback_();
     }
     return cap_per_micron_;
 }
@@ -2637,7 +2648,7 @@ DatabaseHandler::isCombinational(LibraryCell* cell) const
 }
 
 void
-DatabaseHandler::setWireRC(float res_per_micon, float cap_per_micron,
+DatabaseHandler::setWireRC(float res_per_micron, float cap_per_micron,
                            bool reset_delays)
 {
     if (reset_delays)
@@ -2647,11 +2658,19 @@ DatabaseHandler::setWireRC(float res_per_micon, float cap_per_micron,
         sta_->graphDelayCalc()->delaysInvalid();
         sta_->search()->arrivalsInvalid();
     }
-    res_per_micron_ = res_per_micon;
+    res_per_micron_ = res_per_micron;
     cap_per_micron_ = cap_per_micron;
     has_wire_rc_    = true;
     calculateParasitics();
     sta_->findDelays();
+}
+void
+DatabaseHandler::setWireRC(ParasticsCallback res_per_micron,
+                           ParasticsCallback cap_per_micron)
+{
+    has_wire_rc_             = true;
+    res_per_micron_callback_ = res_per_micron;
+    cap_per_micron_callback_ = cap_per_micron;
 }
 
 bool
@@ -2720,6 +2739,10 @@ DatabaseHandler::violatesMaximumTransition(InstanceTerm* term) const
     bool  exists;
     slewLimit(term, sta::MinMax::max(), limit, exists);
     bool vio = false;
+    if (!exists)
+    {
+        return false;
+    }
     for (auto rf : sta::RiseFall::range())
     {
         auto pin_slew = sta_->graph()->slew(vert, rf, dcalc_ap_->index());
@@ -3760,53 +3783,58 @@ DatabaseHandler::slewLimit(InstanceTerm* pin, sta::MinMax* min_max,
                            float& limit, bool& exists) const
 
 {
-    exists         = false;
-    auto  top_cell = network()->cell(network()->topInstance());
-    float top_limit;
-    bool  top_limit_exists;
-    sta_->sdc()->slewLimit(top_cell, min_max, top_limit, top_limit_exists);
+    exists = false;
+    float pin_limit;
+    bool  pin_limit_exists;
+    sta_->sdc()->slewLimit(network()->cell(network()->topInstance()), min_max,
+                           pin_limit, pin_limit_exists);
 
-    // Default to top ("design") limit.
-    exists = top_limit_exists;
-    limit  = top_limit;
+    exists = pin_limit_exists;
+    limit  = pin_limit;
     if (network()->isTopLevelPort(pin))
     {
-        auto  port = network()->port(pin);
-        float port_limit;
-        bool  port_limit_exists;
-        sta_->sdc()->slewLimit(port, min_max, port_limit, port_limit_exists);
-        // Use the tightest limit.
-        if (port_limit_exists &&
-            (!exists || min_max->compare(limit, port_limit)))
+        Port* port = network()->port(pin);
+        sta_->sdc()->slewLimit(port, min_max, pin_limit, pin_limit_exists);
+        if (pin_limit_exists && (!exists || min_max->compare(limit, pin_limit)))
         {
-            limit  = port_limit;
+            limit  = pin_limit;
             exists = true;
         }
     }
     else
     {
-        float pin_limit;
-        bool  pin_limit_exists;
         sta_->sdc()->slewLimit(pin, min_max, pin_limit, pin_limit_exists);
-        // Use the tightest limit.
         if (pin_limit_exists && (!exists || min_max->compare(limit, pin_limit)))
         {
             limit  = pin_limit;
             exists = true;
         }
 
-        float port_limit;
-        bool  port_limit_exists;
-        auto  port = network()->libertyPort(pin);
+        auto port = network()->libertyPort(pin);
         if (port)
         {
-            port->slewLimit(min_max, port_limit, port_limit_exists);
-            // Use the tightest limit.
-            if (port_limit_exists &&
-                (!exists || min_max->compare(limit, port_limit)))
+
+            port->slewLimit(min_max, pin_limit, pin_limit_exists);
+            if (pin_limit_exists)
             {
-                limit  = port_limit;
-                exists = true;
+                if (!exists || min_max->compare(limit, pin_limit))
+                {
+                    limit  = pin_limit;
+                    exists = true;
+                }
+            }
+            else if (port->direction()->isAnyOutput() &&
+                     min_max == sta::MinMax::max())
+            {
+                port->libertyLibrary()->defaultMaxSlew(pin_limit,
+                                                       pin_limit_exists);
+
+                if (pin_limit_exists &&
+                    (!exists || min_max->compare(limit, pin_limit)))
+                {
+                    limit  = pin_limit;
+                    exists = true;
+                }
             }
         }
     }

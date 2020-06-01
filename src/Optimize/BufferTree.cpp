@@ -1700,6 +1700,7 @@ BufferSolution::topDown(Psn* psn_inst, Net* net,
         auto buffer_net_name = handler.generateNetName(net_index);
         auto buf_net = handler.bufferNet(net, tree->bufferCell(), buffer_name,
                                          buffer_net_name, tree->location());
+        affected_nets.insert(net);
         affected_nets.insert(buf_net);
         area += handler.area(tree->bufferCell());
         added_buffers.insert(handler.instance(handler.faninPin(buf_net)));

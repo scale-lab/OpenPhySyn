@@ -65,6 +65,7 @@ class SteinerTree;
 class LibraryCellMapping;
 typedef int                      SteinerPoint;
 typedef std::function<bool(int)> Legalizer;
+typedef std::function<float()>   ParasticsCallback;
 
 enum ElectircalViolation
 {
@@ -338,8 +339,10 @@ public:
                 std::unordered_map<LibraryTerm*, int>& inputs) const;
     virtual int evaluateFunctionExpression(
         LibraryTerm* term, std::unordered_map<LibraryTerm*, int>& inputs) const;
-    virtual void        setWireRC(float res_per_micon, float cap_per_micron,
+    virtual void        setWireRC(float res_per_micron, float cap_per_micron,
                                   bool reset_delays = true);
+    virtual void        setWireRC(ParasticsCallback res_per_micron,
+                                  ParasticsCallback cap_per_micron);
     virtual bool        hasWireRC();
     virtual HandlerType handlerType() const;
     virtual void        calculateParasitics();
@@ -448,7 +451,9 @@ private:
                                           const Net*          net,
                                           const InstanceTerm* pin,
                                           SteinerPoint        pt);
-    std::function<bool(float)> legalizer_;
+    Legalizer           legalizer_;
+    ParasticsCallback   res_per_micron_callback_;
+    ParasticsCallback   cap_per_micron_callback_;
 };
 
 } // namespace psn
