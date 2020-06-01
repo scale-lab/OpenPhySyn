@@ -33,7 +33,7 @@
 
 #include "OpenPhySyn/Database/DatabaseHandler.hpp"
 #include "OpenPhySyn/Database/Types.hpp"
-#include "OpenPhySyn/SteinerTree/SteinerTree.hpp"
+#include "OpenPhySyn/Optimize/SteinerTree.hpp"
 
 namespace psn
 {

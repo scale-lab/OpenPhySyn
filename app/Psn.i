@@ -39,7 +39,7 @@
 using namespace odb;
 
 #include <memory>
-#include "OpenPhySyn/SteinerTree/SteinerTree.hpp"
+#include "OpenPhySyn/Optimize/SteinerTree.hpp"
 #include "OpenPhySyn/Database/DatabaseHandler.hpp"
 using namespace psn;
 DatabaseHandler *handler() {
@@ -88,7 +88,7 @@ DatabaseHandler *handler();
 
 // wrap_unique_ptr(SteinerTreePtr, SteinerTree);
 // wrap_unique_ptr(SteinerTreePtr, psn::SteinerTree);
-// %include "include/OpenPhySyn/SteinerTree/SteinerTree.hpp"
+// %include "include/OpenPhySyn/Optimize/SteinerTree.hpp"
 
 
 %include "external/OpenDB/src/swig/tcl/dbtypes.i"

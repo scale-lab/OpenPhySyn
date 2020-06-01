@@ -31,9 +31,9 @@
 
 #include <unordered_set>
 #include "OpenPhySyn//Utils/IntervalMap.hpp"
-#include "OpenPhySyn/Database/LibraryMapping.hpp"
 #include "OpenPhySyn/Database/Types.hpp"
-#include "OpenPhySyn/SteinerTree/SteinerTree.hpp"
+#include "OpenPhySyn/Liberty/LibraryMapping.hpp"
+#include "OpenPhySyn/Optimize/SteinerTree.hpp"
 #include "opendb/geom.h"
 
 #include <memory>

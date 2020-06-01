@@ -36,10 +36,10 @@
 #include <Psn/Psn.hpp>
 #include <flute.h>
 #include <tcl.h>
-#include "DefReader/DefReader.hpp"
-#include "DefWriter/DefWriter.hpp"
-#include "LefReader/LefReader.hpp"
-#include "LibertyReader/LibertyReader.hpp"
+#include "Def/DefReader.hpp"
+#include "Def/DefWriter.hpp"
+#include "Lef/LefReader.hpp"
+#include "Liberty/LibertyReader.hpp"
 #include "OpenPhySyn/PsnLogger/PsnLogger.hpp"
 #include "OpenPhySyn/Sta/DatabaseSta.hpp"
 #include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"

@@ -33,11 +33,11 @@
 #include <memory>
 #include <unordered_set>
 #include "OpenPhySyn/Database/DatabaseHandler.hpp"
-#include "OpenPhySyn/Database/LibraryMapping.hpp"
 #include "OpenPhySyn/Database/Types.hpp"
+#include "OpenPhySyn/Liberty/LibraryMapping.hpp"
 #include "OpenPhySyn/Optimize/BufferTree.hpp"
+#include "OpenPhySyn/Optimize/SteinerTree.hpp"
 #include "OpenPhySyn/Psn/Psn.hpp"
-#include "OpenPhySyn/SteinerTree/SteinerTree.hpp"
 #include "OpenPhySyn/Transform/PsnTransform.hpp"
 
 namespace psn

@@ -191,14 +191,13 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Psn/Psn.cpp
     ${PSN_HOME}/src/Psn/Exports.cpp
     ${PSN_HOME}/src/Psn/ProgramOptions.cpp
-    ${PSN_HOME}/src/SteinerTree/SteinerTree.cpp
     ${PSN_HOME}/src/PsnLogger/PsnLogger.cpp
     ${PSN_HOME}/src/Database/DatabaseHandler.cpp
-    ${PSN_HOME}/src/Database/LibraryMapping.cpp
-    ${PSN_HOME}/src/DefReader/DefReader.cpp
-    ${PSN_HOME}/src/DefWriter/DefWriter.cpp
-    ${PSN_HOME}/src/LefReader/LefReader.cpp
-    ${PSN_HOME}/src/LibertyReader/LibertyReader.cpp
+    ${PSN_HOME}/src/Def/DefReader.cpp
+    ${PSN_HOME}/src/Def/DefWriter.cpp
+    ${PSN_HOME}/src/Lef/LefReader.cpp
+    ${PSN_HOME}/src/Liberty/LibraryMapping.cpp
+    ${PSN_HOME}/src/Liberty/LibertyReader.cpp
     ${PSN_HOME}/src/Transform/PsnTransform.cpp
     ${PSN_HOME}/src/Transform/TransformHandler.cpp
     ${PSN_HOME}/src/Transform/TransformInfo.cpp
@@ -208,6 +207,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Utils/ClusteringUtils.cpp
     ${PSN_HOME}/src/Utils/PsnGlobal.cpp
     ${PSN_HOME}/src/Optimize/BufferTree.cpp
+    ${PSN_HOME}/src/Optimize/SteinerTree.cpp
     ${PSN_HOME}/src/PsnException/Error.cpp
     ${PSN_HOME}/src/PsnException/FileException.cpp
     ${PSN_HOME}/src/PsnException/FluteInitException.cpp

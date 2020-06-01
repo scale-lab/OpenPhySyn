@@ -29,7 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "OpenPhySyn/SteinerTree/SteinerTree.hpp"
+#include "OpenPhySyn/Optimize/SteinerTree.hpp"
 #include <algorithm>
 #include "OpenPhySyn/Psn/Psn.hpp"
 #include "PsnException/SteinerException.hpp"
