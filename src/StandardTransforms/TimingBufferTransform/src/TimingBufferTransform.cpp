@@ -519,13 +519,13 @@ TimingBufferTransform::timingBuffer(
     for (int i = 0; i < options->max_iterations; i++)
     {
         PSN_LOG_INFO("Iteration {}", i + 1);
-        auto driver_pins = handler.levelDriverPins();
-        std::reverse(driver_pins.begin(), driver_pins.end());
+
         bool hasVio         = false;
         int  pre_fix_buff   = buffer_count_;
         int  pre_fix_resize = resize_count_;
         if (options->repair_negative_slack)
         {
+            auto driver_pins = handler.levelDriverPins(true);
             fixNegativeSlack(psn_inst, driver_pins, options);
             if (buffer_count_ != pre_fix_buff ||
                 resize_count_ != pre_fix_resize)
@@ -539,8 +539,9 @@ TimingBufferTransform::timingBuffer(
         }
         if (options->repair_capacitance_violations)
         {
-            pre_fix_buff   = buffer_count_;
-            pre_fix_resize = resize_count_;
+            pre_fix_buff     = buffer_count_;
+            pre_fix_resize   = resize_count_;
+            auto driver_pins = handler.levelDriverPins(true);
 
             fixCapacitanceViolations(psn_inst, driver_pins, options);
             if (buffer_count_ != pre_fix_buff ||
@@ -555,8 +556,9 @@ TimingBufferTransform::timingBuffer(
         }
         if (options->repair_transition_violations)
         {
-            pre_fix_buff   = buffer_count_;
-            pre_fix_resize = resize_count_;
+            pre_fix_buff     = buffer_count_;
+            pre_fix_resize   = resize_count_;
+            auto driver_pins = handler.levelDriverPins(true);
             fixTransitionViolations(psn_inst, driver_pins, options);
             if (buffer_count_ != pre_fix_buff ||
                 resize_count_ != pre_fix_resize)

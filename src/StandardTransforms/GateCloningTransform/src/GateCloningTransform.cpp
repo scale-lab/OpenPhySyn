@@ -54,8 +54,7 @@ GateCloningTransform::gateClone(Psn* psn_inst, float cap_factor,
     clone_count_             = 0;
     DatabaseHandler& handler = *(psn_inst->handler());
     PSN_LOG_DEBUG("Clone {} {}", cap_factor, clone_largest_only);
-    std::vector<InstanceTerm*> level_drvrs = handler.levelDriverPins();
-    std::reverse(level_drvrs.begin(), level_drvrs.end());
+    std::vector<InstanceTerm*> level_drvrs = handler.levelDriverPins(true);
     for (auto& pin : level_drvrs)
     {
         Instance* inst = handler.instance(pin);

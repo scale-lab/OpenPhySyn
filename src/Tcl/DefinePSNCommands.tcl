@@ -12,6 +12,7 @@ namespace eval psn {
     proc transform {transform_name args} {
         psn::transform_internal $transform_name $args
     }
+    interp alias {} run {} transform
 
     define_cmd_args "import_lef" {[-tech] [-library] filename}
     proc import_lef { args } {

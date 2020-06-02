@@ -89,9 +89,10 @@ public:
     filterPins(std::vector<InstanceTerm*>& terms, PinDirection* direction,
                bool include_top_level = false) const;
     virtual std::vector<InstanceTerm*>
-                                       fanoutPins(Net* net, bool include_top_level = false) const;
-    virtual std::vector<Instance*>     fanoutInstances(Net* net) const;
-    virtual std::vector<InstanceTerm*> levelDriverPins() const;
+                                   fanoutPins(Net* net, bool include_top_level = false) const;
+    virtual std::vector<Instance*> fanoutInstances(Net* net) const;
+    virtual std::vector<InstanceTerm*>
+                                       levelDriverPins(bool reverse = false) const;
     virtual std::vector<Instance*>     driverInstances() const;
     virtual InstanceTerm*              faninPin(Net* net) const;
     virtual InstanceTerm*              faninPin(InstanceTerm* term) const;
@@ -275,6 +276,8 @@ public:
     virtual unsigned int           fanoutCount(Net* net,
                                                bool include_top_level = false) const;
     virtual std::vector<PathPoint> criticalPath(int path_count = 1) const;
+    virtual std::vector<std::vector<PathPoint>>
+    criticalPaths(int path_count = 1) const;
     virtual std::vector<std::vector<PathPoint>>
                                    bestPath(int path_count = 1) const;
     virtual std::vector<PathPoint> worstSlackPath(InstanceTerm* term,

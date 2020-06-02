@@ -1194,11 +1194,20 @@ DatabaseHandler::criticalPath(int path_count) const
     }
     return std::vector<PathPoint>();
 }
+std::vector<std::vector<PathPoint>>
+DatabaseHandler::criticalPaths(int path_count) const
+{
+    auto paths = getPaths(true, path_count);
+    if (path_count < paths.size())
+    {
+        paths.resize(path_count + 1);
+    }
+    return paths;
+}
 std::vector<PathPoint>
 DatabaseHandler::worstSlackPath(InstanceTerm* term, bool trim) const
 {
     sta::PathRef path;
-    sta_->search()->endpointsInvalid();
     sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::max(), path);
     auto expanded = expandPath(&path);
     if (trim && !path.isNull())
@@ -1367,8 +1376,8 @@ float
 DatabaseHandler::worstSlack(InstanceTerm* term) const
 {
     float ws;
-    sta_->findRequireds();
-    auto         vert = vertex(term);
+    auto  vert = vertex(term);
+    sta_->vertexRequired(vert, sta::MinMax::min());
     sta::PathRef ref;
 
     sta_->vertexWorstSlackPath(vert, sta::MinMax::max(), ref);
@@ -1522,7 +1531,7 @@ DatabaseHandler::isCommutative(LibraryTerm* first, LibraryTerm* second) const
     return true;
 }
 std::vector<InstanceTerm*>
-DatabaseHandler::levelDriverPins() const
+DatabaseHandler::levelDriverPins(bool reverse) const
 {
     sta_->ensureGraph();
     sta_->ensureLevelized();
@@ -1549,6 +1558,10 @@ DatabaseHandler::levelDriverPins() const
     for (auto& v : vertices)
     {
         terms.push_back(v->pin());
+    }
+    if (reverse)
+    {
+        std::reverse(terms.begin(), terms.end());
     }
     return terms;
 }
