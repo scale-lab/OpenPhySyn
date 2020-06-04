@@ -911,26 +911,6 @@ BufferSolution::addUpstreamReferences(
 }
 
 std::shared_ptr<BufferTree>
-BufferSolution::optimalRequiredTree(Psn* psn_inst)
-{
-    if (!buffer_trees_.size())
-    {
-        return nullptr;
-    }
-    auto optimal_tree  = *(buffer_trees_.begin());
-    auto buff_required = optimal_tree->bufferRequired(psn_inst);
-    for (auto& tree : buffer_trees_)
-    {
-        auto req = tree->bufferRequired(psn_inst);
-        if (req > buff_required)
-        {
-            optimal_tree  = tree;
-            buff_required = req;
-        }
-    }
-    return optimal_tree;
-}
-std::shared_ptr<BufferTree>
 BufferSolution::optimalDriverTreeWithResize(
     Psn* psn_inst, InstanceTerm* driver_pin,
     std::vector<LibraryCell*> driver_types, float area_penalty)

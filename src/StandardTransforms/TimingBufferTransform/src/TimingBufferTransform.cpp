@@ -627,8 +627,7 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
          "-min_gain", "-area_penalty", "-auto_buffer_library",
          "-minimize_buffer_library", "-use_inverting_buffer_library",
          "-timerless", "-repair_by_resynthesis", "-post_global_place",
-         "-post_detailed_place", "-post_route", "-legalization_frequency",
-         "-fast"});
+         "-post_place", "-post_route", "-legalization_frequency", "-fast"});
 
     if (args.size() < 2)
     {
@@ -824,16 +823,9 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         {
             options->minimum_upstream_resistance = 600;
         }
-        else if (args[i] == "-post_global_place")
+        else if (args[i] == "-post_place")
         {
-            options->phase = DesignPhase::PostGlobalPlace;
-        }
-        else if (args[i] == "-post_detailed_place")
-        {
-            PSN_LOG_ERROR(
-                "Post detailed placement timing repair is not supported");
-            options->phase = DesignPhase::PostDetailedPlace;
-            return -1;
+            options->phase = DesignPhase::PostPlace;
         }
         else if (args[i] == "-post_route")
         {
@@ -848,7 +840,7 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         }
     }
     if (options->legalization_frequency &&
-        (options->phase == DesignPhase::PostGlobalPlace))
+        (options->phase == DesignPhase::PostPlace))
     {
         PSN_LOG_WARN(
             "Incremental legalization enabled in global placement phase");

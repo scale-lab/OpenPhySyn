@@ -68,6 +68,7 @@ print_license		Print license information
 print_transforms	Print loaded transforms
 print_usage		Print usage instructions
 print_version		Print tool version
+repair_timing		Repair design timing and electrical violations through resizing, buffer insertion, and pin-swapping
 set_log			Alias for set_log_level
 set_log_level		Set log level [trace, debug, info, warn, error, critical, off]
 set_log_pattern	        Set log printing pattern, refer to spdlog logger for pattern formats
@@ -111,23 +112,34 @@ By default, the following transforms are built with OpenPhySyn:
 -   `pin_swap`: performs timing-driven/power-driven commutative pin-swapping optimization.
 -   `constant_propagation`: Perform constant propagation optimization across the design hierarchy.
 -   `timing_buffer`: Perform van Ginneken based buffer tree insertion to fix capacitance and transition violations.
+-   `repair_timing`: Repair design timing and electrical violations through resizing, buffer insertion, and pin-swapping.
 
 # Fixing timing violations
 
-The `repair_timing` command repairs maximum capacitance and transition time violations by buffer tree insertion.
+The `repair_timing` command repairs negative slack, maximum capacitance and transition violations by buffer tree insertion, gate sizing, and pin-swapping.
 
 `repair_timing` options:
 
--   **-auto_buffer_library {single|small|medium|large|all}**: Auto-select the buffer library for timing repair.
--   **-minimize_buffer_library**: Attempt to minimize the size of the buffer library selected by **-auto_buffer_library**.
--   **-use_inverting_buffer_library**: Used with **-auto_buffer_library** to allow the selection of inverting buffers.
--   **-buffers {buffer cells}**: Specify a list of non-inverting buffer cells to use.
--   **-buffers {buffer cells}**: Specify a list of non-inverting buffer cells to use.
--   **-inverters {inverter cells}**: Specify a list of inverting buffer cells to use.
--   **-iterations {iterations=1}**: Specify the maximum number of iterations to fix violations.
--   **-min_gain {gain=0.0}**: Minimum slack gain to accept a buffering option.
--   **-enable_gate_resize**: Enable driver sizing.
--   **-area_penalty {penalty area/time=0.0}**: When used with **-enable_gate_resize** penalizes solutions that cause area increase.
+-   `[-capacitance_violations]`: Repair capacitance violations.
+-   `[-transition_violations]`: Repair transition violations.
+-   `[-negative_slack_violations]`: Repair paths with negative slacks.
+-   `[-iterations]`: Maximum number of iterations.
+-   `[-buffers buffer_cells]`: Manually specify buffer cells to use.
+-   `[-inverters inverter cells]`: Manually specify inverter cells to use.
+-   `[-min_gain <unit_time>]`: Minimum slack gain to accept an optimization.
+-   `[-auto_buffer_library <single|small|medium|large|all>]`: Auto-select buffer library.
+-   `[-no_minimize_buffer_library]`: Do not run initial pruning phase for buffer selection.
+-   `[-auto_buffer_library_inverters_enabled]`: Include inverters in the selected buffer library.
+-   `[-buffer_disabled]`: Disable all buffering.
+-   `[-minimum_cost_buffer_enabled]`: Enable minimum cost buffering.
+-   `[-upsize_enabled]`: Enable repair by upsizing.
+-   `[-downsize_enabled]`: Enable repair by downsizing.
+-   `[-pin_swap_enabled]`: Enable pin-swapping.
+-   `[-legalize_eventually]`: Legalize at the end of the optimization.
+-   `[-legalize_each_iteration]`: Legalize after each iteration.
+-   `[-post_place|-post_route]`: Post-placement phase mode or post-routing phase mode (not currently supported).
+-   `[-legalization_frequency <num_edits>]`: Legalize after how many edits.
+-   `[-fast]`: Trade-off runtime versus optimization quality by aggressive pruning.
 
 ## Optimization Commands
 

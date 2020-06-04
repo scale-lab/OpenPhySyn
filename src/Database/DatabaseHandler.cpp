@@ -79,14 +79,16 @@ DatabaseHandler::DatabaseHandler(Psn* psn_inst, DatabaseSta* sta)
       has_library_cell_mappings_(false)
 {
     // Use default corner for now
-    corner_                  = sta_->findCorner("default");
-    min_max_                 = sta::MinMax::max();
-    dcalc_ap_                = corner_->findDcalcAnalysisPt(min_max_);
-    pvt_                     = dcalc_ap_->operatingConditions();
-    parasitics_ap_           = corner_->findParasiticAnalysisPt(min_max_);
-    legalizer_               = nullptr;
-    res_per_micron_callback_ = nullptr;
-    cap_per_micron_callback_ = nullptr;
+    corner_                      = sta_->findCorner("default");
+    min_max_                     = sta::MinMax::max();
+    dcalc_ap_                    = corner_->findDcalcAnalysisPt(min_max_);
+    pvt_                         = dcalc_ap_->operatingConditions();
+    parasitics_ap_               = corner_->findParasiticAnalysisPt(min_max_);
+    legalizer_                   = nullptr;
+    res_per_micron_callback_     = nullptr;
+    cap_per_micron_callback_     = nullptr;
+    dont_use_callback_           = nullptr;
+    compute_parasitics_callback_ = nullptr;
     resetDelays();
 }
 
@@ -1208,6 +1210,7 @@ std::vector<PathPoint>
 DatabaseHandler::worstSlackPath(InstanceTerm* term, bool trim) const
 {
     sta::PathRef path;
+    // sta_->search()->endpointsInvalid();
     sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::max(), path);
     auto expanded = expandPath(&path);
     if (trim && !path.isNull())
@@ -1376,7 +1379,8 @@ float
 DatabaseHandler::worstSlack(InstanceTerm* term) const
 {
     float ws;
-    auto  vert = vertex(term);
+    // sta_->findRequireds();
+    auto vert = vertex(term);
     sta_->vertexRequired(vert, sta::MinMax::min());
     sta::PathRef ref;
 
@@ -2686,6 +2690,18 @@ DatabaseHandler::setWireRC(ParasticsCallback res_per_micron,
     cap_per_micron_callback_ = cap_per_micron;
 }
 
+void
+DatabaseHandler::setDontUseCallback(DontUseCallback dont_use_callback)
+{
+    dont_use_callback_ = dont_use_callback;
+}
+void
+DatabaseHandler::setComputeParasiticsCallback(
+    ComputeParasiticsCallback compute_parasitics_callback)
+{
+    compute_parasitics_callback_ = compute_parasitics_callback;
+}
+
 bool
 DatabaseHandler::hasWireRC()
 {
@@ -2723,14 +2739,15 @@ DatabaseHandler::isTriState(LibraryTerm* term) const
     return term->direction()->isTristate();
 }
 bool
-DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term) const
+DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term,
+                                            float limit_scale_factor) const
 {
     float load_cap = loadCapacitance(term);
-    return violatesMaximumCapacitance(term, load_cap);
+    return violatesMaximumCapacitance(term, load_cap, limit_scale_factor);
 }
 bool
-DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term,
-                                            float         load_cap) const
+DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term, float load_cap,
+                                            float limit_scale_factor) const
 {
     LibraryTerm* port = network()->libertyPort(term);
     if (port)
@@ -2738,13 +2755,14 @@ DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term,
         float cap_limit;
         bool  exists;
         port->capacitanceLimit(sta::MinMax::max(), cap_limit, exists);
-        return exists && load_cap > cap_limit;
+        return exists && load_cap > (cap_limit * limit_scale_factor);
     }
     return false;
 }
 
 bool
-DatabaseHandler::violatesMaximumTransition(InstanceTerm* term) const
+DatabaseHandler::violatesMaximumTransition(InstanceTerm* term,
+                                           float limit_scale_factor) const
 {
     Vertex *vert, *bi;
     sta_->graph()->pinVertices(term, vert, bi);
@@ -2759,7 +2777,7 @@ DatabaseHandler::violatesMaximumTransition(InstanceTerm* term) const
     for (auto rf : sta::RiseFall::range())
     {
         auto pin_slew = sta_->graph()->slew(vert, rf, dcalc_ap_->index());
-        if (pin_slew > limit)
+        if (pin_slew > limit * limit_scale_factor)
         {
             return true;
         }
@@ -2777,7 +2795,8 @@ DatabaseHandler::violatesMaximumTransition(InstanceTerm* term) const
 }
 
 ElectircalViolation
-DatabaseHandler::hasElectricalViolation(InstanceTerm* pin) const
+DatabaseHandler::hasElectricalViolation(InstanceTerm* pin,
+                                        float         limit_scale_factor) const
 {
     auto pin_net   = net(pin);
     auto net_pins  = pins(pin_net);
@@ -2785,7 +2804,7 @@ DatabaseHandler::hasElectricalViolation(InstanceTerm* pin) const
     bool vio_cap   = false;
     for (auto connected_pin : net_pins)
     {
-        if (violatesMaximumTransition(connected_pin))
+        if (violatesMaximumTransition(connected_pin, limit_scale_factor))
         {
             vio_trans = true;
             if (vio_cap)
@@ -2793,7 +2812,7 @@ DatabaseHandler::hasElectricalViolation(InstanceTerm* pin) const
                 break;
             }
         }
-        else if (violatesMaximumCapacitance(connected_pin))
+        else if (violatesMaximumCapacitance(connected_pin, limit_scale_factor))
         {
             vio_cap = true;
             if (vio_trans)
@@ -2821,7 +2840,7 @@ DatabaseHandler::hasElectricalViolation(InstanceTerm* pin) const
 }
 
 std::vector<InstanceTerm*>
-DatabaseHandler::maximumTransitionViolations() const
+DatabaseHandler::maximumTransitionViolations(float limit_scale_factor) const
 {
     if (sta_->sdc()->haveClkSlewLimits())
     {
@@ -2842,7 +2861,8 @@ DatabaseHandler::maximumTransitionViolations() const
             auto net_pins = pins(pin_net);
             for (auto connected_pin : net_pins)
             {
-                if (violatesMaximumTransition(connected_pin))
+                if (violatesMaximumTransition(connected_pin,
+                                              limit_scale_factor))
                 {
                     vio_pins.insert(pin);
                     break;
@@ -2853,7 +2873,7 @@ DatabaseHandler::maximumTransitionViolations() const
     return std::vector<InstanceTerm*>(vio_pins.begin(), vio_pins.end());
 }
 std::vector<InstanceTerm*>
-DatabaseHandler::maximumCapacitanceViolations() const
+DatabaseHandler::maximumCapacitanceViolations(float limit_scale_factor) const
 {
     if (sta_->sdc()->haveClkSlewLimits())
     {
@@ -2874,7 +2894,8 @@ DatabaseHandler::maximumCapacitanceViolations() const
             auto net_pins = pins(pin_net);
             for (auto connected_pin : net_pins)
             {
-                if (violatesMaximumCapacitance(connected_pin))
+                if (violatesMaximumCapacitance(connected_pin,
+                                               limit_scale_factor))
                 {
                     vio_pins.insert(pin);
                     break;
@@ -3987,7 +4008,8 @@ DatabaseHandler::findBufferTargetSlews(std::vector<Liberty*>* resize_libs)
 bool
 DatabaseHandler::dontUse(LibraryCell* cell) const
 {
-    return cell->dontUse() || dont_use_.count(cell);
+    return cell->dontUse() || dont_use_.count(cell) ||
+           (dont_use_callback_ != nullptr && dont_use_callback_(cell));
 }
 bool
 DatabaseHandler::dontTouch(Instance*) const
@@ -4087,6 +4109,11 @@ DatabaseHandler::isClock(Net* net) const
 void
 DatabaseHandler::calculateParasitics(Net* net)
 {
+    if (compute_parasitics_callback_ != nullptr)
+    {
+        compute_parasitics_callback_(net);
+        return;
+    }
     auto tree = SteinerTree::create(net, psn_);
     if (tree && tree->isPlaced())
     {

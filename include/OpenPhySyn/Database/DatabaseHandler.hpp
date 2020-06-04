@@ -63,9 +63,11 @@ namespace psn
 class Psn;
 class SteinerTree;
 class LibraryCellMapping;
-typedef int                      SteinerPoint;
-typedef std::function<bool(int)> Legalizer;
-typedef std::function<float()>   ParasticsCallback;
+typedef int                               SteinerPoint;
+typedef std::function<bool(int)>          Legalizer;
+typedef std::function<float()>            ParasticsCallback;
+typedef std::function<bool(LibraryCell*)> DontUseCallback;
+typedef std::function<bool(Net*)>         ComputeParasiticsCallback;
 
 enum ElectircalViolation
 {
@@ -243,15 +245,22 @@ public:
     virtual bool isSingleOutputCombinational(Instance* inst) const;
     virtual bool isSingleOutputCombinational(LibraryCell* cell) const;
     virtual void replaceInstance(Instance* inst, LibraryCell* cell);
-    virtual bool violatesMaximumCapacitance(InstanceTerm* term,
-                                            float         load_cap) const;
-    virtual bool violatesMaximumCapacitance(InstanceTerm* term) const;
-    virtual bool violatesMaximumTransition(InstanceTerm* term) const;
+    virtual bool violatesMaximumCapacitance(InstanceTerm* term, float load_cap,
+                                            float limit_scale_factor) const;
+    virtual bool
+    violatesMaximumCapacitance(InstanceTerm* term,
+                               float         limit_scale_factor = 1.0) const;
+    virtual bool
+    violatesMaximumTransition(InstanceTerm* term,
+                              float         limit_scale_factor = 1.0) const;
     virtual ElectircalViolation
-                                       hasElectricalViolation(InstanceTerm* term) const;
-    virtual std::vector<InstanceTerm*> maximumTransitionViolations() const;
-    virtual std::vector<InstanceTerm*> maximumCapacitanceViolations() const;
-    virtual bool                       isLoad(InstanceTerm* term) const;
+    hasElectricalViolation(InstanceTerm* term,
+                           float         limit_scale_factor = 1.0) const;
+    virtual std::vector<InstanceTerm*>
+    maximumTransitionViolations(float limit_scale_factor = 1.0) const;
+    virtual std::vector<InstanceTerm*>
+                      maximumCapacitanceViolations(float limit_scale_factor = 1.0) const;
+    virtual bool      isLoad(InstanceTerm* term) const;
     virtual Instance* createInstance(const char* inst_name, LibraryCell* cell);
     virtual void      createClock(const char*             clock_name,
                                   std::vector<BlockTerm*> ports, float period);
@@ -342,10 +351,14 @@ public:
                 std::unordered_map<LibraryTerm*, int>& inputs) const;
     virtual int evaluateFunctionExpression(
         LibraryTerm* term, std::unordered_map<LibraryTerm*, int>& inputs) const;
-    virtual void        setWireRC(float res_per_micron, float cap_per_micron,
-                                  bool reset_delays = true);
-    virtual void        setWireRC(ParasticsCallback res_per_micron,
-                                  ParasticsCallback cap_per_micron);
+    virtual void setWireRC(float res_per_micron, float cap_per_micron,
+                           bool reset_delays = true);
+    virtual void setWireRC(ParasticsCallback res_per_micron,
+                           ParasticsCallback cap_per_micron);
+    virtual void setDontUseCallback(DontUseCallback dont_use_callback);
+    virtual void setComputeParasiticsCallback(
+        ComputeParasiticsCallback compute_parasitics_callback);
+
     virtual bool        hasWireRC();
     virtual HandlerType handlerType() const;
     virtual void        calculateParasitics();
@@ -457,6 +470,8 @@ private:
     Legalizer           legalizer_;
     ParasticsCallback   res_per_micron_callback_;
     ParasticsCallback   cap_per_micron_callback_;
+    DontUseCallback     dont_use_callback_;
+    ComputeParasiticsCallback compute_parasitics_callback_;
 };
 
 } // namespace psn

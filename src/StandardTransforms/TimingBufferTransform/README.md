@@ -1,4 +1,4 @@
-# OpenPhySyn Constant Timing Buffer
+# OpenPhySyn Timing Buffer
 
 Fix design rule violation by RAT-based buffer tree insertion.
 

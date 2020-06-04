@@ -226,7 +226,7 @@ namespace eval psn {
     }
 
     define_cmd_args "timing_buffer" {[-maximum_capacitance] [-maximum_transition] [-negative_slack]\
-				 [-timerless] [-repair_by_resize] [-repair_by_clone]\
+				 [-timerless] [-repair_by_upsize] \
 				 [-auto_buffer_library single|small|medium|large|all]\
 				 [-minimize_buffer_library] [-fast]\
 				 [-use_inverting_buffer_library] [-buffers buffers]\
@@ -237,7 +237,7 @@ namespace eval psn {
     proc timing_buffer { args } {
         sta::parse_key_args "timing_buffer" args \
         keys {-auto_buffer_library -buffers -inverters -iterations -min_gain -area_penalty -legalization_frequency}\
-        flags {-negative_slack -timerless -maximum_capacitance -maximum_transition -repair_by_resize -fast -repair_by_clone -repair_by_resynthesis -enable_driver_resize -minimize_buffer_library -use_inverting_buffer_library -maximum_capacitance] -maximum_transition}
+        flags {-negative_slack -timerless -maximum_capacitance -maximum_transition -repair_by_upsize -fast -repair_by_resynthesis -enable_driver_resize -minimize_buffer_library -use_inverting_buffer_library -maximum_capacitance] -maximum_transition}
         
         set buffer_lib_flag ""
         set auto_buf_flag ""
@@ -258,12 +258,10 @@ namespace eval psn {
         if {$has_max_ns} {
             set repair_target_flag "$repair_target_flag -negative_slack"
         }
-        if {[info exists flags(-repair_by_resize)]} {
-            set repair_target_flag "$repair_target_flag -repair_by_resize"
+        if {[info exists flags(-repair_by_upsize)]} {
+            set repair_target_flag "$repair_target_flag -repair_by_upsize"
         }
-        if {[info exists flags(-repair_by_clone)]} {
-            set repair_target_flag "$repair_target_flag -repair_by_clone"
-        }
+
         if {[info exists flags(-repair_by_resynthesis)]} {
             set repair_target_flag "$repair_target_flag -repair_by_resynthesis"
         }
