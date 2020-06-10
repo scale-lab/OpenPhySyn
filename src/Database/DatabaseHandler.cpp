@@ -4015,9 +4015,16 @@ DatabaseHandler::dontUse(LibraryCell* cell) const
            (dont_use_callback_ != nullptr && dont_use_callback_(cell));
 }
 bool
-DatabaseHandler::dontTouch(Instance*) const
+DatabaseHandler::dontTouch(Instance* inst) const
 {
-    return false;
+    odb::dbInst* db_inst = network()->staToDb(inst);
+    return db_inst && db_inst->isDoNotTouch();
+}
+bool
+DatabaseHandler::dontSize(Instance* inst) const
+{
+    odb::dbInst* db_inst = network()->staToDb(inst);
+    return db_inst && db_inst->isDoNotSize();
 }
 void
 DatabaseHandler::resetDelays()

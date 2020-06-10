@@ -326,6 +326,7 @@ public:
     virtual bool isInverter(LibraryCell* cell) const;
     virtual bool dontUse(LibraryCell* cell) const;
     virtual bool dontTouch(Instance* cell) const;
+    virtual bool dontSize(Instance* cell) const;
     virtual void resetDelays();
     virtual void resetDelays(InstanceTerm* term);
     virtual void buildLibraryMappings(int                        max_length,
