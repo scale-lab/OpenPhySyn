@@ -18,12 +18,6 @@ make test # Makes and runs the tests.
 make coverage # Generate a coverage report.
 ```
 
-## Building Custom Transforms
-
-Physical Synthesis transforms libraries are loaded from the directory referred to by the variable `PSN_TRANSFORM_PATH`, defaulting to `./transforms`.
-
-To build a new transform, refer to the transform [template](https://github.com/scale-lab/OpenPhySynHelloTransform).
-
 ## Getting Started
 
 ### Read design and run a transorm:
@@ -185,7 +179,13 @@ The `repair_timing` command repairs negative slack, maximum capacitance and tran
 
 Refer to the provided [tests directory](https://github.com/scale-lab/OpenPhySyn/tree/master/tests) for C++ example code.
 
-You can also refer to the [tcl tests directory](https://github.com/scale-lab/OpenPhySyn/tree/master/tests/tcl) for example for using the Tcl API.
+You can also refer to the [tcl tests directory](https://github.com/scale-lab/OpenPhySyn/tree/master/tests/tcl) for examples for using the Tcl API.
+
+## Building Custom Transforms
+
+Physical Synthesis transforms libraries are loaded from the directory referred to by the variable `PSN_TRANSFORM_PATH`, defaulting to `./transforms`.
+
+To build a new transform, refer to the transform [template](https://github.com/scale-lab/OpenPhySynHelloTransform).
 
 ## Dependencies
 
