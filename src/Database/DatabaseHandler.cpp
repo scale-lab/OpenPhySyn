@@ -1860,7 +1860,7 @@ DatabaseHandler::dbuToMeters(int dist) const
     return static_cast<double>(dist) * 1e-6 / db_->getTech()->getLefUnits();
 }
 double
-DatabaseHandler::dbuToMicrons(uint dist) const
+DatabaseHandler::dbuToMicrons(int dist) const
 {
     return (1.0 * dist) / db_->getTech()->getLefUnits();
 }
@@ -3628,23 +3628,7 @@ DatabaseHandler::coreArea() const
 {
     auto block = top();
     Rect core;
-    auto rows = block->getRows();
-    if (rows.size() > 0)
-    {
-        core.mergeInit();
-        for (auto db_row : block->getRows())
-        {
-            int orig_x, orig_y;
-            db_row->getOrigin(orig_x, orig_y);
-            Rect row_bbox;
-            db_row->getBBox(row_bbox);
-            core.merge(row_bbox);
-        }
-    }
-    else
-    {
-        block->getDieArea(core);
-    }
+    block->getCoreArea(core);
     return dbuToMeters(core.dx()) * dbuToMeters(core.dy());
 }
 

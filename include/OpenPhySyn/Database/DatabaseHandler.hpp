@@ -121,7 +121,7 @@ public:
     virtual LibraryCell*               libraryCell(const char* name) const;
     virtual LibraryCell*               largestLibraryCell(LibraryCell* cell);
     virtual double                     dbuToMeters(int dist) const;
-    virtual double                     dbuToMicrons(uint dist) const;
+    virtual double                     dbuToMicrons(int dist) const;
     virtual bool                       isPlaced(InstanceTerm* term) const;
     virtual bool                       isPlaced(Instance* inst) const;
     virtual bool                       isDriver(InstanceTerm* term) const;
