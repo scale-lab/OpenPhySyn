@@ -30,23 +30,24 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ConstantPropagationTransform.hpp"
-#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
-#include <OpenPhySyn/Sta/PathPoint.hpp>
-#include <OpenPhySyn/Utils/PsnGlobal.hpp>
-#include <OpenSTA/dcalc/ArcDelayCalc.hh>
-#include <OpenSTA/dcalc/GraphDelayCalc.hh>
-#include <OpenSTA/liberty/TimingArc.hh>
-#include <OpenSTA/liberty/TimingModel.hh>
-#include <OpenSTA/liberty/TimingRole.hh>
-#include <OpenSTA/search/Corner.hh>
+#include "OpenPhySyn/PsnLogger/PsnLogger.hpp"
+#include "OpenPhySyn/Sta/PathPoint.hpp"
+#include "OpenPhySyn/Utils/PsnGlobal.hpp"
 #include "Utils/StringUtils.hpp"
+#include "sta/ArcDelayCalc.hh"
+#include "sta/Corner.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/TimingArc.hh"
+#include "sta/TimingModel.hh"
+#include "sta/TimingRole.hh"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <sstream>
 
-using namespace psn;
+namespace psn
+{
 
 ConstantPropagationTransform::ConstantPropagationTransform() : prop_count_(0)
 {
@@ -651,11 +652,11 @@ ConstantPropagationTransform::run(Psn* psn_inst, std::vector<std::string> args)
     }
     if (args.size() >= 3)
     {
-        tielo_cell_name = args[2];
+        tiehi_cell_name = args[2];
     }
     if (args.size() >= 4)
     {
-        tiehi_cell_name = args[3];
+        tielo_cell_name = args[3];
     }
     if (args.size() >= 5)
     {
@@ -666,3 +667,4 @@ ConstantPropagationTransform::run(Psn* psn_inst, std::vector<std::string> args)
     return propagateConstants(psn_inst, tiehi_cell_name, tielo_cell_name,
                               inverter_cell_name, max_depth, invereter_replace);
 }
+} // namespace psn

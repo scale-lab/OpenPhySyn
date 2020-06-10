@@ -33,14 +33,17 @@
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE("Should add a signle net")
+TEST_CASE("testing hello_transform")
 {
     Psn& psn_inst = Psn::instance();
     try
     {
         psn_inst.clearDatabase();
+        psn_inst.readLib("../tests/data/libraries/Nangate45/"
+                         "NangateOpenCellLibrary_typical.lib");
         psn_inst.readLef(
             "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
         psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
@@ -55,3 +58,4 @@ TEST_CASE("Should add a signle net")
         FAIL(e.what());
     }
 }
+} // namespace psn

@@ -29,8 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_POGRAM_OPTIONS__
-#define __PSN_POGRAM_OPTIONS__
+#pragma once
 
 #include <string>
 
@@ -72,4 +71,3 @@ private:
     std::string usage_;
 };
 } // namespace psn
-#endif

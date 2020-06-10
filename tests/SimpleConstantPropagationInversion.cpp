@@ -33,9 +33,10 @@
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE("Should perform simple constant propagation with adding inverter")
+TEST_CASE("testing constant_propagation with adding inverter")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -71,3 +72,4 @@ TEST_CASE("Should perform simple constant propagation with adding inverter")
         FAIL(e.what());
     }
 }
+} // namespace psn

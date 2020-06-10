@@ -29,55 +29,59 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <OpenPhySyn/Database/DatabaseHandler.hpp>
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Psn/Psn.hpp>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
-#include <OpenPhySyn/Transform/PsnTransform.hpp>
 #include <cstring>
 #include <memory>
 #include <unordered_set>
-#include "BufferTree.hpp"
+#include "OpenPhySyn/Database/DatabaseHandler.hpp"
+#include "OpenPhySyn/Database/Types.hpp"
+#include "OpenPhySyn/Liberty/LibraryMapping.hpp"
+#include "OpenPhySyn/Optimize/BufferTree.hpp"
+#include "OpenPhySyn/Optimize/SteinerTree.hpp"
+#include "OpenPhySyn/Psn/Psn.hpp"
+#include "OpenPhySyn/Transform/PsnTransform.hpp"
 
 namespace psn
 {
+
+class BufferTree;
+class BufferSolution;
+
 class TimingBufferTransform : public PsnTransform
 {
 
 private:
-    int  buffer_count_;
-    int  net_index_;
-    int  buff_index_;
-    void bufferPin(Psn* psn_inst, InstanceTerm* pin,
-                   std::vector<LibraryCell*>& buffer_lib,
-                   std::vector<LibraryCell*>& inverter_lib, bool resize_gates,
-                   float min_gain);
-    std::shared_ptr<BufferSolution>
-         bottomUp(Psn* psn_inst, SteinerPoint pt, SteinerPoint prev,
-                  std::vector<LibraryCell*>&   buffer_lib,
-                  std::vector<LibraryCell*>&   inverter_lib,
-                  std::shared_ptr<SteinerTree> st_tree, bool resize_gates = false);
-    void topDown(Psn* psn_inst, Net* net, std::shared_ptr<BufferTree> tree);
-    void topDown(Psn* psn_inst, InstanceTerm* pin,
-                 std::shared_ptr<BufferTree> tree);
+    int   buffer_count_;
+    int   resize_count_;
+    int   clone_count_;
+    int   resynth_count_;
+    int   net_count_;
+    int   timerless_rebuffer_count_;
+    int   net_index_;
+    int   buff_index_;
+    int   clone_index_;
+    int   transition_violations_;
+    int   capacitance_violations_;
+    int   slack_violations_;
+    float current_area_;
+    float saved_slack_;
+    std::unordered_set<Instance*>
+    bufferPin(Psn* psn_inst, InstanceTerm* pin, RepairTarget target,
+              std::unique_ptr<OptimizationOptions>& options);
 
-    int timingBuffer(Psn* psn_inst, bool fix_cap = true, bool fix_slew = true,
-                     std::unordered_set<std::string> buffer_lib_names =
+    int timingBuffer(Psn*                                  psn_inst,
+                     std::unique_ptr<OptimizationOptions>& options,
+                     std::unordered_set<std::string>       buffer_lib_names =
                          std::unordered_set<std::string>(),
                      std::unordered_set<std::string> inverter_lib_names =
-                         std::unordered_set<std::string>(),
-                     bool resize_gates = false, bool use_inverter_pair = false,
-                     int max_iterations = 1, float min_gain = 0);
-    int fixCapacitanceViolations(Psn*                       psn_inst,
-                                 std::vector<InstanceTerm*> driver_pins,
-                                 std::vector<LibraryCell*>& buffer_lib,
-                                 std::vector<LibraryCell*>& inverter_lib,
-                                 bool resize_gates, float min_gain);
-    int fixTransitionViolations(Psn*                       psn_inst,
-                                std::vector<InstanceTerm*> driver_pins,
-                                std::vector<LibraryCell*>& buffer_lib,
-                                std::vector<LibraryCell*>& inverter_lib,
-                                bool resize_gates, float min_gain);
+                         std::unordered_set<std::string>());
+    int fixCapacitanceViolations(Psn*                        psn_inst,
+                                 std::vector<InstanceTerm*>& driver_pins,
+                                 std::unique_ptr<OptimizationOptions>& options);
+    int fixTransitionViolations(Psn*                        psn_inst,
+                                std::vector<InstanceTerm*>& driver_pins,
+                                std::unique_ptr<OptimizationOptions>& options);
+    int fixNegativeSlack(Psn* psn_inst, std::vector<InstanceTerm*>& driver_pins,
+                         std::unique_ptr<OptimizationOptions>& options);
 
 public:
     TimingBufferTransform();
@@ -86,12 +90,20 @@ public:
 };
 
 DEFINE_TRANSFORM(
-    TimingBufferTransform, "timing_buffer", "1.1",
+    TimingBufferTransform, "timing_buffer", "1.5",
     "Performs several variations of buffering and resizing to fix timing "
     "violations",
-    "Usage: transform timing_buffer buffers -all|<set of buffers> [-inverters "
-    "-all|<set of inverters>] [-iterations <# iterations=1>] [-min_gain "
-    "<gain=0ps>]"
-    "[-enable_gate_resize] [-enable_inverter_pair]")
+    "Usage: transform timing_buffer [-capacitance_violations] "
+    "[-transition_violations] [-negative_slack_violations] "
+    "[-auto_buffer_library "
+    "<single|small|medium|large|all>] [-minimize_buffer_library] "
+    "[-use_inverting_buffer_library] [-buffers "
+    "<buffer library>] [-inverters "
+    "<inverters library>] [-repair_by_resynthesis] [-iterations "
+    "<# "
+    "iterations=1>] [-post_place|-post_route] "
+    "[-legalization_frequency <numBuffer>]"
+    "[-min_gain "
+    "<gain=0ps>] [-enable_gate_resize] [-area_penalty <penalty=0ps/um>]")
 
 } // namespace psn

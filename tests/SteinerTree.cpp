@@ -28,15 +28,16 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
+#include "OpenPhySyn/Optimize/SteinerTree.hpp"
 #include "Psn/Psn.hpp"
 #include "PsnException/PsnException.hpp"
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE("Should construct a steiner tree correctly")
+TEST_CASE("testing steiner tree construction")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -60,3 +61,4 @@ TEST_CASE("Should construct a steiner tree correctly")
         FAIL(e.what());
     }
 }
+} // namespace psn

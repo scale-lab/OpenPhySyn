@@ -33,9 +33,10 @@
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE("Should perform power-driven pin swapping")
+TEST_CASE("testing pin_swap -power transform")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -51,11 +52,12 @@ TEST_CASE("Should perform power-driven pin swapping")
         auto& handler = *(psn_inst.handler());
         handler.createClock("core_clock", {"clk"}, 10E-09);
         auto result = psn_inst.runTransform(
-            "pin_swap", std::vector<std::string>({"true", "50"}));
-        CHECK(result == 20);
+            "pin_swap", std::vector<std::string>({"-power", "50"}));
+        CHECK(result == 18);
     }
     catch (PsnException& e)
     {
         FAIL(e.what());
     }
 }
+} // namespace psn

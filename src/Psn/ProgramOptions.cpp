@@ -29,7 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <OpenPhySyn/Psn/ProgramOptions.hpp>
+#include "OpenPhySyn/Psn/ProgramOptions.hpp"
 
 #ifndef OPENPHYSYN_CXX_OPTS_DISABLED
 #include "cxxopts.hpp"

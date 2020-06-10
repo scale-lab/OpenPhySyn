@@ -29,8 +29,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_FILE_UTILS__
-#define __PSN_FILE_UTILS__
+#pragma once
+
 #include <string>
 #include <vector>
 
@@ -43,7 +43,8 @@ public:
     static bool isDirectory(const std::string& path);
     static bool createDirectory(const std::string& path);
     static bool createDirectoryIfNotExists(const std::string& path);
-    static std::vector<std::string> readDirectory(const std::string& path);
+    static std::vector<std::string> readDirectory(const std::string& path,
+                                                  bool ignore_hidden = false);
     static std::string              readFile(const std::string& path);
     static std::string              homePath();
     static std::string              joinPath(const std::string& first_path,
@@ -52,4 +53,3 @@ public:
     static std::string              executablePath();
 };
 } // namespace psn
-#endif

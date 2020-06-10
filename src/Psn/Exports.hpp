@@ -29,11 +29,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_EXPORTS__
-#define __PSN_EXPORTS__
-#include <OpenPhySyn/Database/DatabaseHandler.hpp>
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
+#pragma once
+
+#include "OpenPhySyn/Database/DatabaseHandler.hpp"
+#include "OpenPhySyn/Database/Types.hpp"
+#include "OpenPhySyn/Optimize/SteinerTree.hpp"
 
 namespace psn
 {
@@ -45,7 +45,9 @@ void  print_transforms();
 void  print_license();
 float design_area();
 int   import_def(const char* def_path);
-int   import_lef(const char* lef_path, int ignore_routing_layers = true);
+int   import_lef_tech(const char* lef_path);
+int   import_lef_sc(const char* lef_path);
+int   import_lef_tech_sc(const char* lef_path);
 int   import_lib(const char* lib_path); // Alias for import_liberty
 int   import_liberty(const char* lib_path);
 int   export_def(const char* def_path);
@@ -53,16 +55,27 @@ int   import_db(const char* db_path);
 int   export_db(const char* db_path);
 int   print_liberty_cells();
 bool  has_transform(const char* transform_name);
-int   set_wire_rc(float res_per_micon, float cap_per_micron);
+int   set_wire_rc(float res_per_micron, float cap_per_micron);
 int   set_wire_rc(const char* layer_name);
 int   set_max_area(float area);
+float max_area();
+float core_area();
 int   link(const char* top_module);
 int   link_design(const char* top_module);
 int   set_log(const char* level);
 int   set_log_level(const char* level);
 int   set_log_pattern(const char* pattern);
-int   transform_internal(std::string              transform_name,
-                         std::vector<std::string> args);
+void  set_dont_use(std::vector<std::string> cell_names);
+bool  has_design();
+bool  has_liberty();
+std::vector<std::string> capacitance_violations();
+std::vector<std::string> transition_violations();
+std::vector<std::string> cluster_buffer_names(float cluster_threshold,
+                                              bool  find_superior = true);
+std::vector<std::string> cluster_inverter_names(float cluster_threshold,
+                                                bool  find_superior = true);
+int                      transform_internal(std::string              transform_name,
+                                            std::vector<std::string> args);
 
 DatabaseHandler& get_handler();
 DatabaseHandler& get_database_handler();
@@ -71,5 +84,3 @@ Liberty&         get_liberty();
 SteinerTree*     make_steiner_tree(const char* pin_name);
 SteinerTree*     make_steiner_tree(Net* net);
 } // namespace psn
-
-#endif

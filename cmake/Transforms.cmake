@@ -83,3 +83,11 @@ install(
   DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
 )
 endif()
+
+if (${OPENPHYSYN_TRANSFORM_REPAIR_TIMING_ENABLED})
+add_subdirectory(src/StandardTransforms/RepairTimingTransform)
+install(
+  TARGETS repair_timing
+  DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
+)
+endif()

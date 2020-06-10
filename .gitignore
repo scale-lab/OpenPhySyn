@@ -38,3 +38,5 @@
 # Build directory
 build/
 tests/results
+.vscode
+external/opendp

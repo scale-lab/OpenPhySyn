@@ -33,9 +33,10 @@
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE("Should buffers to the top-level port")
+TEST_CASE("testing buffer_fanout works with top-level port")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -57,3 +58,4 @@ TEST_CASE("Should buffers to the top-level port")
         FAIL(e.what());
     }
 }
+} // namespace psn

@@ -29,8 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_ERROR_
-#define __PSN_ERROR_
+#pragma once
 
 namespace psn
 {
@@ -64,4 +63,3 @@ enum Common
 
 } // namespace Error
 } // namespace psn
-#endif

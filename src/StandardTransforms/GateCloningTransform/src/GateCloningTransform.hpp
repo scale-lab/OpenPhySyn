@@ -29,13 +29,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <OpenPhySyn/Database/DatabaseHandler.hpp>
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Psn/Psn.hpp>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
-#include <OpenPhySyn/Transform/PsnTransform.hpp>
 #include <cstring>
 #include <memory>
+#include "OpenPhySyn/Database/DatabaseHandler.hpp"
+#include "OpenPhySyn/Database/Types.hpp"
+#include "OpenPhySyn/Optimize/SteinerTree.hpp"
+#include "OpenPhySyn/Psn/Psn.hpp"
+#include "OpenPhySyn/Transform/PsnTransform.hpp"
 
 namespace psn
 {
@@ -45,11 +45,13 @@ private:
     void cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
                    bool clone_largest_only);
     void topDownClone(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
-                      SteinerPoint k, float c_limit);
+                      SteinerPoint k, SteinerPoint prev, float c_limit,
+                      LibraryCell* driver_cell);
     void topDownConnect(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
                         SteinerPoint k, Net* net);
     void cloneInstance(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
-                       SteinerPoint k);
+                       SteinerPoint k, SteinerPoint prev,
+                       LibraryCell* driver_cell);
     int  net_index_;
     int  clone_index_;
     int  clone_count_;

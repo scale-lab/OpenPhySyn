@@ -1,6 +1,17 @@
-cmake_minimum_required(VERSION 3.1...3.15)
+cmake_minimum_required (VERSION 3.9)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
+cmake_policy(SET CMP0078 NEW)
+endif()
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.14)
+cmake_policy(SET CMP0086 NEW)
+endif()
 
-project(OpenPhySyn VERSION 1.4.1 LANGUAGES CXX)
+
+project(OpenPhySyn VERSION 1.6.0)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add flags and defines.
@@ -9,15 +20,17 @@ option(OPENPHYSYN_LTO_ENABLED "Enable link time optimization" ON)
 option(OPENPHYSYN_UNIT_TESTS_ENABLED "Include tests in the library. Setting this to OFF will remove all doctest related code.
                         Tests in tests/*.cpp will still be enabled." ON)
 option(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED "Build OpenPhySyn Standard Transforms" ON)
-option(OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED "Build demo hello transform" ON)
+option(OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED "Build demo hello transform" OFF)
 option(OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED "Build Buffer Fan-Out transform" ON)
 option(OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED "Build Gate Clone transform" ON)
 option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
 option(OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED "Build Constant Propagation transform" ON)
-option(OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED "Build Buffer Resize transform" ON)
+option(OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED "Build Timing Buffer transform" ON)
+option(OPENPHYSYN_TRANSFORM_REPAIR_TIMING_ENABLED "Build Repair Timing transform" ON)
 option(OPENPHYSYN_READLINE_ENABLED "Enable Tcl Readline" ON)
+option(OPENPHYSYN_OPENDP_ENABLED "Enable OpenDP" OFF)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-error -Wno-deprecated-copy")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-error")
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -Wl,-export_dynamic -Wno-unused-command-line-argument")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -32,17 +45,11 @@ endif()
 # Tool build configuration
 option(OPENROAD_BUILD "Indicates if the tool is being built as a module in the top level application" OFF)
 option(OPENPHYSYN_TF_ENABLED "Build and use cpp-taskflow" OFF)
-set(OPENPHYSYN_DATABASE_HANDLER "OpenSTA" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
 
-if (${OPENPHYSYN_DATABASE_HANDLER} STREQUAL "OpenDB")
-add_definitions(-DUSE_OPENDB_DB_HANDLER)
-else()
 add_definitions(-DUSE_OPENSTA_DB_HANDLER)
-endif()
 
 
 set(SWIG_FLAGS "-w467,72,503,509")
-set(SWIG_PSN_LIB_FLAGS "")
 
 
 
@@ -104,10 +111,16 @@ set(FLUTE_HOME
 ${PROJECT_SOURCE_DIR}/external/flute
 )
 
-# Build spdlok
+# Build spdlog
 set(SPD_LOG_HOME
   ${PROJECT_SOURCE_DIR}/external/spdlog
 )
+
+if (${OPENPHYSYN_OPENDP_ENABLED})
+set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/external/opendp)
+add_subdirectory(${OPENDP_HOME})
+add_definitions(-DOPENPHYSYN_OPENDP_ENABLED)
+endif()
 
 # Build cxxopts
 set(CXXOPTS_HOME
@@ -167,32 +180,31 @@ message(STATUS "OpenPhySyn Git SHA: ${OPENPHYSYN_GIT_SHA1}")
 
 
 set(PSN_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap.cpp)
-set(PSN_LIBRARY_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_lib_wrap.cpp)
-set(SWIG_SOURCE_COMPILE_FLAGS "-Wno-cast-qual -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-parameter -Wno-deprecated-copy")
+set(SWIG_SOURCE_COMPILE_FLAGS "-Wno-cast-qual -Wno-unused-variable -Wno-unused-parameter")
 set_source_files_properties(${PSN_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
-set_source_files_properties(${PSN_LIBRARY_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
 
 set(PSN_MAIN ${PSN_HOME}/app/PsnMain.cpp)
 set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Psn/Psn.cpp
     ${PSN_HOME}/src/Psn/Exports.cpp
     ${PSN_HOME}/src/Psn/ProgramOptions.cpp
-    ${PSN_HOME}/src/Psn/DesignSettings.cpp
-    ${PSN_HOME}/src/SteinerTree/SteinerTree.cpp
     ${PSN_HOME}/src/PsnLogger/PsnLogger.cpp
-    ${PSN_HOME}/src/Database/OpenDBHandler.cpp
-    ${PSN_HOME}/src/Database/OpenStaHandler.cpp
-    ${PSN_HOME}/src/DefReader/DefReader.cpp
-    ${PSN_HOME}/src/DefWriter/DefWriter.cpp
-    ${PSN_HOME}/src/LefReader/LefReader.cpp
-    ${PSN_HOME}/src/LibertyReader/LibertyReader.cpp
+    ${PSN_HOME}/src/Database/DatabaseHandler.cpp
+    ${PSN_HOME}/src/Def/DefReader.cpp
+    ${PSN_HOME}/src/Def/DefWriter.cpp
+    ${PSN_HOME}/src/Lef/LefReader.cpp
+    ${PSN_HOME}/src/Liberty/LibraryMapping.cpp
+    ${PSN_HOME}/src/Liberty/LibertyReader.cpp
     ${PSN_HOME}/src/Transform/PsnTransform.cpp
     ${PSN_HOME}/src/Transform/TransformHandler.cpp
     ${PSN_HOME}/src/Transform/TransformInfo.cpp
     ${PSN_HOME}/src/Utils/FileUtils.cpp
     ${PSN_HOME}/src/Utils/FilesystemLegacyHelpers.cpp
     ${PSN_HOME}/src/Utils/StringUtils.cpp
+    ${PSN_HOME}/src/Utils/ClusteringUtils.cpp
     ${PSN_HOME}/src/Utils/PsnGlobal.cpp
+    ${PSN_HOME}/src/Optimize/BufferTree.cpp
+    ${PSN_HOME}/src/Optimize/SteinerTree.cpp
     ${PSN_HOME}/src/PsnException/Error.cpp
     ${PSN_HOME}/src/PsnException/FileException.cpp
     ${PSN_HOME}/src/PsnException/FluteInitException.cpp
@@ -223,7 +235,6 @@ set(PSN_SOURCES
 
 set(PSN_TESTFILES        # All .cpp files in tests/
     ${PROJECT_SOURCE_DIR}/tests/SteinerTree.cpp
-    ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
     ${PROJECT_SOURCE_DIR}/tests/ReadLefDef.cpp
     ${PROJECT_SOURCE_DIR}/tests/WriteDef.cpp
     ${PROJECT_SOURCE_DIR}/tests/ReadLiberty.cpp
@@ -270,6 +281,8 @@ if (${OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED})
   set(PSN_TESTFILES
   ${PSN_TESTFILES}
   ${PROJECT_SOURCE_DIR}/tests/TimingBuffer.cpp
+  ${PROJECT_SOURCE_DIR}/tests/TimingBufferWithSizing.cpp
+  ${PROJECT_SOURCE_DIR}/tests/TimingInvertingBuffer.cpp
 )
 endif()
 
@@ -299,7 +312,6 @@ set(PRIVATE_INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/external/StandardTransforms
   ${PROJECT_SOURCE_DIR}/external/flute
   ${TCL_INCLUDE_PATH}
-  ${SPD_LOG_HOME}/include
   ${FLUTE_HOME}/include
   ${OPENDB_HOME}/include
   ${OPENDB_HOME}/src
@@ -349,17 +361,37 @@ set(PRIVATE_INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/external
 )
 
+
 set(PUBLIC_LIBRARIES
 opendb
 OpenSTA
 sta_swig
 flute
+spdlog::spdlog
 ${PUBLIC_LIBRARIES}
 )
 
+# Sometimes linking issues occur when linking OpenSTA with CUDD..
+if (CUDD_LIB)
+set(PUBLIC_LIBRARIES
+${PUBLIC_LIBRARIES}
+${CUDD_LIB}
+)
+endif()
+
+if (${OPENPHYSYN_OPENDP_ENABLED})
+set(PRIVATE_INCLUDE_DIRS
+  ${PRIVATE_INCLUDE_DIRS}
+  ${OPENDP_HOME}/include
+)
+set(PUBLIC_LIBRARIES
+${PUBLIC_LIBRARIES}
+opendp
+)
+endif()
 
 # Compile all sources into a library.
-add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_LIBRARY_WRAP})
+add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_WRAP})
 add_executable(Psn ${PSN_SOURCES})  # Name of exec. and location of file.
 
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
@@ -393,11 +425,6 @@ add_custom_command(OUTPUT ${PSN_WRAP}
   WORKING_DIRECTORY ${PSN_HOME}
   DEPENDS ${PSN_SWIG_FILES}
 )
-add_custom_command(OUTPUT ${PSN_LIBRARY_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} ${SWIG_PSN_LIB_FLAGS} ${SWIG_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_LIBRARY_WRAP} ${PSN_SWIG_FILES}
-  WORKING_DIRECTORY ${PSN_HOME}
-  DEPENDS ${PSN_SWIG_FILES}
-)
 
 install(TARGETS Psn DESTINATION bin)
 
@@ -408,7 +435,6 @@ endif()
 
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
   ${PSN_WRAP}
-  ${PSN_LIBRARY_WRAP}
 )
 
 if(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED)

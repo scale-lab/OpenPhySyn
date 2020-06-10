@@ -28,15 +28,16 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <OpenPhySyn/Sta/PathPoint.hpp>
+#include "OpenPhySyn/Sta/PathPoint.hpp"
 #include "Psn/Psn.hpp"
 #include "PsnException/PsnException.hpp"
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE("Should perform timing-driven pin swapping")
+TEST_CASE("testing sta functions")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -67,3 +68,4 @@ TEST_CASE("Should perform timing-driven pin swapping")
         FAIL(e.what());
     }
 }
+} // namespace psn

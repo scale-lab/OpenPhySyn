@@ -31,7 +31,7 @@
 %module psn
 %{
 #include "Psn/Exports.hpp"
-#include <OpenPhySyn/Psn/Psn.hpp>
+#include "OpenPhySyn/Psn/Psn.hpp"
 
 #include "db.h"
 #include "dbShape.h"
@@ -39,8 +39,8 @@
 using namespace odb;
 
 #include <memory>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
-#include <OpenPhySyn/Database/DatabaseHandler.hpp>
+#include "OpenPhySyn/Optimize/SteinerTree.hpp"
+#include "OpenPhySyn/Database/DatabaseHandler.hpp"
 using namespace psn;
 DatabaseHandler *handler() {
    return Psn::instance().handler();
@@ -88,12 +88,10 @@ DatabaseHandler *handler();
 
 // wrap_unique_ptr(SteinerTreePtr, SteinerTree);
 // wrap_unique_ptr(SteinerTreePtr, psn::SteinerTree);
-// %include "include/OpenPhySyn/SteinerTree/SteinerTree.hpp"
+// %include "include/OpenPhySyn/Optimize/SteinerTree.hpp"
 
 
 %include "external/OpenDB/src/swig/tcl/dbtypes.i"
-%include "external/OpenDB/include/opendb/geom.h"
-%include "external/OpenDB/include/opendb/db.h"
 %include "include/OpenPhySyn/Database/Types.hpp"
 %rename(pt_eq) psn::PointEqual::operator()(const Point& pt1, const Point& pt2);
 %rename(pt_hash) psn::PointHash::operator()(const Point& pt);

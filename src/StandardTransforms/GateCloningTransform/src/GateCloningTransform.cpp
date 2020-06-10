@@ -30,16 +30,20 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "GateCloningTransform.hpp"
-#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
-#include <OpenPhySyn/Utils/PsnGlobal.hpp>
-#include "Utils/StringUtils.hpp"
-
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <sstream>
+#include "OpenPhySyn/PsnLogger/PsnLogger.hpp"
+#include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"
+#include "OpenPhySyn/Utils/PsnGlobal.hpp"
+#include "Utils/StringUtils.hpp"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/Parasitics.hh"
+#include "sta/Search.hh"
 
-using namespace psn;
+namespace psn
+{
 
 GateCloningTransform::GateCloningTransform() : net_index_(0), clone_index_(0)
 {
@@ -51,11 +55,14 @@ GateCloningTransform::gateClone(Psn* psn_inst, float cap_factor,
     clone_count_             = 0;
     DatabaseHandler& handler = *(psn_inst->handler());
     PSN_LOG_DEBUG("Clone {} {}", cap_factor, clone_largest_only);
-    std::vector<InstanceTerm*> level_drvrs = handler.levelDriverPins();
+    std::vector<InstanceTerm*> level_drvrs = handler.levelDriverPins(true);
     for (auto& pin : level_drvrs)
     {
         Instance* inst = handler.instance(pin);
-        cloneTree(psn_inst, inst, cap_factor, clone_largest_only);
+        if (handler.isSingleOutputCombinational(inst))
+        {
+            cloneTree(psn_inst, inst, cap_factor, clone_largest_only);
+        }
     }
     return clone_count_;
 }
@@ -64,7 +71,7 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
                                 bool clone_largest_only)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
-    float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
+    float cap_per_micron     = psn_inst->handler()->capacitancePerMicron();
 
     auto output_pins = handler.outputPins(inst);
     if (!output_pins.size())
@@ -82,6 +89,7 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
     {
         return;
     }
+    auto driver_lib = handler.libraryCell(inst);
 
     float        total_net_load = tree->totalLoad(cap_per_micron);
     LibraryCell* cell           = handler.libraryCell(inst);
@@ -89,6 +97,20 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
     float output_target_load = handler.targetLoad(cell);
 
     float c_limit = cap_factor * output_target_load;
+
+    if (!handler.violatesMaximumTransition(output_pin) &&
+        !handler.violatesMaximumCapacitance(output_pin))
+    {
+        return;
+    }
+    auto  slew = handler.slew(output_pin);
+    auto  cap  = handler.loadCapacitance(output_pin);
+    bool  exists;
+    auto  slew_limit = handler.pinSlewLimit(output_pin, &exists);
+    auto  cap_limit  = handler.maxLoad(handler.libraryPin(output_pin));
+    float slew_ratio = slew / slew_limit;
+    auto  cap_ratio  = cap / cap_limit;
+
     PSN_LOG_TRACE("{} {} output_target_load: {}", handler.name(inst),
                   handler.name(cell), output_target_load);
     PSN_LOG_TRACE("{} {} cap_per_micron: {}", handler.name(inst),
@@ -97,36 +119,54 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
                   c_limit);
     PSN_LOG_TRACE("{} {} total_net_load: {}", handler.name(inst),
                   handler.name(cell), total_net_load);
-    if ((c_limit - total_net_load) > std::numeric_limits<float>::epsilon())
+
+    if (slew_ratio < 1.4 && cap_ratio < 1.4)
     {
-        PSN_LOG_TRACE("{} {} load is fine", handler.name(inst),
-                      handler.name(cell));
         return;
     }
+    clone_largest_only = false;
+
     if (clone_largest_only && cell != handler.largestLibraryCell(cell))
     {
         PSN_LOG_TRACE("{} {} is not the largest cell", handler.name(inst),
                       handler.name(cell));
         return;
     }
-
     int fanout_count = handler.fanoutPins(net).size();
 
     if (fanout_count <= 1)
     {
         return;
     }
-    PSN_LOG_DEBUG("Cloning: {}", handler.name(inst), handler.name(cell));
 
-    topDownClone(psn_inst, tree, tree->driverPoint(), c_limit);
+    auto half_drvr = handler.halfDrivingPowerCell(driver_lib);
+    if (half_drvr == driver_lib)
+    {
+        return;
+    }
+
+    PSN_LOG_DEBUG("Cloning {} {}", handler.name(inst), handler.name(cell));
+    auto prec          = clone_count_;
+    output_target_load = handler.targetLoad(half_drvr);
+
+    c_limit = cap_factor * output_target_load;
+
+    topDownClone(psn_inst, tree, tree->top(), tree->driverPoint(), c_limit,
+                 half_drvr);
+    auto postc = clone_count_;
+    if (prec != postc)
+    {
+        handler.replaceInstance(inst, half_drvr);
+    }
 }
 void
 GateCloningTransform::topDownClone(Psn*                          psn_inst,
                                    std::unique_ptr<SteinerTree>& tree,
-                                   SteinerPoint k, float c_limit)
+                                   SteinerPoint k, SteinerPoint prev,
+                                   float c_limit, LibraryCell* driver_cell)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
-    float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
+    float cap_per_micron     = psn_inst->handler()->capacitancePerMicron();
 
     SteinerPoint drvr = tree->driverPoint();
 
@@ -146,11 +186,11 @@ GateCloningTransform::topDownClone(Psn*                          psn_inst,
             tree->left(left) == SteinerNull && tree->right(left) == SteinerNull;
         if (cap_left < c_limit || is_leaf)
         {
-            cloneInstance(psn_inst, tree, left);
+            cloneInstance(psn_inst, tree, left, k, driver_cell);
         }
         else
         {
-            topDownClone(psn_inst, tree, left, c_limit);
+            topDownClone(psn_inst, tree, left, k, c_limit, driver_cell);
         }
     }
 
@@ -162,11 +202,11 @@ GateCloningTransform::topDownClone(Psn*                          psn_inst,
                        tree->right(right) == SteinerNull;
         if (cap_right < c_limit || is_leaf)
         {
-            cloneInstance(psn_inst, tree, right);
+            cloneInstance(psn_inst, tree, right, k, driver_cell);
         }
         else
         {
-            topDownClone(psn_inst, tree, right, c_limit);
+            topDownClone(psn_inst, tree, right, k, c_limit, driver_cell);
         }
     }
 }
@@ -194,52 +234,136 @@ GateCloningTransform::topDownConnect(Psn*                          psn_inst,
 void
 GateCloningTransform::cloneInstance(Psn*                          psn_inst,
                                     std::unique_ptr<SteinerTree>& tree,
-                                    SteinerPoint                  k)
+                                    SteinerPoint k, SteinerPoint prev,
+                                    LibraryCell* driver_cell)
 {
-    DatabaseHandler& handler = *(psn_inst->handler());
+    DatabaseHandler& handler    = *(psn_inst->handler());
+    SteinerPoint     drvr       = tree->driverPoint();
+    auto             output_pin = tree->pin(drvr);
+    auto             inst       = handler.instance(output_pin);
+    Net*             output_net = handler.net(output_pin);
+    handler.calculateParasitics(output_net);
+    handler.sta()->ensureLevelized();
+    handler.sta()->findRequireds();
+    handler.sta()->findDelays();
 
-    SteinerPoint drvr       = tree->driverPoint();
-    auto         output_pin = tree->pin(drvr);
-    auto         inst       = handler.instance(output_pin);
-    Net*         output_net = handler.net(output_pin);
+    auto wp = handler.worstSlackPath(output_pin);
+    if (!wp.size())
+    {
+        return;
+    }
+    auto preslack = handler.worstSlack(wp[wp.size() - 1].pin());
+    auto ws       = handler.worstSlack();
 
     std::string clone_net_name = handler.generateNetName(net_index_);
     Net*        clone_net      = handler.createNet(clone_net_name.c_str());
     auto        output_port    = handler.libraryPin(output_pin);
 
     topDownConnect(psn_inst, tree, k, clone_net);
-    std::vector<Net*> para_nets;
-    para_nets.push_back(clone_net);
+    std::unordered_set<Net*> para_nets;
+    para_nets.insert(clone_net);
+    para_nets.insert(output_net);
+    handler.calculateParasitics(clone_net);
 
     int fanout_count = handler.fanoutPins(handler.net(output_pin)).size();
     if (fanout_count == 0)
     {
-        handler.connect(clone_net, output_pin);
-        handler.del(output_net);
+        handler.disconnectAll(clone_net);
+        topDownConnect(psn_inst, tree, k, output_net);
+        handler.del(clone_net);
+        para_nets.erase(clone_net);
     }
     else
     {
-        std::string instance_name =
-            handler.generateInstanceName("clone_", clone_index_);
-        auto cell = handler.libraryCell(inst);
-
-        Instance* cloned_inst =
-            handler.createInstance(instance_name.c_str(), cell);
-        handler.setLocation(cloned_inst, handler.location(output_pin));
-        handler.connect(clone_net, cloned_inst, output_port);
-        clone_count_++;
-        auto pins = handler.pins(inst);
-        for (auto& p : pins)
+        if (wp.size())
         {
-            if (handler.isInput(p) && p != output_pin)
+
+            std::string instance_name =
+                handler.generateInstanceName("clone_", clone_index_);
+
+            Instance* cloned_inst =
+                handler.createInstance(instance_name.c_str(), driver_cell);
+            handler.setLocation(cloned_inst, tree->location(prev));
+            handler.connect(clone_net, cloned_inst, output_port);
+
+            auto pins = handler.pins(inst);
+            for (auto& p : pins)
             {
-                Net* target_net  = handler.net(p);
-                auto target_port = handler.libraryPin(p);
-                handler.connect(target_net, cloned_inst, target_port);
-                para_nets.push_back(target_net);
+                handler.sta()->delaysInvalidFrom(p);
+                handler.sta()->delaysInvalidFrom(cloned_inst);
+                handler.sta()->delaysInvalidFromFanin(p);
+                if (handler.isInput(p) && p != output_pin)
+                {
+                    Net* target_net  = handler.net(p);
+                    auto target_port = handler.libraryPin(p);
+                    handler.connect(target_net, cloned_inst, target_port);
+                    para_nets.insert(target_net);
+                }
+            }
+
+            handler.legalize(1);
+            for (auto& net : para_nets)
+            {
+                handler.calculateParasitics(net);
+            }
+
+            handler.sta()->ensureLevelized();
+            handler.sta()->findRequireds();
+            handler.sta()->findDelays();
+
+            wp = handler.worstSlackPath(output_pin);
+
+            auto new_ws = handler.worstSlack();
+
+            float postslack = preslack;
+            if (wp.size())
+            {
+                postslack = handler.worstSlack(wp[wp.size() - 1].pin());
+            }
+
+            if (postslack <= preslack || new_ws < ws)
+            {
+
+                auto clone_pin     = handler.outputPins(cloned_inst)[0];
+                auto clone_out_net = handler.net(clone_pin);
+                auto clone_sinks   = handler.fanoutPins(clone_out_net, true);
+
+                handler.disconnectAll(clone_out_net);
+                for (auto& p : clone_sinks)
+                {
+                    handler.connect(output_net, p);
+                }
+
+                handler.del(clone_net);
+
+                para_nets.erase(clone_net);
+
+                handler.del(cloned_inst);
+
+                handler.legalize(1);
+                for (auto& net : para_nets)
+                {
+                    handler.calculateParasitics(net);
+                }
+
+                handler.sta()->graphDelayCalc()->delaysInvalid();
+            }
+            else
+            {
+
+                clone_count_++;
             }
         }
+        else
+        {
+
+            handler.disconnectAll(clone_net);
+            topDownConnect(psn_inst, tree, k, output_net);
+            handler.del(clone_net);
+            para_nets.erase(clone_net);
+        }
     }
+
     for (auto& net : para_nets)
     {
         handler.calculateParasitics(net);
@@ -281,5 +405,13 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
             }
         }
     }
-    return gateClone(psn_inst, cap_factor, clone_largest_only);
+    psn_inst->handler()->sta()->search()->endpointsInvalid();
+    psn_inst->handler()->sta()->ensureLevelized();
+    psn_inst->handler()->sta()->findRequireds();
+    psn_inst->handler()->sta()->findDelays();
+
+    int rc = gateClone(psn_inst, cap_factor, clone_largest_only);
+
+    return rc;
 }
+} // namespace psn

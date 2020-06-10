@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DatabaseSdcNetwork.hpp"
-#include "Machine.hh"
+#include "OpenSTA/util/Machine.hh"
 #include "ParseBus.hh"
 #include "PatternMatch.hh"
 

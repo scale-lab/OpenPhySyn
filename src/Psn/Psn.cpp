@@ -33,19 +33,17 @@
 #define THROW_DCL throw()
 
 #include <Config.hpp>
-#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
-#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
-#include <OpenSTA/dcalc/ArcDelayCalc.hh>
-#include <OpenSTA/network/ConcreteNetwork.hh>
-#include <OpenSTA/search/Search.hh>
-#include <OpenSTA/search/Sta.hh>
 #include <Psn/Psn.hpp>
 #include <flute.h>
 #include <tcl.h>
-#include "DefReader/DefReader.hpp"
-#include "DefWriter/DefWriter.hpp"
-#include "LefReader/LefReader.hpp"
-#include "LibertyReader/LibertyReader.hpp"
+#include "Def/DefReader.hpp"
+#include "Def/DefWriter.hpp"
+#include "Lef/LefReader.hpp"
+#include "Liberty/LibertyReader.hpp"
+#include "OpenPhySyn/PsnLogger/PsnLogger.hpp"
+#include "OpenPhySyn/Sta/DatabaseSta.hpp"
+#include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"
+#include "OpenPhySyn/Utils/PsnGlobal.hpp"
 #include "PsnException/FileException.hpp"
 #include "PsnException/FluteInitException.hpp"
 #include "PsnException/NoTechException.hpp"
@@ -53,6 +51,16 @@
 #include "PsnException/TransformNotFoundException.hpp"
 #include "Utils/FileUtils.hpp"
 #include "Utils/StringUtils.hpp"
+#include "sta/ArcDelayCalc.hh"
+#include "sta/ConcreteNetwork.hh"
+#include "sta/Search.hh"
+#include "sta/Sta.hh"
+#include "sta/Units.hh"
+
+#ifdef OPENPHYSYN_OPENDP_ENABLED
+#include "opendp/MakeOpendp.h"
+#include "opendp/Opendp.h"
+#endif
 
 extern "C"
 {
@@ -80,7 +88,6 @@ Psn::Psn(Database* db) : db_(db), interp_(nullptr)
         initializeDatabase();
     }
     exec_path_ = FileUtils::executablePath();
-    settings_  = new DesignSettings();
     initializeSta();
     db_handler_ = new DatabaseHandler(this, sta_);
 }
@@ -101,6 +108,7 @@ Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp,
     {
         psn_instance_->initializeFlute();
     }
+    setupLegalizer();
     is_initialized_ = true;
 }
 
@@ -113,7 +121,6 @@ Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
     }
     exec_path_  = FileUtils::executablePath();
     db_         = sta_->db();
-    settings_   = new DesignSettings();
     db_handler_ = new DatabaseHandler(this, sta_);
 }
 
@@ -136,12 +143,13 @@ Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
     {
         psn_instance_->initializeFlute();
     }
+
+    setupLegalizer();
     is_initialized_ = true;
 }
 
 Psn::~Psn()
 {
-    delete settings_;
     delete db_handler_;
     delete sta_;
     if (db_ != nullptr)
@@ -234,6 +242,7 @@ Psn::readLef(const char* path, bool import_library, bool import_tech)
         {
             return 0;
         }
+
         return 1;
     }
     catch (PsnException& e)
@@ -313,10 +322,15 @@ Psn::handler() const
     return db_handler_;
 }
 
-DesignSettings*
-Psn::settings() const
+bool
+Psn::hasDesign() const
 {
-    return settings_;
+    return (database() && database()->getChip() != nullptr);
+}
+bool
+Psn::hasLiberty() const
+{
+    return handler()->hasLiberty();
 }
 
 Psn&
@@ -366,7 +380,7 @@ Psn::loadTransforms()
             continue;
         }
         std::vector<std::string> transforms_paths =
-            FileUtils::readDirectory(transform_parent_path);
+            FileUtils::readDirectory(transform_parent_path, true);
         for (auto& path : transforms_paths)
         {
             PSN_LOG_DEBUG("Loading transform {}", path);
@@ -408,7 +422,7 @@ Psn::hasTransform(std::string transform_name)
 int
 Psn::runTransform(std::string transform_name, std::vector<std::string> args)
 {
-    if (!database() || database()->getChip() == nullptr)
+    if (!hasDesign())
     {
         PSN_LOG_ERROR("Could not find any loaded design.");
         return -1;
@@ -445,6 +459,19 @@ Psn::runTransform(std::string transform_name, std::vector<std::string> args)
         PSN_LOG_ERROR(e.what());
         return -1;
     }
+}
+
+void
+Psn::setupLegalizer()
+{
+#ifdef OPENPHYSYN_OPENDP_ENABLED
+    ord::makeOpendp();
+    psn_instance_->setLegalizer([=](int max_displacment) -> bool {
+        opendp::Opendp* opendp = opendp::Opendp::instance;
+        // opendp->detailedPlacement(max_displacment);
+        return true;
+    });
+#endif
 }
 
 Tcl_Interp*
@@ -521,6 +548,10 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
             return TCL_ERROR;
         }
     }
+
+#ifdef OPENPHYSYN_OPENDP_ENABLED
+    ord::initOpendp(psn_instance_->interpreter(), psn_instance_->database());
+#endif
 
     return TCL_OK;
 }
@@ -632,6 +663,7 @@ Psn::printCommands(bool raw_str)
         "design_area			Report design total cell area\n"
         "export_db			Export OpenDB database file\n"
         "export_def			Export design DEF file\n"
+        "gate_clone			Perform load-driven gate cloning\n"
         "get_database			Return OpenDB database object\n"
         "get_database_handler		Return OpenPhySyn database "
         "handler\n"
@@ -656,13 +688,25 @@ Psn::printCommands(bool raw_str)
         "buffering\n"
         "optimize_logic			Perform logic optimization\n"
         "optimize_power			Perform power optimization\n"
+        "pin_swap			Perform timing optimization by "
+        "commutative pin swapping\n"
         "print_liberty_cells		Print liberty cells available "
-        "in the "
-        "loaded library\n"
+        "in the  loaded library\n"
         "print_license			Print license information\n"
         "print_transforms		Print loaded transforms\n"
         "print_usage			Print usage instructions\n"
         "print_version			Print tool version\n"
+        "propagate_constants		Perform logic optimization by constant "
+        "propgation\n"
+        "timing_buffer			Repair violations through buffer tree "
+        "insertion\n"
+        "repair_timing			Repair design timing and electrical "
+        "violations "
+        "through resizing, buffer insertion, and pin-swapping\n"
+        "capacitance_violations		Print pins with capacitance limit "
+        "violation\n"
+        "transition_violations		Print pins with transition limit "
+        "violation\n"
         "set_log				Alias for "
         "set_log_level\n"
         "set_log_level			Set log level [trace, debug, info, "
@@ -707,8 +751,8 @@ Psn::printTransforms(bool raw_str)
         {
             PSN_LOG_INFO(transform_str);
         }
-        PSN_LOG_RAW("");
     }
+    PSN_LOG_RAW("");
 
 } // namespace psn
 void
@@ -836,17 +880,25 @@ Psn::sourceTclScript(const char* script_path)
     return 1;
 }
 void
-Psn::setWireRC(float res_per_micon, float cap_per_micron)
+Psn::setLegalizer(Legalizer legalizer)
+{
+    db_handler_->setLegalizer(legalizer);
+}
+void
+Psn::setWireRC(float res_per_micron, float cap_per_micron)
 {
     if (!database() || database()->getChip() == nullptr)
     {
         PSN_LOG_ERROR("Could not find any loaded design.");
         return;
     }
-    settings()
-        ->setResistancePerMicron(res_per_micon)
-        ->setCapacitancePerMicron(cap_per_micron);
-    handler()->setWireRC(res_per_micon, cap_per_micron);
+    res_per_micron =
+        (sta_->units()->resistanceUnit()->scale() * res_per_micron) /
+        (sta_->units()->distanceUnit()->scale() * 1.0);
+    cap_per_micron =
+        (sta_->units()->capacitanceUnit()->scale() * cap_per_micron) /
+        (sta_->units()->distanceUnit()->scale() * 1.0);
+    handler()->setWireRC(res_per_micron, cap_per_micron);
 }
 int
 Psn::setWireRC(const char* layer_name)
@@ -865,13 +917,15 @@ Psn::setWireRC(const char* layer_name)
         PSN_LOG_ERROR("Could not find layer with the name {}.", layer_name);
         return -1;
     }
-    auto  width         = handler()->dbuToMicrons(layer->getWidth());
-    float res_per_micon = (layer->getResistance() / width) * 1E6;
+    auto  width_dbu      = layer->getWidth();
+    auto  width          = handler()->dbuToMicrons(width_dbu);
+    float res_per_micron = (layer->getResistance() / width) * 1E6;
     float cap_per_micron =
-        (handler()->dbuToMicrons(1) * width * layer->getCapacitance() +
-         layer->getEdgeCapacitance() * 2.0) *
+        (handler()->dbuToMicrons(1) * ((width_dbu * layer->getCapacitance()) +
+                                       (2.0 * layer->getEdgeCapacitance()))) *
         1E-12 * 1E6;
-    setWireRC(res_per_micon, cap_per_micron);
+
+    handler()->setWireRC(res_per_micron, cap_per_micron);
     return 1;
 }
 int
@@ -895,14 +949,8 @@ Psn::initializeDatabase()
 int
 Psn::initializeSta(Tcl_Interp* interp)
 {
-    // sta::initSta();
-    // sta_ = new sta::DatabaseSta(db_);
-    // sta::Sta::setSta(sta_);
-    // sta_->makeComponents();
     if (interp == nullptr)
     {
-        // This is a very bad solution! but temporarily until
-        // dbSta can take a database without interp..
         interp = Tcl_CreateInterp();
         Tcl_Init(interp);
     }

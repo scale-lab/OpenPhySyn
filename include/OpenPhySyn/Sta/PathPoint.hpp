@@ -29,9 +29,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_PATH_POINT__
-#define __PSN_PATH_POINT__
-#include <OpenPhySyn/Database/Types.hpp>
+#pragma once
+
+#include "OpenPhySyn/Database/Types.hpp"
+
+namespace sta
+{
+class PathAnalysisPoint;
+}
 
 namespace psn
 {
@@ -40,21 +45,21 @@ class PathPoint
 public:
     PathPoint(InstanceTerm* path_pin = nullptr, bool is_rise = false,
               float path_arrival = 0, float path_required = 0,
-              float path_slack = 0, int ap_index = -1);
-    InstanceTerm* pin() const;
-    bool          isRise() const;
-    float         arrival() const;
-    float         required() const;
-    float         slack() const;
-    int           analysisPointIndex() const;
+              float path_slack = 0, PathAnalysisPoint* pt = nullptr);
+    InstanceTerm*      pin() const;
+    bool               isRise() const;
+    float              arrival() const;
+    float              required() const;
+    float              slack() const;
+    int                analysisPointIndex() const;
+    PathAnalysisPoint* analysisPoint() const;
 
 private:
-    InstanceTerm* pin_;
-    bool          is_rise_;
-    float         arrival_;
-    float         required_;
-    float         slack_;
-    int           path_ap_index_;
+    InstanceTerm*      pin_;
+    bool               is_rise_;
+    float              arrival_;
+    float              required_;
+    float              slack_;
+    PathAnalysisPoint* path_ap_;
 };
 } // namespace psn
-#endif

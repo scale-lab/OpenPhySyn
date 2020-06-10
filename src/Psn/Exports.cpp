@@ -30,9 +30,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "Exports.hpp"
-#include <OpenPhySyn/Psn/Psn.hpp>
 #include <memory>
+#include "OpenPhySyn/Psn/Psn.hpp"
+#include "OpenPhySyn/Utils/PsnGlobal.hpp"
 #include "PsnLogger/PsnLogger.hpp"
+#include "sta/Liberty.hh"
 
 namespace psn
 {
@@ -43,9 +45,19 @@ import_def(const char* def_path)
     return Psn::instance().readDef(def_path);
 }
 int
-import_lef(const char* lef_path, int ignore_routing_layers)
+import_lef_tech(const char* lef_path)
 {
-    return Psn::instance().readLef(lef_path, ignore_routing_layers);
+    return Psn::instance().readLef(lef_path, false, true);
+}
+int
+import_lef_sc(const char* lef_path)
+{
+    return Psn::instance().readLef(lef_path, true, false);
+}
+int
+import_lef_tech_sc(const char* lef_path)
+{
+    return Psn::instance().readLef(lef_path, true, true);
 }
 int
 import_lib(const char* lib_path)
@@ -102,10 +114,9 @@ design_area()
     return Psn::instance().handler()->area();
 }
 int
-set_wire_rc(float res_per_micon, float cap_per_micron)
+set_wire_rc(float res_per_micron, float cap_per_micron)
 {
-    Psn::instance().setWireRC(res_per_micon, cap_per_micron);
-
+    Psn::instance().setWireRC(res_per_micron, cap_per_micron);
     return 1;
 }
 
@@ -117,9 +128,98 @@ set_wire_rc(const char* layer_name)
 int
 set_max_area(float area)
 {
-    Psn::instance().settings()->setMaxArea(area);
+    Psn::instance().handler()->setMaximumArea(area);
     return 1;
 }
+
+float
+max_area()
+{
+    return Psn::instance().handler()->maximumArea();
+}
+float
+core_area()
+{
+    return Psn::instance().handler()->coreArea();
+}
+
+void
+set_dont_use(std::vector<std::string> cell_names)
+{
+    Psn::instance().handler()->setDontUse(cell_names);
+}
+
+bool
+has_design()
+{
+    return Psn::instance().hasDesign();
+}
+bool
+has_liberty()
+{
+    return Psn::instance().hasLiberty();
+}
+
+std::vector<std::string>
+transition_violations()
+{
+    std::vector<std::string> names;
+    if (!Psn::instance().hasDesign())
+    {
+        PSN_LOG_ERROR("Could not find any loaded design.");
+        return names;
+    }
+    for (auto& pin : Psn::instance().handler()->maximumTransitionViolations())
+    {
+        names.push_back(Psn::instance().handler()->name(pin));
+    }
+    return names;
+}
+std::vector<std::string>
+capacitance_violations()
+{
+    std::vector<std::string> names;
+    if (!Psn::instance().hasDesign())
+    {
+        PSN_LOG_ERROR("Could not find any loaded design.");
+        return names;
+    }
+    for (auto& pin : Psn::instance().handler()->maximumCapacitanceViolations())
+    {
+        names.push_back(Psn::instance().handler()->name(pin));
+    }
+    return names;
+}
+
+std::vector<std::string>
+cluster_buffer_names(float cluster_threshold, bool find_superior)
+{
+    std::vector<std::string> names;
+    auto                     cells = Psn::instance()
+                     .handler()
+                     ->bufferClusters(cluster_threshold, find_superior, false)
+                     .first;
+    for (auto& cell : cells)
+    {
+        names.push_back(Psn::instance().handler()->name(cell));
+    }
+    return names;
+}
+std::vector<std::string>
+cluster_inverter_names(float cluster_threshold, bool find_superior)
+{
+    std::vector<std::string> names;
+    auto                     cells = Psn::instance()
+                     .handler()
+                     ->bufferClusters(cluster_threshold, find_superior, true)
+                     .second;
+    for (auto& cell : cells)
+    {
+        names.push_back(Psn::instance().handler()->name(cell));
+    }
+    return names;
+}
+
 int
 link(const char* top_module)
 {
@@ -141,6 +241,7 @@ transform_internal(std::string transform_name, std::vector<std::string> args)
 {
     return Psn::instance().runTransform(transform_name, args);
 }
+
 void
 help()
 {

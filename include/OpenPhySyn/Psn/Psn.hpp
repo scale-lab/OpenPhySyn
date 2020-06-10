@@ -29,23 +29,24 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_PSN__
-#define __PSN_PSN__
-#include <OpenPhySyn/Database/DatabaseHandler.hpp>
-#include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Psn/DesignSettings.hpp>
-#include <OpenPhySyn/Psn/ProgramOptions.hpp>
-#include <OpenPhySyn/PsnLogger/LogLevel.hpp>
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
-#include <OpenPhySyn/Transform/PsnTransform.hpp>
-#include <OpenPhySyn/Transform/TransformHandler.hpp>
-#include <OpenPhySyn/Transform/TransformInfo.hpp>
-#include <OpenSTA/network/ConcreteNetwork.hh>
+#pragma once
 
+#include "OpenPhySyn/Database/DatabaseHandler.hpp"
+#include "OpenPhySyn/Database/Types.hpp"
+#include "OpenPhySyn/Psn/ProgramOptions.hpp"
+#include "OpenPhySyn/PsnLogger/LogLevel.hpp"
+#include "OpenPhySyn/Sta/DatabaseSta.hpp"
+#include "OpenPhySyn/Transform/PsnTransform.hpp"
+#include "OpenPhySyn/Transform/TransformHandler.hpp"
+#include "OpenPhySyn/Transform/TransformInfo.hpp"
+#include "sta/ConcreteNetwork.hh"
+
+#include <functional>
 #include <unordered_map>
 
 namespace psn
 {
+typedef std::function<bool(int)> Legalizer;
 class Psn
 {
 public:
@@ -81,12 +82,15 @@ public:
     void setProgramOptions(int argc, char* argv[]);
     void processStartupProgramOptions();
     int  sourceTclScript(const char* script_path);
-    virtual void setWireRC(float res_per_micon, float cap_per_micron);
+    virtual void setLegalizer(Legalizer legalizer);
+    virtual void setWireRC(float res_per_micron, float cap_per_micron);
     virtual int  setWireRC(const char* layer_name);
     virtual int  linkDesign(const char* design_name);
 
     virtual DatabaseHandler* handler() const;
-    virtual DesignSettings*  settings() const;
+
+    virtual bool hasDesign() const;
+    virtual bool hasLiberty() const;
 
     virtual void printVersion(bool raw_str = false);
     virtual void printUsage(bool raw_str = false, bool print_transforms = true,
@@ -103,6 +107,8 @@ public:
 
     virtual int initializeFlute();
 
+    static void setupLegalizer();
+
     static void initialize(Database* db = nullptr, bool load_transforms = true,
                            Tcl_Interp* interp     = nullptr,
                            bool        init_flute = true);
@@ -116,7 +122,6 @@ public:
 private:
     Psn(Database* db = nullptr);
     Psn(sta::DatabaseSta* sta);
-    DesignSettings*   settings_;
     Liberty*          liberty_;
     sta::DatabaseSta* sta_;
     Database*         db_;
@@ -136,4 +141,3 @@ private:
     static bool                                    is_initialized_;
 };
 } // namespace psn
-#endif

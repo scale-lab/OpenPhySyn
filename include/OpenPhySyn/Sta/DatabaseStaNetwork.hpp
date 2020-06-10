@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __PSN_STA_DB_NETWORK_H__
-#define __PSN_STA_DB_NETWORK_H__
+#pragma once
 
 #include "ConcreteNetwork.hh"
 #include "opendb/db.h"
@@ -183,4 +182,7 @@ protected:
 };
 
 } // namespace sta
-#endif
+namespace psn
+{
+using sta::DatabaseStaNetwork;
+}

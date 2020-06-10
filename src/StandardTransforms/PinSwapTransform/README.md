@@ -23,6 +23,6 @@ Example:
 > ./Psn
 > import_lef <lef file>
 > import_def <def file>
-> transform pin_swap
+> transform pin_swap 10
 > write_def out.def
 ```

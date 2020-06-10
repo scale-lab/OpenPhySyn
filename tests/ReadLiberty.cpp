@@ -31,10 +31,12 @@
 #include "Psn/Psn.hpp"
 #include "PsnException/PsnException.hpp"
 #include "doctest.h"
+#include "sta/Liberty.hh"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE("Should read liberty file")
+TEST_CASE("testing liberty parsing")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -50,3 +52,4 @@ TEST_CASE("Should read liberty file")
         FAIL(e.what());
     }
 }
+} // namespace psn
