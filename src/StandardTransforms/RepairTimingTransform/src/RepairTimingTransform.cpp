@@ -190,7 +190,6 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
             auto sol_buf_count = buff_tree->bufferCount();
             if (sol_buf_count)
             {
-                buffer_count_ += sol_buf_count;
                 net_count_++;
             }
             if (!is_slack_repair &&
@@ -402,6 +401,8 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                     BufferSolution::topDown(
                         psn_inst, pin, buff_tree, current_area_, net_index_,
                         buff_index_, added_buffers, affected_nets);
+                    buffer_count_ += buff_tree->bufferCount();
+
                     for (auto& net : affected_nets)
                     {
                         handler.calculateParasitics(net);
@@ -418,10 +419,13 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                         {
                             handler.ripupBuffers(added_buffers);
                             added_buffers.clear();
+                            buffer_count_ -= buff_tree->bufferCount();
+
                             BufferSolution::topDown(psn_inst, pin, max_req_tree,
                                                     current_area_, net_index_,
                                                     buff_index_, added_buffers,
                                                     affected_nets);
+                            buffer_count_ += max_req_tree->bufferCount();
 
                             for (auto& net : affected_nets)
                             {
@@ -899,8 +903,12 @@ RepairTimingTransform::repairTiming(
                  inverter_lib_names.size()
                      ? StringUtils::join(inv_names_vec, ", ")
                      : "None");
+    PSN_LOG_INFO("Buffering: {}",
+                 !options->disable_buffering ? "enabled" : "disabled");
     PSN_LOG_INFO("Driver sizing: {}",
-                 options->driver_resize ? "enabled" : "disabled");
+                 options->repair_by_upsize ? "enabled" : "disabled");
+    PSN_LOG_INFO("Pin-swapping: {}",
+                 options->repair_by_pinswap ? "enabled" : "disabled");
     PSN_LOG_INFO("Mode: {}",
                  options->timerless ? "Timerless" : "Timing-Driven");
 
