@@ -2460,7 +2460,7 @@ DatabaseHandler::generateNetName(int& start_index)
 {
     std::string name;
     do
-        name = std::string("net_") + std::to_string(start_index++);
+        name = std::string("psn_net_") + std::to_string(start_index++);
     while (net(name.c_str()));
     return name;
 }
@@ -2470,7 +2470,8 @@ DatabaseHandler::generateInstanceName(const std::string& prefix,
 {
     std::string name;
     do
-        name = prefix + std::to_string(start_index++);
+        name =
+            std::string("psn_inst_") + prefix + std::to_string(start_index++);
     while (instance(name.c_str()));
     return name;
 }

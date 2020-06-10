@@ -301,7 +301,6 @@ GateCloningTransform::cloneInstance(Psn*                          psn_inst,
                 }
             }
 
-            handler.legalize(1);
             for (auto& net : para_nets)
             {
                 handler.calculateParasitics(net);
@@ -340,7 +339,6 @@ GateCloningTransform::cloneInstance(Psn*                          psn_inst,
 
                 handler.del(cloned_inst);
 
-                handler.legalize(1);
                 for (auto& net : para_nets)
                 {
                     handler.calculateParasitics(net);
