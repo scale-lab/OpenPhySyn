@@ -1,20 +1,20 @@
 # OpenPhySyn
 
-OpenPhySyn is a plugin-based physical synthesis optimization kit developed as part of the [OpenROAD](https://theopenroadproject.org/) flow.
+OpenPhySyn is a physical synthesis optimization kit developed at [Brown University SCALE lab](http://scale.engin.brown.edu) as part of the [OpenROAD](https://theopenroadproject.org/) flow.
 
 ## Building
 
-Build by creating a build directory (i.e. `build/`), run `cmake ..` in that directory, and then use `make` to build the desired target.
-
-Example:
+Clone and build OpenPhySyn using the following commands:
 
 ```sh
+git clone --recursive https://github.com/scale-lab/OpenPhySyn.git
+cd OpenPhySyn
 mkdir build && cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=${HOME}/apps/OpenPhySyn -DCMAKE_BUILD_TYPE=[Debug | Coverage | Release]
+cmake .. -DCMAKE_BUILD_TYPE=[Debug | Coverage | Release]
 make
-make install
+make install # Or sudo make install
 Psn
-make test # Makes and runs the tests.
+make test # Runs the unit tests
 make coverage # Generate a coverage report.
 ```
 
@@ -30,7 +30,7 @@ transform <transform name> <arguments...>
 export_def <def file>
 ```
 
-### Repair design timing violations
+### Example: Repair design timing violations
 
 ```tcl
 Psn
