@@ -89,6 +89,7 @@ DatabaseHandler::DatabaseHandler(Psn* psn_inst, DatabaseSta* sta)
     cap_per_micron_callback_     = nullptr;
     dont_use_callback_           = nullptr;
     compute_parasitics_callback_ = nullptr;
+    maximum_area_callback_       = nullptr;
     resetDelays();
 }
 
@@ -3643,6 +3644,13 @@ DatabaseHandler::setMaximumArea(float area)
     maximum_area_       = area;
     maximum_area_valid_ = true;
 }
+
+void
+DatabaseHandler::setMaximumArea(MaxAreaCallback maximum_area_callback)
+{
+    maximum_area_callback_ = maximum_area_callback;
+    maximum_area_valid_    = true;
+}
 bool
 DatabaseHandler::hasMaximumArea() const
 {
@@ -3654,6 +3662,10 @@ DatabaseHandler::maximumArea() const
     if (!maximum_area_valid_)
     {
         PSN_LOG_WARN("Maximum area is not set or invalid");
+    }
+    if (maximum_area_callback_)
+    {
+        return maximum_area_callback_();
     }
     return maximum_area_;
 }

@@ -113,8 +113,9 @@ DEFINE_TRANSFORM(
     "Repair design timing and electrical violations",
     "Usage: transform repair_timing [-capacitance_violations] "
     "[-transition_violations]"
-    "[-negative_slack_violations] [-iterations] [-buffers buffer_cells] "
-    "[-inverters inverter cells] [-min_gain 0.0] [-auto_buffer_library "
+    "[-negative_slack_violations] [-iterations <num_iterations>] [-buffers "
+    "buffer_cells] "
+    "[-inverters inverter cells] [-min_gain gain=0.0] [-auto_buffer_library "
     "<single|small|medium|large|all>] "
     "[-no_minimize_buffer_library] [-auto_buffer_library_inverters_enabled] "
     "[-buffer_disabled] [-minimum_cost_buffer_enabled] [-upsize_enabled] "

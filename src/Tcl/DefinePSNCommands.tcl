@@ -63,7 +63,7 @@ namespace eval psn {
     }
 
     define_cmd_args "pin_swap" {\
-        [-path_count]\
+        [-path_count count]\
         [-power]\
     }
     
@@ -221,7 +221,7 @@ namespace eval psn {
         }
     }
 
-    define_cmd_args "timing_buffer" {[-maximum_capacitance] [-maximum_transition] [-negative_slack]\
+    define_cmd_args "timing_buffer" {[-capacitance_violations] [-transition_violations] [-negative_slack_violations]\
 				 [-timerless] [-repair_by_upsize] \
 				 [-auto_buffer_library single|small|medium|large|all]\
 				 [-minimize_buffer_library] [-fast]\
@@ -233,26 +233,26 @@ namespace eval psn {
     proc timing_buffer { args } {
         sta::parse_key_args "timing_buffer" args \
         keys {-auto_buffer_library -buffers -inverters -iterations -min_gain -area_penalty -legalization_frequency}\
-        flags {-negative_slack -timerless -maximum_capacitance -maximum_transition -repair_by_upsize -fast -repair_by_resynthesis -enable_driver_resize -minimize_buffer_library -use_inverting_buffer_library -maximum_capacitance] -maximum_transition}
+        flags {-negative_slack_violations -timerless -capacitance_violations -transition_violations -repair_by_upsize -fast -repair_by_resynthesis -enable_driver_resize -minimize_buffer_library -use_inverting_buffer_library -capacitance_violations] -transition_violations}
         
         set buffer_lib_flag ""
         set auto_buf_flag ""
         set mode_flag ""
 
-        set has_max_cap [info exists flags(-maximum_capacitance)]
-        set has_max_transition [info exists flags(-maximum_transition)]
-        set has_max_ns [info exists flags(-negative_slack)]
+        set has_max_cap [info exists flags(-capacitance_violations)]
+        set has_max_transition [info exists flags(-transition_violations)]
+        set has_max_ns [info exists flags(-negative_slack_violations)]
 
         set repair_target_flag ""
 
         if {$has_max_cap} {
-            set repair_target_flag "-maximum_capacitance"
+            set repair_target_flag "-capacitance_violations"
         }
         if {$has_max_transition} {
-            set repair_target_flag "$repair_target_flag -maximum_transition"
+            set repair_target_flag "$repair_target_flag -transition_violations"
         }
         if {$has_max_ns} {
-            set repair_target_flag "$repair_target_flag -negative_slack"
+            set repair_target_flag "$repair_target_flag -negative_slack_violations"
         }
         if {[info exists flags(-repair_by_upsize)]} {
             set repair_target_flag "$repair_target_flag -repair_by_upsize"
@@ -403,7 +403,7 @@ namespace eval psn {
                 }
             }
         }
-        return [transform constant_propagation {*}transform_args]
+        return [transform constant_propagation {*}$transform_args]
     }
 }
 namespace import psn::*

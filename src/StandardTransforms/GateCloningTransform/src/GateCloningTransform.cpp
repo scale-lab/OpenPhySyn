@@ -145,7 +145,7 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
         return;
     }
 
-    PSN_LOG_DEBUG("Cloning: {}", handler.name(inst), handler.name(cell));
+    PSN_LOG_DEBUG("Cloning {} {}", handler.name(inst), handler.name(cell));
     auto prec          = clone_count_;
     output_target_load = handler.targetLoad(half_drvr);
 
@@ -405,87 +405,13 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
             }
         }
     }
-    psn_inst->handler()->setWireRC(psn_inst->handler()->resistancePerMicron(),
-                                   psn_inst->handler()->capacitancePerMicron(),
-                                   false);
     psn_inst->handler()->sta()->search()->endpointsInvalid();
     psn_inst->handler()->sta()->ensureLevelized();
     psn_inst->handler()->sta()->findRequireds();
     psn_inst->handler()->sta()->findDelays();
-    float prear = psn_inst->handler()->area();
 
-    PSN_LOG_INFO("Pre-nst: {}", psn_inst->handler()->sta()->totalNegativeSlack(
-                                    sta::MinMax::max()) *
-                                    10E8);
-    PSN_LOG_INFO("Pre-nsw: {}", psn_inst->handler()->worstSlack() * 10E8);
-    PSN_LOG_INFO("Pre-clone-Insts: {}",
-                 psn_inst->handler()->sta()->network()->leafInstanceCount());
-    std::vector<std::string> names;
+    int rc = gateClone(psn_inst, cap_factor, clone_largest_only);
 
-    for (auto& pin : Psn::instance().handler()->maximumTransitionViolations())
-    {
-        if (Psn::instance().handler()->net(pin) &&
-            !Psn::instance().handler()->isTopLevel(pin))
-        {
-
-            names.push_back(Psn::instance().handler()->name(pin));
-        }
-    }
-    PSN_LOG_INFO("Pre-clone-Transition-Violations: {}", names.size());
-    names.clear();
-    for (auto& pin : Psn::instance().handler()->maximumCapacitanceViolations())
-    {
-        if (Psn::instance().handler()->net(pin) &&
-            !Psn::instance().handler()->isTopLevel(pin))
-
-        {
-            names.push_back(Psn::instance().handler()->name(pin));
-        }
-    }
-
-    PSN_LOG_INFO("Pre-clone-Capacitance-Violations: {}", names.size());
-    names.clear();
-
-    PSN_LOG_INFO("Pre-ar: {}", (int)(10E12 * prear));
-    int   rc     = gateClone(psn_inst, cap_factor, clone_largest_only);
-    float postar = psn_inst->handler()->area();
-    PSN_LOG_INFO("Post-ar: {}", (int)(10E12 * postar));
-    PSN_LOG_INFO("Delta-ar: {}%", 100.0 * ((postar - prear) / (prear)));
-    PSN_LOG_INFO("Post-nst: {}", psn_inst->handler()->sta()->totalNegativeSlack(
-                                     sta::MinMax::max()) *
-                                     10E8);
-    PSN_LOG_INFO("Post-nsw: {}", psn_inst->handler()->worstSlack() * 10E8);
-    for (auto& pin : Psn::instance().handler()->maximumTransitionViolations())
-    {
-        if (Psn::instance().handler()->net(pin) &&
-            !Psn::instance().handler()->isTopLevel(pin))
-        {
-
-            names.push_back(Psn::instance().handler()->name(pin));
-        }
-    }
-    PSN_LOG_INFO("Post-clone-Transition-Violations: {}", names.size());
-    names.clear();
-    for (auto& pin : Psn::instance().handler()->maximumCapacitanceViolations())
-    {
-        if (Psn::instance().handler()->net(pin) &&
-            !Psn::instance().handler()->isTopLevel(pin))
-
-        {
-            names.push_back(Psn::instance().handler()->name(pin));
-        }
-    }
-    PSN_LOG_INFO("Post-clone-Capacitance-Violations: {}", names.size());
-    names.clear();
-
-    psn_inst->handler()->legalize();
-    psn_inst->handler()->setWireRC(psn_inst->handler()->resistancePerMicron(),
-                                   psn_inst->handler()->capacitancePerMicron(),
-                                   false);
-    psn_inst->handler()->sta()->search()->endpointsInvalid();
-    psn_inst->handler()->sta()->ensureLevelized();
-    psn_inst->handler()->sta()->findRequireds();
-    psn_inst->handler()->sta()->findDelays();
     return rc;
 }
 } // namespace psn

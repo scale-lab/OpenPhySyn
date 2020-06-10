@@ -949,14 +949,8 @@ Psn::initializeDatabase()
 int
 Psn::initializeSta(Tcl_Interp* interp)
 {
-    // sta::initSta();
-    // sta_ = new sta::DatabaseSta(db_);
-    // sta::Sta::setSta(sta_);
-    // sta_->makeComponents();
     if (interp == nullptr)
     {
-        // This is a very bad solution! but temporarily until
-        // dbSta can take a database without interp..
         interp = Tcl_CreateInterp();
         Tcl_Init(interp);
     }

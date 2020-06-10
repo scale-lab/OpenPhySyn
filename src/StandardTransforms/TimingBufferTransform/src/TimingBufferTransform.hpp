@@ -93,8 +93,9 @@ DEFINE_TRANSFORM(
     TimingBufferTransform, "timing_buffer", "1.5",
     "Performs several variations of buffering and resizing to fix timing "
     "violations",
-    "Usage: transform timing_buffer [-maximum_capacitance] "
-    "[-maximum_transition] [-auto_buffer_library "
+    "Usage: transform timing_buffer [-capacitance_violations] "
+    "[-transition_violations] [-negative_slack_violations] "
+    "[-auto_buffer_library "
     "<single|small|medium|large|all>] [-minimize_buffer_library] "
     "[-use_inverting_buffer_library] [-buffers "
     "<buffer library>] [-inverters "

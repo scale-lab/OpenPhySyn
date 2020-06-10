@@ -875,15 +875,15 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         {
             options->driver_resize = true;
         }
-        else if (args[i] == "-maximum_capacitance")
+        else if (args[i] == "-capacitance_violations")
         {
             options->repair_capacitance_violations = true;
         }
-        else if (args[i] == "-maximum_transition")
+        else if (args[i] == "-transition_violations")
         {
             options->repair_transition_violations = true;
         }
-        else if (args[i] == "-negative_slack")
+        else if (args[i] == "-negative_slack_violations")
         {
             options->repair_negative_slack = true;
         }

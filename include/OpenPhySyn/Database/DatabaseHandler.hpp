@@ -67,7 +67,8 @@ typedef int                               SteinerPoint;
 typedef std::function<bool(int)>          Legalizer;
 typedef std::function<float()>            ParasticsCallback;
 typedef std::function<bool(LibraryCell*)> DontUseCallback;
-typedef std::function<bool(Net*)>         ComputeParasiticsCallback;
+typedef std::function<void(Net*)>         ComputeParasiticsCallback;
+typedef std::function<float()>            MaxAreaCallback;
 
 enum ElectircalViolation
 {
@@ -149,6 +150,7 @@ public:
     virtual float coreArea() const;
     virtual bool  maximumUtilizationViolation() const;
     virtual void  setMaximumArea(float area);
+    virtual void  setMaximumArea(MaxAreaCallback maximum_area_callback);
     virtual float maximumArea() const;
     virtual bool  hasMaximumArea() const;
     virtual float gateDelay(Instance* inst, InstanceTerm* to, float in_slew = 0,
@@ -482,6 +484,7 @@ private:
     ParasticsCallback   cap_per_micron_callback_;
     DontUseCallback     dont_use_callback_;
     ComputeParasiticsCallback compute_parasitics_callback_;
+    MaxAreaCallback           maximum_area_callback_;
 };
 
 } // namespace psn
