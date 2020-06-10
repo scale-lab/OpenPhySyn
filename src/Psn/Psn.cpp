@@ -29,9 +29,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Temproary fix for OpenSTA
-#define THROW_DCL throw()
-
 #include <Config.hpp>
 #include <Psn/Psn.hpp>
 #include <flute.h>
@@ -165,7 +162,7 @@ Psn::readDef(const char* path)
     try
     {
         int rc = reader.read(path);
-        sta_->readDefAfter();
+        sta_->postReadDef(db_->getChip()->getBlock());
         return rc;
     }
     catch (FileException& e)
@@ -223,7 +220,7 @@ Psn::readLef(const char* path, bool import_library, bool import_tech)
             }
             if (library)
             {
-                sta_->readLefAfter(library);
+                sta_->postReadLef(tech, library);
             }
         }
         else if (import_library)
@@ -231,7 +228,7 @@ Psn::readLef(const char* path, bool import_library, bool import_tech)
             library = reader.readLib(path);
             if (library)
             {
-                sta_->readLefAfter(library);
+                sta_->postReadLef(tech, library);
             }
         }
         else if (import_tech)
@@ -274,7 +271,7 @@ Psn::readDatabase(const char* path)
     if (stream)
     {
         db_->read(stream);
-        sta_->readDbAfter();
+        sta_->postReadDb(db_);
         fclose(stream);
         return 1;
     }
@@ -932,7 +929,7 @@ int
 Psn::linkDesign(const char* design_name)
 {
     int rc = sta_->linkDesign(design_name);
-    sta_->readDbAfter();
+    sta_->postReadDb(db_);
     return rc;
 }
 

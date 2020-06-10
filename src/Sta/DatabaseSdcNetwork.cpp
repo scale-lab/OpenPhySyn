@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// This code is originally written by James Cherry and adapted for OpenPhySyn
 
 #include "DatabaseSdcNetwork.hpp"
 #include "OpenSTA/util/Machine.hh"

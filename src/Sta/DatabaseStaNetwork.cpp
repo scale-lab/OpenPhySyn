@@ -13,16 +13,14 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-// Temproary fix for OpenSTA
-#define THROW_DCL throw()
+// This code is originally written by James Cherry and adapted for OpenPhySyn
 
 #include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"
-#include "Liberty.hh"
-#include "OpenSTA/util/Machine.hh"
-#include "PatternMatch.hh"
-#include "PortDirection.hh"
-#include "Report.hh"
+
+#include "sta/Liberty.hh"
+#include "sta/PatternMatch.hh"
+#include "sta/PortDirection.hh"
+#include "sta/Report.hh"
 
 #include "opendb/db.h"
 
@@ -48,7 +46,6 @@ using odb::dbObjectType;
 using odb::dbSet;
 using odb::dbSigType;
 
-// TODO: move to StringUtil
 char*
 tmpStringCopy(const char* str)
 {
@@ -199,7 +196,7 @@ private:
     dbSet<dbITerm>::iterator  iitr_end_;
     dbSet<dbBTerm>::iterator  bitr_;
     dbSet<dbBTerm>::iterator  bitr_end_;
-    Pin*                      pin_;
+    Pin*                      next_;
 };
 
 DbInstancePinIterator::DbInstancePinIterator(const Instance*           inst,
@@ -231,39 +228,33 @@ DbInstancePinIterator::hasNext()
         else
         {
             dbBTerm* bterm = *bitr_;
+            next_          = network_->dbToSta(bterm);
             bitr_++;
-            pin_ = network_->dbToSta(bterm);
             return true;
         }
     }
-    if (iitr_ == iitr_end_)
-        return false;
     else
     {
-        dbITerm* iterm = *iitr_;
-        while (iterm->getSigType() == dbSigType::POWER ||
-               iterm->getSigType() == dbSigType::GROUND)
+        while (iitr_ != iitr_end_)
         {
+            dbITerm* iterm = *iitr_;
+            if (!(iterm->getSigType() == dbSigType::POWER ||
+                  iterm->getSigType() == dbSigType::GROUND))
+            {
+                next_ = network_->dbToSta(*iitr_);
+                ++iitr_;
+                return true;
+            }
             iitr_++;
-            if (iitr_ == iitr_end_)
-                return false;
-            iterm = *iitr_;
         }
-        if (iitr_ == iitr_end_)
-            return false;
-        else
-        {
-            pin_ = network_->dbToSta(iterm);
-            iitr_++;
-            return true;
-        }
+        return false;
     }
 }
 
 Pin*
 DbInstancePinIterator::next()
 {
-    return pin_;
+    return next_;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -277,9 +268,9 @@ public:
 
 private:
     const DatabaseStaNetwork* network_;
-    dbSet<dbITerm>::iterator  _iitr;
-    dbSet<dbITerm>::iterator  _iitr_end;
-    void*                     _term;
+    dbSet<dbITerm>::iterator  iitr_;
+    dbSet<dbITerm>::iterator  iitr_end_;
+    Pin*                      next_;
 };
 
 DbNetPinIterator::DbNetPinIterator(const Net*                net,
@@ -287,40 +278,33 @@ DbNetPinIterator::DbNetPinIterator(const Net*                net,
     : network_(network)
 {
     dbNet* dnet = reinterpret_cast<dbNet*>(const_cast<Net*>(net));
-    _iitr       = dnet->getITerms().begin();
-    _iitr_end   = dnet->getITerms().end();
-    _term       = NULL;
+    iitr_       = dnet->getITerms().begin();
+    iitr_end_   = dnet->getITerms().end();
+    next_       = nullptr;
 }
 
 bool
 DbNetPinIterator::hasNext()
 {
-    if (_iitr != _iitr_end)
+    while (iitr_ != iitr_end_)
     {
-        dbITerm* iterm = *_iitr;
-        while (iterm->getSigType() == dbSigType::POWER ||
-               iterm->getSigType() == dbSigType::GROUND)
+        dbITerm* iterm = *iitr_;
+        if (!(iterm->getSigType() == dbSigType::POWER ||
+              iterm->getSigType() == dbSigType::GROUND))
         {
-            ++_iitr;
-            if (_iitr == _iitr_end)
-                break;
-            iterm = *_iitr;
+            next_ = reinterpret_cast<Pin*>(*iitr_);
+            ++iitr_;
+            return true;
         }
+        iitr_++;
     }
-    if (_iitr != _iitr_end)
-    {
-        _term = (void*)(*_iitr);
-        ++_iitr;
-        return true;
-    }
-    else
-        return false;
+    return false;
 }
 
 Pin*
 DbNetPinIterator::next()
 {
-    return (Pin*)_term;
+    return next_;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -365,7 +349,7 @@ DbNetTermIterator::next()
 ////////////////////////////////////////////////////////////////
 
 Network*
-makedbNetwork()
+makeDatabaseStaNetwork()
 {
     return new DatabaseStaNetwork;
 }
@@ -398,6 +382,7 @@ DatabaseStaNetwork::setBlock(dbBlock* block)
 void
 DatabaseStaNetwork::clear()
 {
+    ConcreteNetwork::clear();
     db_ = nullptr;
 }
 
@@ -485,7 +470,7 @@ DatabaseStaNetwork::findPin(const Instance* instance,
     {
         dbInst*  dinst = staToDb(instance);
         dbITerm* iterm = dinst->findITerm(port_name);
-        return reinterpret_cast<Pin*>(iterm);
+        return dbToSta(iterm);
     }
 }
 
@@ -716,6 +701,12 @@ DatabaseStaNetwork::visitConnectedPins(const Net* net, PinVisitor& visitor,
     Network::visitConnectedPins(net, visitor, visited_nets);
 }
 
+Net*
+DatabaseStaNetwork::highestConnectedNet(Net* net) const
+{
+    return net;
+}
+
 ////////////////////////////////////////////////////////////////
 
 Pin*
@@ -790,21 +781,19 @@ DatabaseStaNetwork::readLefAfter(dbLib* lib)
 }
 
 void
-DatabaseStaNetwork::readDefAfter()
+DatabaseStaNetwork::readDefAfter(dbBlock* block)
 {
-    dbChip* chip = db_->getChip();
-    if (chip)
-    {
-        block_ = chip->getBlock();
-        makeTopCell();
-    }
+    db_    = block->getDataBase();
+    block_ = block;
+    makeTopCell();
 }
 
 // Make ConcreteLibrary/Cell/Port objects for the
 // db library/master/MTerm objects.
 void
-DatabaseStaNetwork::readDbAfter()
+DatabaseStaNetwork::readDbAfter(odb::dbDatabase* db)
 {
+    db_          = db;
     dbChip* chip = db_->getChip();
     if (chip)
     {
@@ -904,11 +893,16 @@ DatabaseStaNetwork::readLibertyAfter(LibertyLibrary* lib)
                             ccell->portBitIterator();
                         while (port_iter->hasNext())
                         {
-                            ConcretePort* cport = port_iter->next();
+                            ConcretePort* cport     = port_iter->next();
+                            const char*   port_name = cport->name();
                             LibertyPort*  lport =
-                                lcell->findLibertyPort(cport->name());
+                                lcell->findLibertyPort(port_name);
                             if (lport)
                                 cport->setLibertyPort(lport);
+                            else if (!cport->direction()->isPowerGround())
+                                report_->warn("Liberty cell %s pin %s missing "
+                                              "from LEF macro\n",
+                                              lcell->name(), port_name);
                         }
                         delete port_iter;
                     }
@@ -1083,6 +1077,10 @@ DatabaseStaNetwork::makeNet(const char* name, Instance* parent)
 void
 DatabaseStaNetwork::deleteNet(Net* net)
 {
+    PinSet* drvrs = net_drvr_pin_map_.findKey(net);
+    delete drvrs;
+    net_drvr_pin_map_.erase(net);
+
     dbNet* dnet = staToDb(net);
     dbNet::destroy(dnet);
 }
@@ -1118,20 +1116,28 @@ DatabaseStaNetwork::staToDb(const Pin* pin,
                             // Return values.
                             dbITerm*& iterm, dbBTerm*& bterm) const
 {
-    dbObject*    obj  = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
-    dbObjectType type = obj->getObjectType();
-    if (type == dbITermObj)
+    if (pin)
     {
-        iterm = static_cast<dbITerm*>(obj);
-        bterm = nullptr;
-    }
-    else if (type == dbBTermObj)
-    {
-        iterm = nullptr;
-        bterm = static_cast<dbBTerm*>(obj);
+        dbObject*    obj  = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
+        dbObjectType type = obj->getObjectType();
+        if (type == dbITermObj)
+        {
+            iterm = static_cast<dbITerm*>(obj);
+            bterm = nullptr;
+        }
+        else if (type == dbBTermObj)
+        {
+            iterm = nullptr;
+            bterm = static_cast<dbBTerm*>(obj);
+        }
+        else
+            internalError("pin is not ITerm or BTerm");
     }
     else
-        internalError("pin is not ITerm or BTerm");
+    {
+        iterm = nullptr;
+        bterm = nullptr;
+    }
 }
 
 dbBTerm*
@@ -1144,6 +1150,13 @@ dbMaster*
 DatabaseStaNetwork::staToDb(const Cell* cell) const
 {
     const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
+    return reinterpret_cast<dbMaster*>(ccell->extCell());
+}
+
+dbMaster*
+DatabaseStaNetwork::staToDb(const LibertyCell* cell) const
+{
+    const ConcreteCell* ccell = cell;
     return reinterpret_cast<dbMaster*>(ccell->extCell());
 }
 
