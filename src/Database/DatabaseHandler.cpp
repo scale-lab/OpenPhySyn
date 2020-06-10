@@ -2843,7 +2843,7 @@ DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term, float load_cap,
     sta_->checkCapacitance(term, nullptr, sta::MinMax::max(), corner, rf, cap,
                            limit, diff);
 
-    return diff < 0.0;
+    return diff < 0.0 && limit > 0.0;
 }
 
 bool
@@ -2856,7 +2856,7 @@ DatabaseHandler::violatesMaximumTransition(InstanceTerm* term, float) const
     sta_->checkSlew(term, nullptr, sta::MinMax::max(), false, corner, rf, slew,
                     limit, diff);
 
-    return diff < 0.0;
+    return diff < 0.0 && limit > 0.0;
 }
 
 ElectircalViolation

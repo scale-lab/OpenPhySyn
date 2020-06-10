@@ -13,10 +13,9 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// This code is originally written by James Cherry and adapted for OpenPhySyn
 
 #pragma once
-// Temproary fix for OpenSTA
-#define THROW_DCL throw()
 
 #include "SdcNetwork.hh"
 

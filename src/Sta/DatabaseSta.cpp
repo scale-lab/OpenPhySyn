@@ -13,14 +13,16 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#include "OpenPhySyn/Sta/DatabaseSta.hpp"
-#include <Sta/DatabaseSdcNetwork.hpp>
-#include <tcl.h>
-#include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"
-#include "OpenSTA/util/Machine.hh"
-#include "StaMain.hh"
-#include "opendb/db.h"
+// This code is originally written by James Cherry and adapted for OpenPhySyn
 
+#include "OpenPhySyn/Sta/DatabaseSta.hpp"
+#include "OpenPhySyn/Sta/DatabaseStaNetwork.hpp"
+#include "Sta/DatabaseSdcNetwork.hpp"
+#include "opendb/db.h"
+#include "sta/Bfs.hh"
+#include "sta/Graph.hh"
+#include "sta/Search.hh"
+#include "sta/StaMain.hh"
 namespace sta
 {
 
@@ -31,10 +33,18 @@ extern "C"
 
 extern const char* tcl_inits[];
 
-DatabaseSta::DatabaseSta() : Sta(), db_(nullptr)
+DatabaseSta*
+makeBlockSta(dbBlock* block)
 {
+    Sta*         sta  = Sta::sta();
+    DatabaseSta* sta2 = new DatabaseSta;
+    sta2->makeComponents();
+    sta2->getDbNetwork()->setBlock(block);
+    sta2->setTclInterp(sta->tclInterp());
+    sta2->copyUnits(sta->units());
+    return sta2;
 }
-DatabaseSta::DatabaseSta(dbDatabase* db) : Sta(), db_(db)
+DatabaseSta::DatabaseSta() : Sta(), db_(nullptr)
 {
 }
 
@@ -77,21 +87,24 @@ DatabaseSta::makeSdcNetwork()
 }
 
 void
-DatabaseSta::readLefAfter(dbLib* lib)
+DatabaseSta::postReadLef(dbTech* tech, dbLib* library)
 {
-    db_network_->readLefAfter(lib);
+    if (library)
+    {
+        db_network_->readLefAfter(library);
+    }
 }
 
 void
-DatabaseSta::readDefAfter()
+DatabaseSta::postReadDef(dbBlock* block)
 {
-    db_network_->readDefAfter();
+    db_network_->readDefAfter(block);
 }
 
 void
-DatabaseSta::readDbAfter()
+DatabaseSta::postReadDb(dbDatabase* db)
 {
-    db_network_->readDbAfter();
+    db_network_->readDbAfter(db);
 }
 
 // Wrapper to sync db/liberty libraries.
@@ -111,6 +124,36 @@ DatabaseSta::netSlack(const dbNet* db_net, const MinMax* min_max)
 {
     const Net* net = db_network_->dbToSta(db_net);
     return netSlack(net, min_max);
+}
+
+void
+DatabaseSta::findClkNets(std::set<dbNet*>& clk_nets)
+{
+    ensureGraph();
+    ensureLevelized();
+    ClkArrivalSearchPred srch_pred(this);
+    BfsFwdIterator       bfs(BfsIndex::other, &srch_pred, this);
+    PinSet               clk_pins;
+    search_->findClkVertexPins(clk_pins);
+    for (Pin* pin : clk_pins)
+    {
+        Vertex *vertex, *bidirect_drvr_vertex;
+        graph_->pinVertices(pin, vertex, bidirect_drvr_vertex);
+        bfs.enqueue(vertex);
+        if (bidirect_drvr_vertex)
+            bfs.enqueue(bidirect_drvr_vertex);
+    }
+    while (bfs.hasNext())
+    {
+        Vertex*    vertex = bfs.next();
+        const Pin* pin    = vertex->pin();
+        if (!network_->isTopLevelPort(pin))
+        {
+            Net* net = network_->net(pin);
+            clk_nets.insert(db_network_->staToDb(net));
+        }
+        bfs.enqueueAdjacentVertices(vertex);
+    }
 }
 
 } // namespace sta

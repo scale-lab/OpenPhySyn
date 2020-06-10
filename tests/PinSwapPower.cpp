@@ -52,7 +52,7 @@ TEST_CASE("testing pin_swap -power transform")
         auto& handler = *(psn_inst.handler());
         handler.createClock("core_clock", {"clk"}, 10E-09);
         auto result = psn_inst.runTransform(
-            "pin_swap", std::vector<std::string>({"-power", "50"}));
+            "pin_swap", std::vector<std::string>({"50", "-power"}));
         CHECK(result == 18);
     }
     catch (PsnException& e)
