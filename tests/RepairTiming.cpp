@@ -30,26 +30,34 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include "Psn/Psn.hpp"
 #include "PsnException/PsnException.hpp"
+#include "Utils/FileUtils.hpp"
 #include "doctest.h"
-#include "sta/Liberty.hh"
 
-namespace psn
-{
+using namespace psn;
 
-TEST_CASE("testing liberty parsing")
+TEST_CASE("testing repair_timing transform")
 {
     Psn& psn_inst = Psn::instance();
     try
     {
+        psn_inst.clearDatabase();
         psn_inst.readLib("../tests/data/libraries/Nangate45/"
                          "NangateOpenCellLibrary_typical.lib");
-        Liberty*                 liberty = psn_inst.liberty();
-        sta::LibertyCellIterator cell_iter(liberty);
-        CHECK(cell_iter.hasNext());
+        psn_inst.readLef(
+            "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
+        psn_inst.readDef(
+            "../tests/data/designs/timing_buffer/ibex_resized.def");
+        psn_inst.setWireRC("metal2");
+        CHECK(psn_inst.database()->getChip() != nullptr);
+        CHECK(psn_inst.hasTransform("timing_buffer"));
+        auto& handler = *(psn_inst.handler());
+        handler.createClock("core_clock", {"clk_i"}, 10E-09);
+        auto result = psn_inst.runTransform(
+            "timing_buffer", std::vector<std::string>({"-buffers", "BUF_X4"}));
+        CHECK(result == 31);
     }
     catch (PsnException& e)
     {
         FAIL(e.what());
     }
 }
-} // namespace psn

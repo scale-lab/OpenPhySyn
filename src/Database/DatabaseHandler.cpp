@@ -232,6 +232,67 @@ DatabaseHandler::fanoutPins(Net* pin_net, bool include_top_level) const
     return filtered_inst_pins;
 }
 
+bool
+DatabaseHandler::isTieHi(Instance* inst) const
+{
+    return isTieHi(libraryCell(inst));
+}
+bool
+DatabaseHandler::isTieHi(LibraryCell* cell) const
+{
+    if (isSingleOutputCombinational(cell))
+    {
+        auto           output_pins = libraryOutputPins(cell);
+        auto           output_pin  = output_pins[0];
+        sta::FuncExpr* output_func = output_pin->function();
+        if (output_func && output_func->op() == sta::FuncExpr::op_one)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+bool
+DatabaseHandler::isTieLo(Instance* inst) const
+{
+    return isTieHiLo(libraryCell(inst));
+}
+bool
+DatabaseHandler::isTieLo(LibraryCell* cell) const
+{
+    if (isSingleOutputCombinational(cell))
+    {
+        auto           output_pins = libraryOutputPins(cell);
+        auto           output_pin  = output_pins[0];
+        sta::FuncExpr* output_func = output_pin->function();
+        if (output_func && output_func->op() == sta::FuncExpr::op_zero)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+bool
+DatabaseHandler::isTieHiLo(Instance* inst) const
+{
+    return isTieHiLo(libraryCell(inst));
+}
+bool
+DatabaseHandler::isTieHiLo(LibraryCell* cell) const
+{
+    return isTieHi(cell) || isTieLo(cell);
+}
+bool
+DatabaseHandler::isTieCell(Instance* inst) const
+{
+    return isTieCell(libraryCell(inst));
+}
+bool
+DatabaseHandler::isTieCell(LibraryCell* cell) const
+{
+    return isTieCell(cell);
+}
+
 std::vector<LibraryCell*>
 DatabaseHandler::tiehiCells() const
 {
@@ -1640,8 +1701,15 @@ DatabaseHandler::location(InstanceTerm* term)
     if (iterm)
     {
         int x, y;
-        iterm->getInst()->getOrigin(x, y);
-        return Point(x, y);
+        if (iterm->getAvgXY(&x, &y))
+        {
+            return Point(x, y);
+        }
+        else
+        {
+            iterm->getInst()->getOrigin(x, y);
+            return Point(x, y);
+        }
     }
     if (bterm)
     {
@@ -2664,6 +2732,13 @@ DatabaseHandler::isCombinational(LibraryCell* cell) const
             !cell->hasSequentials());
 }
 
+bool
+DatabaseHandler::isSpecial(Net* net) const
+{
+    odb::dbNet* db_net = network()->staToDb(net);
+    return db_net && db_net->isSpecial();
+}
+
 void
 DatabaseHandler::setWireRC(float res_per_micron, float cap_per_micron,
                            bool reset_delays)
@@ -2738,6 +2813,17 @@ DatabaseHandler::isTriState(LibraryTerm* term) const
 {
     return term->direction()->isTristate();
 }
+float
+DatabaseHandler::capacitanceLimit(InstanceTerm* term) const
+{
+    const sta::Corner*   corner;
+    const sta::RiseFall* rf;
+    float                cap, limit, diff;
+    sta_->checkCapacitance(term, nullptr, min_max_, corner, rf, cap, limit,
+                           diff);
+    return limit;
+}
+
 bool
 DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term,
                                             float limit_scale_factor) const
@@ -2747,51 +2833,29 @@ DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term,
 }
 bool
 DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term, float load_cap,
-                                            float limit_scale_factor) const
+                                            float) const
 {
-    LibraryTerm* port = network()->libertyPort(term);
-    if (port)
-    {
-        float cap_limit;
-        bool  exists;
-        port->capacitanceLimit(sta::MinMax::max(), cap_limit, exists);
-        return exists && load_cap > (cap_limit * limit_scale_factor);
-    }
-    return false;
+    const sta::Corner*   corner;
+    const sta::RiseFall* rf;
+    float                cap, limit, diff;
+
+    sta_->checkCapacitance(term, nullptr, sta::MinMax::max(), corner, rf, cap,
+                           limit, diff);
+
+    return diff < 0.0;
 }
 
 bool
-DatabaseHandler::violatesMaximumTransition(InstanceTerm* term,
-                                           float limit_scale_factor) const
+DatabaseHandler::violatesMaximumTransition(InstanceTerm* term, float) const
 {
-    Vertex *vert, *bi;
-    sta_->graph()->pinVertices(term, vert, bi);
-    float limit;
-    bool  exists;
-    slewLimit(term, sta::MinMax::max(), limit, exists);
-    bool vio = false;
-    if (!exists)
-    {
-        return false;
-    }
-    for (auto rf : sta::RiseFall::range())
-    {
-        auto pin_slew = sta_->graph()->slew(vert, rf, dcalc_ap_->index());
-        if (pin_slew > limit * limit_scale_factor)
-        {
-            return true;
-        }
+    const sta::Corner*   corner;
+    const sta::RiseFall* rf;
+    float                slew, limit, diff;
 
-        if (bi)
-        {
-            pin_slew = sta_->graph()->slew(bi, rf, dcalc_ap_->index());
-            if (pin_slew > limit)
-            {
-                return true;
-            }
-        }
-    }
-    return vio;
+    sta_->checkSlew(term, nullptr, sta::MinMax::max(), false, corner, rf, slew,
+                    limit, diff);
+
+    return diff < 0.0;
 }
 
 ElectircalViolation
@@ -2842,68 +2906,17 @@ DatabaseHandler::hasElectricalViolation(InstanceTerm* pin,
 std::vector<InstanceTerm*>
 DatabaseHandler::maximumTransitionViolations(float limit_scale_factor) const
 {
-    if (sta_->sdc()->haveClkSlewLimits())
-    {
-        sta_->updateTiming(false);
-    }
-    else
-    {
-        sta_->findDelays();
-    }
-    std::unordered_set<InstanceTerm*> vio_pins;
-    auto                              clock_nets = clockNets();
-    for (auto& pin : levelDriverPins())
-    {
-        auto pin_net = net(pin);
-        if (pin_net && !clock_nets.count(pin_net))
-        {
-
-            auto net_pins = pins(pin_net);
-            for (auto connected_pin : net_pins)
-            {
-                if (violatesMaximumTransition(connected_pin,
-                                              limit_scale_factor))
-                {
-                    vio_pins.insert(pin);
-                    break;
-                }
-            }
-        }
-    }
-    return std::vector<InstanceTerm*>(vio_pins.begin(), vio_pins.end());
+    sta_->findDelays();
+    auto vio_pins = sta_->pinSlewLimitViolations(corner_, sta::MinMax::max());
+    return std::vector<InstanceTerm*>(vio_pins->begin(), vio_pins->end());
 }
 std::vector<InstanceTerm*>
 DatabaseHandler::maximumCapacitanceViolations(float limit_scale_factor) const
 {
-    if (sta_->sdc()->haveClkSlewLimits())
-    {
-        sta_->updateTiming(false);
-    }
-    else
-    {
-        sta_->findDelays();
-    }
-    std::unordered_set<InstanceTerm*> vio_pins;
-    auto                              clock_nets = clockNets();
-    for (auto& pin : levelDriverPins())
-    {
-        auto pin_net = net(pin);
-        if (pin_net && !clock_nets.count(pin_net))
-        {
-
-            auto net_pins = pins(pin_net);
-            for (auto connected_pin : net_pins)
-            {
-                if (violatesMaximumCapacitance(connected_pin,
-                                               limit_scale_factor))
-                {
-                    vio_pins.insert(pin);
-                    break;
-                }
-            }
-        }
-    }
-    return std::vector<InstanceTerm*>(vio_pins.begin(), vio_pins.end());
+    sta_->findDelays();
+    auto vio_pins =
+        sta_->pinCapacitanceLimitViolations(corner_, sta::MinMax::max());
+    return std::vector<InstanceTerm*>(vio_pins->begin(), vio_pins->end());
 }
 
 bool
@@ -3837,14 +3850,8 @@ DatabaseHandler::slewLimit(InstanceTerm* pin, sta::MinMax* min_max,
     }
     else
     {
-        sta_->sdc()->slewLimit(pin, min_max, pin_limit, pin_limit_exists);
-        if (pin_limit_exists && (!exists || min_max->compare(limit, pin_limit)))
-        {
-            limit  = pin_limit;
-            exists = true;
-        }
-
         auto port = network()->libertyPort(pin);
+
         if (port)
         {
 

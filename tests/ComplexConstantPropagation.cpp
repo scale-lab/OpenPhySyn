@@ -33,9 +33,10 @@
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE("Should perform deep multi-level constant propagation")
+TEST_CASE("testing deep multi-level constant_propagation")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -60,3 +61,4 @@ TEST_CASE("Should perform deep multi-level constant propagation")
         FAIL(e.what());
     }
 }
+} // namespace psn

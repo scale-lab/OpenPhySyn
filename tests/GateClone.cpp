@@ -33,9 +33,10 @@
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE("Should perform load-driven gate cloning")
+TEST_CASE("testing load-driven gate_clone")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -58,3 +59,5 @@ TEST_CASE("Should perform load-driven gate cloning")
         FAIL(e.what());
     }
 }
+
+} // namespace psn

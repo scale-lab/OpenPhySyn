@@ -44,7 +44,8 @@
 #include <limits>
 #include <sstream>
 
-using namespace psn;
+namespace psn
+{
 
 RepairTimingTransform::RepairTimingTransform()
     : buffer_count_(0),
@@ -56,7 +57,6 @@ RepairTimingTransform::RepairTimingTransform()
       buff_index_(0),
       transition_violations_(0),
       capacitance_violations_(0),
-      slack_violations_(0),
       current_area_(0.0),
       saved_slack_(0.0)
 {
@@ -133,7 +133,8 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                                    // constructed for pins with positive slack
         {
             handler.sta()->ensureLevelized();
-            handler.sta()->findRequireds();
+            handler.sta()->vertexRequired(handler.vertex(pin),
+                                          sta::MinMax::min());
             handler.sta()->findDelays(handler.vertex(pin));
             auto wp      = handler.worstSlackPath(pin);
             use_min_cost = !is_slack_repair && wp.size() &&
@@ -268,7 +269,8 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                     options->current_iteration == 0)
                 {
                     handler.sta()->ensureLevelized();
-                    handler.sta()->findRequireds();
+                    handler.sta()->vertexRequired(handler.vertex(pin),
+                                                  sta::MinMax::min());
                     handler.sta()->findDelays(handler.vertex(pin));
                     auto wp = handler.worstSlackPath(pin, true);
                     if (wp.size() > 1)
@@ -287,7 +289,8 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                             {
                                 handler.swapPins(swap_pin, cp);
                                 handler.sta()->ensureLevelized();
-                                handler.sta()->findRequireds();
+                                handler.sta()->vertexRequired(
+                                    handler.vertex(pin), sta::MinMax::min());
                                 handler.sta()->findDelays(handler.vertex(pin));
                                 auto post_swap_wp =
                                     handler.worstSlackPath(pin, true);
@@ -351,6 +354,8 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                             handler.area(driver_size) > current_area)
                         {
                             handler.replaceInstance(driver_cell, driver_size);
+                            handler.sta()->vertexRequired(handler.vertex(pin),
+                                                          sta::MinMax::min());
                             handler.sta()->findDelays(handler.vertex(pin));
                             is_fixed = !handler.hasElectricalViolation(pin) &&
                                        !vio_check_func(pin);
@@ -387,6 +392,8 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                         current_area_ += handler.area(replaced_driver);
                         resize_up_count_++;
                     }
+                    handler.sta()->vertexRequired(handler.vertex(pin),
+                                                  sta::MinMax::min());
                     handler.sta()->findDelays(handler.vertex(pin));
                 }
                 // 5. Buffer if not fixed by resizing
@@ -400,7 +407,9 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                         handler.calculateParasitics(net);
                     }
                     affected_nets.clear();
-                    handler.sta()->findDelays();
+                    handler.sta()->vertexRequired(handler.vertex(pin),
+                                                  sta::MinMax::min());
+                    handler.sta()->findDelays(handler.vertex(pin));
                     is_fixed = !vio_check_func(pin);
                     if (options->minimum_cost)
                     {
@@ -419,7 +428,9 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                                 handler.calculateParasitics(net);
                             }
                             affected_nets.clear();
-                            handler.sta()->findDelays();
+                            handler.sta()->vertexRequired(handler.vertex(pin),
+                                                          sta::MinMax::min());
+                            handler.sta()->findDelays(handler.vertex(pin));
                             is_fixed = !vio_check_func(pin);
                         }
                     }
@@ -467,14 +478,12 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                         // Return to the original size
                         replaced_driver = driver_lib;
                         handler.replaceInstance(driver_cell, driver_lib);
-                        PSN_LOG_DEBUG("NO RESIZE");
                     }
                     if (driver_lib != replaced_driver)
                     {
                         current_area_ -= handler.area(driver_lib);
                         current_area_ += handler.area(replaced_driver);
                         resize_up_count_++;
-                        PSN_LOG_DEBUG("RESIZED");
                     }
                 }
 
@@ -525,7 +534,8 @@ RepairTimingTransform::fixCapacitanceViolations(
     for (auto& pin : driver_pins)
     {
         auto pin_net = handler.net(pin);
-        if (pin_net && !clock_nets.count(pin_net))
+        if (pin_net && !clock_nets.count(pin_net) &&
+            !handler.isSpecial(pin_net))
         {
             auto vio = handler.hasElectricalViolation(pin);
             if (vio == ElectircalViolation::Capacitance ||
@@ -569,7 +579,8 @@ RepairTimingTransform::fixTransitionViolations(
     {
         auto pin_net = handler.net(pin);
 
-        if (pin_net && !clock_nets.count(pin_net))
+        if (pin_net && !clock_nets.count(pin_net) &&
+            !handler.isSpecial(pin_net))
         {
             auto net_pins = handler.pins(pin_net);
             auto vio      = handler.hasElectricalViolation(pin);
@@ -710,7 +721,8 @@ RepairTimingTransform::resizeDown(Psn*                        psn_inst,
     for (auto& pin : driver_pins)
     {
         auto pin_net = handler.net(pin);
-        if (pin_net && !clock_nets.count(pin_net))
+        if (pin_net && !clock_nets.count(pin_net) &&
+            !handler.isSpecial(pin_net))
         {
             resizeDown(psn_inst, pin, options);
         }
@@ -725,7 +737,7 @@ RepairTimingTransform::resizeDown(Psn* psn_inst, InstanceTerm* pin,
     DatabaseHandler& handler  = *(psn_inst->handler());
     auto             net_pins = handler.pins(handler.net(pin));
     handler.sta()->ensureLevelized();
-    handler.sta()->findRequireds();
+    handler.sta()->vertexRequired(handler.vertex(pin), sta::MinMax::min());
     handler.sta()->findDelays(handler.vertex(pin));
     bool fix = handler.hasElectricalViolation(pin) != ElectircalViolation::None;
     auto wp  = handler.worstSlackPath(pin);
@@ -760,7 +772,8 @@ RepairTimingTransform::resizeDown(Psn* psn_inst, InstanceTerm* pin,
                     {
                         handler.replaceInstance(inst, d_type);
                         handler.sta()->ensureLevelized();
-                        handler.sta()->findRequireds();
+                        handler.sta()->vertexRequired(handler.vertex(pin),
+                                                      sta::MinMax::min());
                         handler.sta()->findDelays(handler.vertex(pin));
                         wp            = handler.worstSlackPath(pin);
                         float new_wns = handler.worstSlack();
@@ -993,17 +1006,15 @@ RepairTimingTransform::repairTiming(
     auto runtime  = end - start;
     current_area_ = handler.area();
     PSN_LOG_INFO(
-        "Runtime: {}",
+        "Runtime: {}s",
         std::chrono::duration_cast<std::chrono::seconds>(runtime).count());
     PSN_LOG_INFO("Buffers: {}", buffer_count_);
     PSN_LOG_INFO("Resize up: {}", resize_up_count_);
     PSN_LOG_INFO("Resize down: {}", resize_down_count_);
     PSN_LOG_INFO("Pin Swap: {}", pin_swap_count_);
-    PSN_LOG_INFO("Legalization: {}", options->legalization_frequency);
     PSN_LOG_INFO("Buffered nets: {}", net_count_);
     PSN_LOG_INFO("Transition violations: {}", transition_violations_);
     PSN_LOG_INFO("Capacitance violations: {}", capacitance_violations_);
-    PSN_LOG_INFO("Slack violations: {}", slack_violations_);
     PSN_LOG_INFO("Slack gain: {}", saved_slack_);
     PSN_LOG_INFO("Initial area: {}", (int)(options->initial_area * 10E12));
     PSN_LOG_INFO("New area: {}", (int)(current_area_ * 10E12));
@@ -1013,16 +1024,17 @@ RepairTimingTransform::repairTiming(
 int
 RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
-    buffer_count_           = 0;
-    resize_up_count_        = 0;
-    resize_down_count_      = 0;
-    net_count_              = 0;
-    pin_swap_count_         = 0;
-    transition_violations_  = 0;
-    capacitance_violations_ = 0;
-    slack_violations_       = 0;
-    current_area_           = psn_inst->handler()->area();
-    saved_slack_            = 0.0;
+    buffer_count_      = 0;
+    resize_up_count_   = 0;
+    resize_down_count_ = 0;
+    net_count_         = 0;
+    pin_swap_count_    = 0;
+    current_area_      = psn_inst->handler()->area();
+    saved_slack_       = 0.0;
+    capacitance_violations_ =
+        psn_inst->handler()->maximumCapacitanceViolations().size();
+    transition_violations_ =
+        psn_inst->handler()->maximumTransitionViolations().size();
 
     std::unique_ptr<OptimizationOptions> options(new OptimizationOptions);
 
@@ -1235,31 +1247,31 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
         }
         else if (args[i] == "-buffer_disabled")
         {
-            options->repair_by_buffer = false;
+            options->disable_buffering = true;
         }
         else if (args[i] == "-minimum_cost_buffer_enabled")
         {
-            options->minimum_cost = false;
+            options->minimum_cost = true;
         }
         else if (args[i] == "-pin_swap_enabled")
         {
-            options->repair_by_pinswap = false;
+            options->repair_by_pinswap = true;
         }
         else if (args[i] == "-upsize_enabled")
         {
-            options->repair_by_upsize = false;
+            options->repair_by_upsize = true;
         }
         else if (args[i] == "-downsize_enabled")
         {
-            options->repair_by_downsize = false;
+            options->repair_by_downsize = true;
         }
         else if (args[i] == "-legalize_eventually")
         {
-            options->legalize_eventually = false;
+            options->legalize_eventually = true;
         }
         else if (args[i] == "-legalize_each_iteration")
         {
-            options->legalize_each_iteration = false;
+            options->legalize_each_iteration = true;
         }
         else if (args[i] == "-post_place")
         {
@@ -1303,3 +1315,4 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
     return repairTiming(psn_inst, options, buffer_lib_names,
                         inverter_lib_names);
 }
+} // namespace psn

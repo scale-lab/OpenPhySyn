@@ -144,12 +144,13 @@ public:
     virtual float loadCapacitance(InstanceTerm* term) const;
     std::vector<std::vector<PathPoint>> getNegativeSlackPaths() const;
     virtual float                       maxLoad(LibraryCell* cell);
-    virtual float                       targetLoad(LibraryCell* cell);
-    virtual float                       coreArea() const;
-    virtual bool                        maximumUtilizationViolation() const;
-    virtual void                        setMaximumArea(float area);
-    virtual float                       maximumArea() const;
-    virtual bool                        hasMaximumArea() const;
+    virtual float capacitanceLimit(InstanceTerm* term) const;
+    virtual float targetLoad(LibraryCell* cell);
+    virtual float coreArea() const;
+    virtual bool  maximumUtilizationViolation() const;
+    virtual void  setMaximumArea(float area);
+    virtual float maximumArea() const;
+    virtual bool  hasMaximumArea() const;
     virtual float gateDelay(Instance* inst, InstanceTerm* to, float in_slew = 0,
                             LibraryTerm* from = nullptr,
                             float* drvr_slew = nullptr, int rise_fall = -1);
@@ -242,6 +243,15 @@ public:
     virtual bool                      isTriState(LibraryTerm* term) const;
     virtual bool                      isCombinational(Instance* inst) const;
     virtual bool                      isCombinational(LibraryCell* cell) const;
+    virtual bool                      isSpecial(Net* net) const;
+    virtual bool                      isTieHi(Instance* inst) const;
+    virtual bool                      isTieHi(LibraryCell* cell) const;
+    virtual bool                      isTieLo(Instance* inst) const;
+    virtual bool                      isTieLo(LibraryCell* cell) const;
+    virtual bool                      isTieHiLo(Instance* inst) const;
+    virtual bool                      isTieHiLo(LibraryCell* cell) const;
+    virtual bool                      isTieCell(Instance* inst) const;
+    virtual bool                      isTieCell(LibraryCell* cell) const;
     virtual bool isSingleOutputCombinational(Instance* inst) const;
     virtual bool isSingleOutputCombinational(LibraryCell* cell) const;
     virtual void replaceInstance(Instance* inst, LibraryCell* cell);

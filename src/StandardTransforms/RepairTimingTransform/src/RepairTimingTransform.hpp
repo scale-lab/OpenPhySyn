@@ -60,10 +60,8 @@ private:
                                  // violations
     int capacitance_violations_; // Number of repaired (or attempted)
                                  // capacitance violations
-    int slack_violations_; // Number of repaired (or attempted) negative slack
-                           // violations
-    float current_area_;   // Incremental area holder
-    float saved_slack_;    // Total slack gain
+    float current_area_;         // Incremental area holder
+    float saved_slack_;          // Total slack gain
 
     // Repair a single pin
     std::unordered_set<Instance*>

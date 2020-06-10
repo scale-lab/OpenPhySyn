@@ -73,6 +73,6 @@ DEFINE_TRANSFORM(
     ConstantPropagationTransform, "constant_propagation", "1.0",
     "Performs design optimization through constant propagation",
     "Usage: transform constant_propagation [enable-inverter-replacement] "
-    "[max-depth] [tie-hi cell] [tie-lo]"
+    "[max-depth] [tie-hi cell] [tie-lo cell]"
     "cell] [inverter_cell]")
 } // namespace psn

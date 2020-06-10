@@ -35,7 +35,8 @@
 #include "OpenPhySyn/PsnLogger/PsnLogger.hpp"
 #include "OpenPhySyn/Utils/PsnGlobal.hpp"
 
-using namespace psn;
+namespace psn
+{
 
 int
 HelloTransform::addWire(Psn* psn_inst, std::string name)
@@ -69,3 +70,4 @@ HelloTransform::run(Psn* psn_inst, std::vector<std::string> args)
 
     return -1;
 }
+} // namespace psn

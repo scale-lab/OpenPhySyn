@@ -663,6 +663,7 @@ Psn::printCommands(bool raw_str)
         "design_area			Report design total cell area\n"
         "export_db			Export OpenDB database file\n"
         "export_def			Export design DEF file\n"
+        "gate_clone			Perform load-driven gate cloning\n"
         "get_database			Return OpenDB database object\n"
         "get_database_handler		Return OpenPhySyn database "
         "handler\n"
@@ -687,14 +688,25 @@ Psn::printCommands(bool raw_str)
         "buffering\n"
         "optimize_logic			Perform logic optimization\n"
         "optimize_power			Perform power optimization\n"
+        "pin_swap			Perform timing optimization by "
+        "commutative pin swapping\n"
         "print_liberty_cells		Print liberty cells available "
         "in the  loaded library\n"
         "print_license			Print license information\n"
         "print_transforms		Print loaded transforms\n"
         "print_usage			Print usage instructions\n"
         "print_version			Print tool version\n"
-        "repair_timing		Repair design timing and electrical violations "
+        "propagate_constants		Perform logic optimization by constant "
+        "propgation\n"
+        "timing_buffer			Repair violations through buffer tree "
+        "insertion\n"
+        "repair_timing			Repair design timing and electrical "
+        "violations "
         "through resizing, buffer insertion, and pin-swapping\n"
+        "capacitance_violations		Print pins with capacitance limit "
+        "violation\n"
+        "transition_violations		Print pins with transition limit "
+        "violation\n"
         "set_log				Alias for "
         "set_log_level\n"
         "set_log_level			Set log level [trace, debug, info, "
@@ -739,8 +751,8 @@ Psn::printTransforms(bool raw_str)
         {
             PSN_LOG_INFO(transform_str);
         }
-        PSN_LOG_RAW("");
     }
+    PSN_LOG_RAW("");
 
 } // namespace psn
 void

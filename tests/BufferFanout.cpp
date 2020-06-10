@@ -33,9 +33,10 @@
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE("Should add fan-out buffers")
+TEST_CASE("testing buffer_fanout transform")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -57,3 +58,4 @@ TEST_CASE("Should add fan-out buffers")
         FAIL(e.what());
     }
 }
+} // namespace psn

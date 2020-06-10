@@ -53,6 +53,7 @@ private:
     int   buffer_count_;
     int   resize_count_;
     int   clone_count_;
+    int   resynth_count_;
     int   net_count_;
     int   timerless_rebuffer_count_;
     int   net_index_;

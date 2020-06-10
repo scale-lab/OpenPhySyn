@@ -33,10 +33,10 @@
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE(
-    "Should perform buffer insertion to fix cap./trans. violations with sizing")
+TEST_CASE("testing timing_buffer transform with sizing")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -68,3 +68,4 @@ TEST_CASE(
         FAIL(e.what());
     }
 }
+} // namespace psn

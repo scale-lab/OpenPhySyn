@@ -37,7 +37,8 @@
 #include <algorithm>
 #include <cmath>
 
-using namespace psn;
+namespace psn
+{
 
 int
 BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
@@ -343,3 +344,4 @@ BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
 
     return -1;
 }
+} // namespace psn

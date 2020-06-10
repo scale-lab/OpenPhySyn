@@ -42,7 +42,8 @@
 #include "sta/Parasitics.hh"
 #include "sta/Search.hh"
 
-using namespace psn;
+namespace psn
+{
 
 GateCloningTransform::GateCloningTransform() : net_index_(0), clone_index_(0)
 {
@@ -487,3 +488,4 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
     psn_inst->handler()->sta()->findDelays();
     return rc;
 }
+} // namespace psn

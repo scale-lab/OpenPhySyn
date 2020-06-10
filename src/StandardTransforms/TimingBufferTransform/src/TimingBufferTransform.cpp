@@ -55,12 +55,14 @@
 // * Layout aware buffering. [TODO]
 // * Logic aware buffering. [InProgress]
 
-using namespace psn;
+namespace psn
+{
 
 TimingBufferTransform::TimingBufferTransform()
     : buffer_count_(0),
       resize_count_(0),
       clone_count_(0),
+      resynth_count_(0),
       net_count_(0),
       timerless_rebuffer_count_(0),
       net_index_(0),
@@ -172,6 +174,85 @@ TimingBufferTransform::bufferPin(Psn* psn_inst, InstanceTerm* pin,
 
         if (buff_tree)
         {
+            if (options->repair_by_resynthesis &&
+                options->current_iteration == 0 &&
+                (handler.isAnyANDOR(driver_lib) ||
+                 handler.isBuffer(driver_lib) ||
+                 handler.isInverter(driver_lib)) &&
+                (buff_tree->isBranched() && buff_tree->left()->isBufferNode() &&
+                 buff_tree->right()->isBufferNode()))
+            {
+                LibraryCell* shattered = nullptr;
+                if (handler.libraryInputPins(driver_lib).size() == 4)
+                {
+                    shattered = handler.closestDriver(
+                        driver_lib, handler.cellSuperset(driver_lib, 2), 0.5);
+                }
+                if (shattered)
+                {
+                    PSN_LOG_INFO("Shattered {} -> {}", handler.name(driver_lib),
+                                 handler.name(shattered));
+                }
+
+                auto inverted = handler.inverseCells(driver_lib);
+                auto closest_inverse =
+                    handler.closestDriver(driver_lib, inverted);
+                if (closest_inverse)
+                {
+                    handler.sta()->ensureLevelized();
+                    handler.sta()->findRequireds();
+                    handler.sta()->findDelays(handler.vertex(pin));
+                    auto wp = handler.worstSlackPath(pin, true);
+                    if (wp.size() &&
+                        handler.worstSlack(wp[wp.size() - 1].pin()) > 0.0)
+                    {
+                        float        current_cost   = 0;
+                        float        inverting_cost = 0;
+                        LibraryCell* left_buff      = nullptr;
+                        LibraryCell* right_buff     = nullptr;
+                        LibraryCell* left_inv       = nullptr;
+                        LibraryCell* right_inv      = nullptr;
+                        if (buff_tree->left() &&
+                            buff_tree->left()->isBufferNode())
+                        {
+                            left_buff = buff_tree->left()->bufferCell();
+                            left_inv  = handler.closestDriver(
+                                left_buff, handler.inverseCells(left_buff));
+                            current_cost += handler.area(left_buff);
+                            inverting_cost += handler.area(left_inv);
+                        }
+                        if (buff_tree->right() &&
+                            buff_tree->right()->isBufferNode())
+                        {
+                            right_buff = buff_tree->right()->bufferCell();
+                            right_inv  = handler.closestDriver(
+                                right_buff, handler.inverseCells(right_buff));
+                            current_cost += handler.area(right_buff);
+                            inverting_cost += handler.area(right_inv);
+                        }
+                        if (handler.area(closest_inverse) + inverting_cost <
+                            handler.area(driver_lib) + current_cost)
+                        {
+                            handler.replaceInstance(driver_cell,
+                                                    closest_inverse);
+                            current_area_ -= handler.area(driver_lib);
+                            current_area_ += handler.area(closest_inverse);
+                            std::vector<Net*> fanin_nets;
+                            for (auto& fpin : handler.inputPins(driver_cell))
+                            {
+                                fanin_nets.push_back(handler.net(fpin));
+                            }
+                            affected_nets.insert(handler.net(pin));
+                            affected_nets.insert(fanin_nets.begin(),
+                                                 fanin_nets.end());
+
+                            buff_tree->left()->setBufferCell(left_inv);
+                            buff_tree->right()->setBufferCell(right_inv);
+                            resynth_count_++;
+                        }
+                    }
+                }
+            }
             auto sol_buf_count = buff_tree->bufferCount();
             if (sol_buf_count)
             {
@@ -609,12 +690,15 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     resize_count_             = 0;
     timerless_rebuffer_count_ = 0;
     net_count_                = 0;
+    resynth_count_            = 0;
     clone_count_              = 0;
-    transition_violations_    = 0;
-    capacitance_violations_   = 0;
     slack_violations_         = 0;
     current_area_             = psn_inst->handler()->area();
     saved_slack_              = 0.0;
+    capacitance_violations_ =
+        psn_inst->handler()->maximumCapacitanceViolations().size();
+    transition_violations_ =
+        psn_inst->handler()->maximumTransitionViolations().size();
 
     std::unique_ptr<OptimizationOptions> options(new OptimizationOptions);
 
@@ -877,3 +961,4 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     return timingBuffer(psn_inst, options, buffer_lib_names,
                         inverter_lib_names);
 }
+} // namespace psn

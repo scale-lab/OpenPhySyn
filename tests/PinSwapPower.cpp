@@ -33,9 +33,10 @@
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE("Should perform power-driven pin swapping")
+TEST_CASE("testing pin_swap -power transform")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -59,3 +60,4 @@ TEST_CASE("Should perform power-driven pin swapping")
         FAIL(e.what());
     }
 }
+} // namespace psn

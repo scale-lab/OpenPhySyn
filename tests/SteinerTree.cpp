@@ -34,9 +34,10 @@
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE("Should construct a steiner tree correctly")
+TEST_CASE("testing steiner tree construction")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -60,3 +61,4 @@ TEST_CASE("Should construct a steiner tree correctly")
         FAIL(e.what());
     }
 }
+} // namespace psn

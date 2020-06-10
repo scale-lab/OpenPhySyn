@@ -34,10 +34,10 @@
 
 #include "doctest.h"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE("Should perform buffer insertion to fix cap./trans. violations for "
-          "large buffer library")
+TEST_CASE("testing timing_buffer transform withn inverters")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -67,3 +67,4 @@ TEST_CASE("Should perform buffer insertion to fix cap./trans. violations for "
         FAIL(e.what());
     }
 }
+} // namespace psn

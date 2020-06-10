@@ -43,7 +43,8 @@
 #include <limits>
 #include <sstream>
 
-using namespace psn;
+namespace psn
+{
 
 PinSwapTransform::PinSwapTransform() : swap_count_(0)
 {
@@ -234,3 +235,4 @@ PinSwapTransform::run(Psn* psn_inst, std::vector<std::string> args)
         return timingPinSwap(psn_inst, max_opt_paths);
     }
 }
+} // namespace psn

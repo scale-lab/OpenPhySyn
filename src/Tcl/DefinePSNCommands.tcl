@@ -10,6 +10,9 @@ namespace eval psn {
     
     define_cmd_args "transform" {transform_name args}
     proc transform {transform_name args} {
+        if {![has_design]} {
+             sta::sta_error "No design is loaded"
+        }
         psn::transform_internal $transform_name $args
     }
     interp alias {} run {} transform
@@ -35,57 +38,50 @@ namespace eval psn {
             }
     }
 
-    define_cmd_args "optimize_design" {\
-        [-no_gate_clone] \
-        [-no_pin_swap] \
+    define_cmd_args "gate_clone" {\
         [-clone_max_cap_factor factor] \
         [-clone_non_largest_cells] \
     }
     
-    proc optimize_design { args } {
-        sta::parse_key_args "optimize_design" args \
-            keys {-clone_max_cap_factor} \
-            flags {-clone_non_largest_cells -no_gate_clone -no_pin_swap}
+    proc gate_clone { args } {
+        sta::parse_key_args "gate_clone" args \
+        keys {-clone_max_cap_factor} \
+        flags {-clone_non_largest_cells}
 
-        set do_pin_swap true
-        set do_gate_clone true
-        if {[info exists flags(-no_gate_clone)]} {
-            set do_gate_clone false
-        }
-        if {[info exists flags(-no_pin_swap)]} {
-            set do_pin_swap false
-        }
-        if {![has_transform gate_clone]} {
-            set do_gate_clone false
-        }
-        if {![has_transform pin_swap]} {
-            set do_pin_swap false
-        }
-        set num_swapped 0
-        set num_cloned 0
-        if {$do_pin_swap} {
-            set num_swapped [transform pin_swap]
-            if {$num_swapped < 0} {
-                return $num_swapped
-            }
-        }
-        if {$do_gate_clone} {
-            set clone_max_cap_factor 1.5
-            set clone_largest_cells_only true
+        set clone_max_cap_factor 1.5
+        set clone_largest_cells_only true
 
-            if {[info exists keys(-clone_max_cap_factor)]} {
-                set clone_max_cap_factor $keys(-clone_max_cap_factor)
-            }
-            if {[info exists flags(-clone_non_largest_cells)]} {
-                set clone_largest_cells_only false
-            }
-
-            set num_cloned [transform gate_clone $clone_max_cap_factor $clone_largest_cells_only]
-            if {$num_cloned < 0} {
-                return $num_cloned
-            }
+        if {[info exists keys(-clone_max_cap_factor)]} {
+            set clone_max_cap_factor $keys(-clone_max_cap_factor)
         }
-        return 1
+        if {[info exists flags(-clone_non_largest_cells)]} {
+            set clone_largest_cells_only false
+        }
+
+        set num_cloned [transform gate_clone $clone_max_cap_factor $clone_largest_cells_only]
+        return $num_cloned
+    }
+
+    define_cmd_args "pin_swap" {\
+        [-path_count]\
+        [-power]\
+    }
+    
+    proc pin_swap { args } {
+        sta::parse_key_args "pin_swap" args \
+            keys {-path_count} \
+            flags {-power}
+
+        set max_path_count 50
+        if {[info exists keys(-path_count)]} {
+            set max_path_count $keys(-path_count)
+        }
+        set power_flag ""
+        if {[info exists flags(-power)]} {
+            set power_flag "-power"
+        }
+        set num_swapped [transform pin_swap $max_path_count $power_flag]
+        return $num_swapped
     }
     
     define_cmd_args "optimize_logic" {\
@@ -356,6 +352,58 @@ namespace eval psn {
             return
         }
         puts "Added/updated $affected cells"
+    }
+
+
+    define_cmd_args "repair_timing" {[-capacitance_violations]\
+        [-transition_violations]\
+        [-negative_slack_violations] [-iterations iteration_count] [-buffers buffer_cells]\
+        [-inverters inverter cells] [-min_gain gain] [-auto_buffer_library size]\
+        [-no_minimize_buffer_library] [-auto_buffer_library_inverters_enabled]\
+        [-buffer_disabled] [-minimum_cost_buffer_enabled] [-upsize_enabled]\
+        [-downsize_enabled] [-pin_swap_enabled] [-legalize_eventually]\
+        [-legalize_each_iteration] [-post_place] [-post_route]\
+        [-legalization_frequency num_edits] [-fast]\
+    }
+
+    proc repair_timing { args } {
+        if {![psn::has_liberty]} {
+            sta::sta_error "No liberty filed is loaded"
+            return
+        }
+        
+        
+        set affected [transform repair_timing {*}$args]
+        if {$affected < 0} {
+             puts "Timing repair failed"
+             return
+        }
+        puts "Added/updated $affected cells"
+    }
+
+    define_cmd_args "propagate_constants" {[-tiehi tiehi_cell] [-tielo tielo_cell] [-inverter inverter_cell]}
+
+    proc propagate_constants { args } {
+        sta::parse_key_args "cluster_buffers" args \
+        keys {-tiehi -tielo -inverter} \
+        flags {}
+
+        if {![psn::has_liberty]} {
+            sta::sta_error "No liberty filed is loaded"
+            return
+        }
+        
+        set transform_args "-1"
+        if {[info exists keys(-tiehi)]} {
+            set transform_args "$transform_args $keys(-tiehi)"
+            if {[info exists keys(-tielo)]} {
+                set transform_args "$transform_args $keys(-tielo)"
+                if {[info exists keys(-inverter)]} {
+                    set transform_args "$transform_args $keys(-inverter)"
+                }
+            }
+        }
+        return [transform constant_propagation {*}transform_args]
     }
 }
 namespace import psn::*

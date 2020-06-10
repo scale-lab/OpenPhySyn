@@ -32,9 +32,10 @@
 #include "PsnException/PsnException.hpp"
 #include "doctest.h"
 
-using namespace psn;
+namespace psn
+{
 
-TEST_CASE("Should read LEF and DEF successfully")
+TEST_CASE("testing LEF/DEF parsing")
 {
     Psn& psn_inst = Psn::instance();
     try
@@ -50,3 +51,4 @@ TEST_CASE("Should read LEF and DEF successfully")
         FAIL(e.what());
     }
 }
+} // namespace psn
