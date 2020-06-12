@@ -1559,7 +1559,7 @@ DatabaseHandler::isCommutative(LibraryTerm* first, LibraryTerm* second) const
     for (auto& out : output_pins)
     {
         sta::FuncExpr* func = out->function();
-        if (func)
+        if (!func)
         {
             return false;
         }
