@@ -50,6 +50,9 @@ TEST_CASE("testing load-driven gate_clone")
         CHECK(psn_inst.database()->getChip() != nullptr);
         CHECK(psn_inst.hasTransform("gate_clone"));
         psn_inst.setWireRC(0.0020, 0.00020);
+        psn_inst.handler()->createClock("core_clock", {"clk"}, 10E-09);
+        // Temproray fix
+        psn_inst.handler()->maximumTransitionViolations();
         psn_inst.runTransform("gate_clone",
                               std::vector<std::string>({"1.4", "false"}));
         CHECK(1);
