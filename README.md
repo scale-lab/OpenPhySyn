@@ -32,7 +32,7 @@ export_def <def file>
 ### Example: Repair design timing violations
 
 ```tcl
-Psn ; # or ./build/Psn if not installed in the global directory
+Psn ; # or ./build/Psn if not installed in the global path
 
 import_lib ./tests/data/libraries/Nangate45/NangateOpenCellLibrary_typical.lib
 import_lef ./tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
