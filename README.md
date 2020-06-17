@@ -166,6 +166,7 @@ The `repair_timing` command repairs negative slack, maximum capacitance and tran
 -   `[-no_minimize_buffer_library]`: Do not run initial pruning phase for buffer selection.
 -   `[-auto_buffer_library_inverters_enabled]`: Include inverters in the selected buffer library.
 -   `[-buffer_disabled]`: Disable all buffering.
+-   `[-pessimism_factor factor]` Scaling factor for transition and capacitance violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic.
 -   `[-minimum_cost_buffer_enabled]`: Enable minimum cost buffering.
 -   `[-upsize_enabled]`: Enable repair by upsizing.
 -   `[-pin_swap_enabled]`: Enable pin-swapping.

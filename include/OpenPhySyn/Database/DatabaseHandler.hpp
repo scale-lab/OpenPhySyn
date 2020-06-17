@@ -260,16 +260,14 @@ public:
     virtual bool violatesMaximumCapacitance(InstanceTerm* term, float load_cap,
                                             float limit_scale_factor) const;
     virtual bool
-    violatesMaximumCapacitance(InstanceTerm* term,
-                               float         limit_scale_factor = 1.0) const;
-    virtual bool
-    violatesMaximumTransition(InstanceTerm* term,
-                              float         limit_scale_factor = 1.0) const;
+                 violatesMaximumCapacitance(InstanceTerm* term,
+                                            float         limit_scale_factor = 1.0) const;
+    virtual bool violatesMaximumTransition(InstanceTerm* term,
+                                           float limit_scale_factor = 1.0);
     virtual ElectircalViolation
-    hasElectricalViolation(InstanceTerm* term,
-                           float         limit_scale_factor = 1.0) const;
+    hasElectricalViolation(InstanceTerm* term, float limit_scale_factor = 1.0);
     virtual std::vector<InstanceTerm*>
-    maximumTransitionViolations(float limit_scale_factor = 1.0) const;
+    maximumTransitionViolations(float limit_scale_factor = 1.0);
     virtual std::vector<InstanceTerm*>
                       maximumCapacitanceViolations(float limit_scale_factor = 1.0) const;
     virtual bool      isLoad(InstanceTerm* term) const;
@@ -400,6 +398,7 @@ private:
     bool                      has_buffer_inverter_seq_;
     bool                      has_equiv_cells_;
     bool                      has_target_loads_;
+    bool                      slew_limits_initialized_;
     float                     res_per_micron_;
     float                     cap_per_micron_;
     bool                      has_wire_rc_;
