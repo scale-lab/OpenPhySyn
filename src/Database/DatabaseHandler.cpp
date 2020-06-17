@@ -76,7 +76,8 @@ DatabaseHandler::DatabaseHandler(Psn* psn_inst, DatabaseSta* sta)
       psn_(psn_inst),
       has_wire_rc_(false),
       maximum_area_valid_(false),
-      has_library_cell_mappings_(false)
+      has_library_cell_mappings_(false),
+      slew_limits_initialized_(false)
 {
     // Use default corner for now
     corner_                      = sta_->findCorner("default");
@@ -2839,34 +2840,41 @@ DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term,
 }
 bool
 DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term, float load_cap,
-                                            float) const
+                                            float limit_scale_factor) const
 {
     const sta::Corner*   corner;
     const sta::RiseFall* rf;
-    float                cap, limit, diff;
+    float                cap, limit, ignore;
 
     sta_->checkCapacitance(term, nullptr, sta::MinMax::max(), corner, rf, cap,
-                           limit, diff);
-
+                           limit, ignore);
+    float diff = (limit_scale_factor * limit) - cap;
     return diff < 0.0 && limit > 0.0;
 }
 
 bool
-DatabaseHandler::violatesMaximumTransition(InstanceTerm* term, float) const
+DatabaseHandler::violatesMaximumTransition(InstanceTerm* term,
+                                           float         limit_scale_factor)
 {
     const sta::Corner*   corner;
     const sta::RiseFall* rf;
-    float                slew, limit, diff;
+    float                slew, limit, ignore;
+
+    if (!slew_limits_initialized_)
+    {
+        sta_->checkSlewLimitPreamble();
+        slew_limits_initialized_ = true;
+    }
 
     sta_->checkSlew(term, nullptr, sta::MinMax::max(), false, corner, rf, slew,
-                    limit, diff);
-
+                    limit, ignore);
+    float diff = (limit_scale_factor * limit) - slew;
     return diff < 0.0 && limit > 0.0;
 }
 
 ElectircalViolation
 DatabaseHandler::hasElectricalViolation(InstanceTerm* pin,
-                                        float         limit_scale_factor) const
+                                        float         limit_scale_factor)
 {
     auto pin_net   = net(pin);
     auto net_pins  = pins(pin_net);
@@ -2910,10 +2918,10 @@ DatabaseHandler::hasElectricalViolation(InstanceTerm* pin,
 }
 
 std::vector<InstanceTerm*>
-DatabaseHandler::maximumTransitionViolations(float limit_scale_factor) const
+DatabaseHandler::maximumTransitionViolations(float limit_scale_factor)
 {
-    sta_->findDelays();
     auto vio_pins = sta_->pinSlewLimitViolations(corner_, sta::MinMax::max());
+    slew_limits_initialized_ = true;
     return std::vector<InstanceTerm*>(vio_pins->begin(), vio_pins->end());
 }
 std::vector<InstanceTerm*>
@@ -2967,10 +2975,12 @@ DatabaseHandler::allLibs() const
 void
 DatabaseHandler::resetCache()
 {
-    has_equiv_cells_         = false;
-    has_buffer_inverter_seq_ = false;
-    has_target_loads_        = false;
-    maximum_area_valid_      = false;
+    has_equiv_cells_           = false;
+    has_buffer_inverter_seq_   = false;
+    has_target_loads_          = false;
+    has_library_cell_mappings_ = false;
+    maximum_area_valid_        = false;
+    slew_limits_initialized_   = false;
     target_load_map_.clear();
     resetLibraryMapping();
 }
