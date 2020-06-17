@@ -20,7 +20,7 @@ make coverage # Generate a coverage report.
 
 ## Getting Started
 
-### Read design and run a transorm:
+### Read design and run a transform:
 
 ```tcl
 Psn
