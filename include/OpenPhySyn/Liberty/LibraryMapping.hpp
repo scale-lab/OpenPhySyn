@@ -33,6 +33,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <string>
 #include "OpenPhySyn/Database/Types.hpp"
 namespace psn
 {
