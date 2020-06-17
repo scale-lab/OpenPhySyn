@@ -10,12 +10,11 @@ Clone and build OpenPhySyn using the following commands:
 git clone --recursive https://github.com/scale-lab/OpenPhySyn.git
 cd OpenPhySyn
 mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=[Debug | Coverage | Release]
+cmake ..
 make
 make install # Or sudo make install
 Psn
 make test # Runs the unit tests
-make coverage # Generate a coverage report.
 ```
 
 ## Getting Started
@@ -33,12 +32,12 @@ export_def <def file>
 ### Example: Repair design timing violations
 
 ```tcl
-Psn
+Psn ; # or ./build/Psn if not installed in the global directory
 
 import_lib ./tests/data/libraries/Nangate45/NangateOpenCellLibrary_typical.lib
 import_lef ./tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
 import_def ./tests/data/designs/timing_buffer/ibex_gp.def
-sta read_sdc ./tests/data/designs/timing_buffer/ibex_tight_clk.sdc
+read_sdc ./tests/data/designs/timing_buffer/ibex_tight_clk.sdc
 
 set_wire_rc 1.0e-03 1.0e-03 ; # or set_wire_rc <metal layer>
 
@@ -134,8 +133,8 @@ transform <transform name> help
 Psn
 import_lef <lef file>
 import_def <def file>
-sta create_clock [sta get_ports clk] -name core_clock -period 10
-sta report_checks
+create_clock [get_ports clk] -name core_clock -period 10
+report_checks
 ```
 
 ## Default Transforms
