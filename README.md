@@ -197,8 +197,8 @@ You can run OpenPhySyn inside Docker using the provided Dockerfile
 
 ```sh
 docker build -t scale/openphysyn .
-docker run -itu $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenPhySyn scale/openphysyn bash
-Psn
+docker run --rm -itu $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenPhySyn scale/openphysyn bash
+Psn ./tests/tcl/getting_started.tcl
 ```
 
 ## Dependencies
