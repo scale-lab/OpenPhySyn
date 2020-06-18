@@ -205,7 +205,7 @@ Psn ./tests/tcl/getting_started.tcl
 
 OpenPhySyn depends on the following libraries:
 
--   [gcc (8.3.0 or higher)](https://gcc.gnu.org) or clang
+-   [gcc (8.3.0 or higher)](https://gcc.gnu.org) or [clang](https://clang.llvm.org)
 -   [CPP TaskFlow](https://github.com/cpp-taskflow/cpp-taskflow) [included, optional]
 -   [Flute](https://github.com/The-OpenROAD-Project/flute3) [included]
 -   [OpenSTA](https://github.com/The-OpenROAD-Project/OpenSTA) [included]
