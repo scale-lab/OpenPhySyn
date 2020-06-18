@@ -29,10 +29,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <Config.hpp>
 #include <Psn/Psn.hpp>
 #include <flute.h>
 #include <tcl.h>
+#include "Config.hpp"
 #include "Def/DefReader.hpp"
 #include "Def/DefWriter.hpp"
 #include "Lef/LefReader.hpp"
@@ -352,15 +352,21 @@ Psn::instancePtr()
 int
 Psn::loadTransforms()
 {
+    int load_count = 0;
+
+    OPENPHYSYN_LOAD_TRANSFORMS(transforms_, transforms_info_, load_count);
+
+#ifdef OPENPHYSYN_ENABLE_DYNAMIC_TRANSFORM_LIBRARY
     std::string transforms_paths(
         FileUtils::joinPath(FileUtils::homePath(), ".OpenPhySyn/transforms") +
-        ":" + FileUtils::joinPath(exec_path_, "./transforms"));
-    const char* env_path   = std::getenv("PSN_TRANSFORM_PATH");
-    int         load_count = 0;
+        ":" + FileUtils::joinPath(exec_path_, "transforms") + ":" +
+        std::string(PSN_TRANSFORM_INSTALL_FULL_PATH));
+    const char* env_path = std::getenv("PSN_TRANSFORM_PATH");
 
     if (env_path)
     {
-        transforms_paths = std::string(env_path);
+        transforms_paths =
+            transforms_paths + std::string(":") + std::string(env_path);
     }
 
     std::vector<std::string> transforms_dirs =
@@ -376,6 +382,7 @@ Psn::loadTransforms()
         {
             continue;
         }
+        PSN_LOG_DEBUG("Searching for transforms at {}", transform_parent_path);
         std::vector<std::string> transforms_paths =
             FileUtils::readDirectory(transform_parent_path, true);
         for (auto& path : transforms_paths)
@@ -401,11 +408,12 @@ Psn::loadTransforms()
         }
         else
         {
-            PSN_LOG_WARN(
+            PSN_LOG_DEBUG(
                 "Transform {} was already loaded, discarding subsequent loads",
                 tr_name);
         }
     }
+#endif
     PSN_LOG_INFO("Loaded {} transforms.", load_count);
     return load_count;
 }

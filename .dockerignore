@@ -25,39 +25,18 @@
 *.la
 *.a
 *.lib
+!tests/data/*.lib
+!tests/data/**/Nangate45/*.lib
+!tests/data/**/gscl45nm/*.lib
 
 # Executables
 *.exe
 *.out
 *.app
+*.x
 
-# build
-build
-.DS_Store
+# Build directory
+build/
+tests/results
 .vscode
-
-**/rpm/RPM-GPG-KEY-nefelus
-autom4te.cache
-.deps
-*.o
-*.so
-*.a
-pkgIndex.tcl
-tclIndex
-Makefile.defs
-*~
-core
-*.core
-*.dSYM
-*.rej
-TAGS
-
-zrouter/bin
-zrouter/src/ade.log
-zrouter/src/ldir
-zrouter/src/logs
-zrouter/src/main/cvs_version.h
-zrouter/src/ModuleTemplate/TMP_tcl/TMP_Tcl.cpp
-zrouter/src/ModuleTemplate/TMP_tcl/TMP_Tcl.h
-zrouter/src/SHAPES/PDN_tcl/PDN_Tcl.cpp
-zrouter/src/SHAPES/PDN_tcl/PDN_Tcl.h
+external/opendp

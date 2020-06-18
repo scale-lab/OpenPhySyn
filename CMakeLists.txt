@@ -7,7 +7,7 @@ cmake_policy(SET CMP0086 NEW)
 endif()
 
 
-project(OpenPhySyn VERSION 1.6.5)
+project(OpenPhySyn VERSION 1.7.0)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -27,15 +27,17 @@ option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
 option(OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED "Build Constant Propagation transform" ON)
 option(OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED "Build Timing Buffer transform" ON)
 option(OPENPHYSYN_TRANSFORM_REPAIR_TIMING_ENABLED "Build Repair Timing transform" ON)
+option(OPENPHYSYN_ENABLE_DYNAMIC_TRANSFORM_LIBRARY "Support dynamic linking for transform libraries" OFF)
 option(OPENPHYSYN_READLINE_ENABLED "Enable Tcl Readline" ON)
 option(OPENPHYSYN_OPENDP_ENABLED "Enable OpenDP" OFF)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-error")
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -Wl,-export_dynamic -Wno-unused-command-line-argument")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -Wl,--export-dynamic -Wno-unused-command-line-argument")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic")
 endif()
+
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if(${OPENPHYSYN_READLINE_ENABLED})
@@ -390,23 +392,37 @@ opendp
 )
 endif()
 
+
+
+add_custom_command(OUTPUT ${PSN_WRAP}
+  COMMAND ${SWIG_EXECUTABLE} ${SWIG_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_WRAP} ${PSN_SWIG_FILES}
+  WORKING_DIRECTORY ${PSN_HOME}
+  DEPENDS ${PSN_SWIG_FILES}
+)
+
+
+
+set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
+  ${PSN_WRAP}
+)
+
+if(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED)
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/external/StandardTransforms")
+    set(OPENPHYSYN_TRANSFORM_TARGETS "")
+    set(OPENPHYSYN_TRANSFORM_HEADER_NAMES "")
+    set(OPENPHYSYN_TRANSFORM_CLASS_NAMES "")
+    set(OPENPHYSYN_TRANSFORM_HEADER_INCLUDES "")
+    include(Transforms)
+    list (APPEND PUBLIC_INCLUDE_DIRS ${OPENPHYSYN_TRANSFORM_HEADER_INCLUDES})
+    include_directories (
+      PRIVATE
+      ${OPENPHYSYN_TRANSFORM_HEADER_INCLUDES}
+    )
+endif()
+
 # Compile all sources into a library.
 add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_WRAP})
 add_executable(Psn ${PSN_SOURCES})  # Name of exec. and location of file.
-
-target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
-target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES}) 
-target_include_directories(Psn PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
-target_link_libraries(Psn PUBLIC ${PUBLIC_EXEC_LIBRARIES} ${PUBLIC_LIBRARIES})
-
-
-
-include_directories (
-  PUBLIC
-  ${PUBLIC_INCLUDE_DIRS}
-  PRIVATE
-  ${PRIVATE_INCLUDE_DIRS}
-)
 
 set_target_properties(
     ${LIBRARY_NAME} Psn
@@ -416,15 +432,20 @@ set_target_properties(
         CXX_EXTENSIONS NO
 )
 
+include_directories (
+  PUBLIC
+  ${PUBLIC_INCLUDE_DIRS}
+  PRIVATE
+  ${PRIVATE_INCLUDE_DIRS}
+)
+
+target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
+target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES}) 
+target_include_directories(Psn PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
+target_link_libraries(Psn PUBLIC ${PUBLIC_EXEC_LIBRARIES} ${PUBLIC_LIBRARIES})
+
 set_property(TARGET ${LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET Psn PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-
-add_custom_command(OUTPUT ${PSN_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} ${SWIG_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_WRAP} ${PSN_SWIG_FILES}
-  WORKING_DIRECTORY ${PSN_HOME}
-  DEPENDS ${PSN_SWIG_FILES}
-)
 
 install(TARGETS Psn DESTINATION bin)
 
@@ -433,11 +454,7 @@ if (${OPENPHYSYN_UNIT_TESTS_ENABLED})
 add_subdirectory(tests)
 endif()
 
-set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
-  ${PSN_WRAP}
+configure_file (
+  "${PROJECT_SOURCE_DIR}/cmake/Config.hpp.in"
+  "${PROJECT_BINARY_DIR}/Config.hpp"
 )
-
-if(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED)
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/external/StandardTransforms")
-    include(Transforms)
-endif()

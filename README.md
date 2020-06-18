@@ -51,7 +51,8 @@ report_tns
 
 puts "Initial area: [expr round([design_area] * 10E12) ] um2"
 
-repair_timing -fast -capacitance_violations -transition_violations -negative_slack_violations -iterations 1 -auto_buffer_library medium -upsize_enabled -pin_swap_enabled
+puts "OpenPhySyn timing repair:"
+repair_timing
 
 puts "=============== Final Reports ============="
 report_checks
@@ -63,8 +64,13 @@ report_tns
 
 puts "Final area: [expr round([design_area] * 10E12) ] um2"
 
+puts "Export optimized design"
+export_def optimized.def
+
 exit 0
 ```
+
+You can also run the previous example from a Tcl script: `./build/Psn ./tests/tcl/getting_started.tcl`
 
 ### List available commands:
 
@@ -157,23 +163,23 @@ The `repair_timing` command repairs negative slack, maximum capacitance and tran
 -   `[-capacitance_violations]`: Repair capacitance violations.
 -   `[-transition_violations]`: Repair transition violations.
 -   `[-negative_slack_violations]`: Repair paths with negative slacks.
--   `[-iterations]`: Maximum number of iterations.
+-   `[-iterations iterations]`: Maximum number of iterations.
 -   `[-buffers buffer_cells]`: Manually specify buffer cells to use.
 -   `[-inverters inverter cells]`: Manually specify inverter cells to use.
--   `[-min_gain <unit_time>]`: Minimum slack gain to accept an optimization.
 -   `[-auto_buffer_library <single|small|medium|large|all>]`: Auto-select buffer library.
 -   `[-no_minimize_buffer_library]`: Do not run initial pruning phase for buffer selection.
 -   `[-auto_buffer_library_inverters_enabled]`: Include inverters in the selected buffer library.
 -   `[-buffer_disabled]`: Disable all buffering.
--   `[-pessimism_factor factor]` Scaling factor for transition and capacitance violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic.
+-   `[-resize_disabled]`: Disable driver sizing.
+-   `[-pin_swap_disabled]`: Disable pin-swapping.
+-   `[-pessimism_factor factor]` Scaling factor for transition and capacitance violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic (default is 1.0).
 -   `[-minimum_cost_buffer_enabled]`: Enable minimum cost buffering.
--   `[-upsize_enabled]`: Enable repair by upsizing.
--   `[-pin_swap_enabled]`: Enable pin-swapping.
+-   `[-legalization_frequency <num_edits>]`: Legalize after how many edits.
 -   `[-legalize_eventually]`: Legalize at the end of the optimization.
 -   `[-legalize_each_iteration]`: Legalize after each iteration.
 -   `[-post_place|-post_route]`: Post-placement phase mode or post-routing phase mode (not currently supported).
--   `[-legalization_frequency <num_edits>]`: Legalize after how many edits.
--   `[-fast]`: Trade-off runtime versus optimization quality by aggressive pruning.
+-   `[-min_gain <unit_time>]`: Minimum slack gain to accept an optimization.
+-   `[-high_effort]`: Trade-off runtime versus optimization quality by weaker pruning.
 
 ## Example Code
 
@@ -183,9 +189,17 @@ You can also refer to the [tcl tests directory](https://github.com/scale-lab/Ope
 
 ## Building Custom Transforms
 
-Physical Synthesis transforms libraries are loaded from the directory referred to by the variable `PSN_TRANSFORM_PATH`, defaulting to `./transforms`.
+For examples to add new transforms, check the [standard transforms directory](https://github.com/scale-lab/OpenPhySyn/tree/master/src/StandardTransforms) and the corresponding project [configuration](https://github.com/scale-lab/OpenPhySyn/blob/master/cmake/Transforms.cmake).
 
-To build a new transform, refer to the transform [template](https://github.com/scale-lab/OpenPhySynHelloTransform).
+## Docker Instructions
+
+You can run OpenPhySyn inside Docker using the provided Dockerfile
+
+```sh
+docker build -t scale/openphysyn .
+docker run --rm -itu $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenPhySyn scale/openphysyn bash
+Psn ./tests/tcl/getting_started.tcl
+```
 
 ## Dependencies
 

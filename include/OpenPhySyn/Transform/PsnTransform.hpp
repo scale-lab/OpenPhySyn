@@ -43,12 +43,37 @@ class PsnTransform
 public:
     PsnTransform();
     virtual ~PsnTransform();
-    virtual int run(Psn* psn_, std::vector<std::string> args) = 0;
+    virtual int         run(Psn* psn_, std::vector<std::string> args) = 0;
+    virtual const char* name()                                        = 0;
+    virtual const char* version()                                     = 0;
+    virtual const char* help()                                        = 0;
+    virtual const char* description()                                 = 0;
 };
 } // namespace psn
 
-#define DEFINE_TRANSFORM(classType, transformName, transformVersion,           \
+#define DEFINE_TRANSFORM(transformName, transformVersion,                      \
                          transformDescription, transformHelp)                  \
+                                                                               \
+    const char* name() override                                                \
+    {                                                                          \
+        return transformName;                                                  \
+    }                                                                          \
+                                                                               \
+    const char* version() override                                             \
+    {                                                                          \
+        return transformVersion;                                               \
+    }                                                                          \
+    const char* help() override                                                \
+    {                                                                          \
+        return transformHelp;                                                  \
+    }                                                                          \
+    const char* description() override                                         \
+    {                                                                          \
+        return transformDescription;                                           \
+    }
+
+#define DEFINE_DYNAMIC_TRANSFORM(classType, transformName, transformVersion,   \
+                                 transformDescription, transformHelp)          \
     extern "C"                                                                 \
     {                                                                          \
         std::shared_ptr<psn::PsnTransform>                                     \
