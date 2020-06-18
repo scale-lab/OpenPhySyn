@@ -1089,11 +1089,6 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
          "-high_effort"}); // Trade-off runtime versus optimization quality by
                            // weaker pruning
 
-    if (args.size() < 2)
-    {
-        PSN_LOG_ERROR(help());
-        return -1;
-    }
     for (size_t i = 0; i < args.size(); i++)
     {
         if (args[i].size() > 2 && args[i][0] == '-' && args[i][1] == '-')

@@ -64,6 +64,9 @@ report_tns
 
 puts "Final area: [expr round([design_area] * 10E12) ] um2"
 
+puts "Export optimized design"
+export_def optimized.def
+
 exit 0
 ```
 
@@ -186,9 +189,7 @@ You can also refer to the [tcl tests directory](https://github.com/scale-lab/Ope
 
 ## Building Custom Transforms
 
-Physical Synthesis transforms libraries are loaded from the directory referred to by the variable `PSN_TRANSFORM_PATH`, defaulting to `./transforms`.
-
-To build a new transform, refer to the transform [template](https://github.com/scale-lab/OpenPhySynHelloTransform).
+For examples to add new transforms, check the [standard transforms directory](https://github.com/scale-lab/OpenPhySyn/tree/master/src/StandardTransforms) and the corresponding project [configuration](https://github.com/scale-lab/OpenPhySyn/blob/master/cmake/Transforms.cmake).
 
 ## Docker Instructions
 

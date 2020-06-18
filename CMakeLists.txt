@@ -7,7 +7,7 @@ cmake_policy(SET CMP0086 NEW)
 endif()
 
 
-project(OpenPhySyn VERSION 1.6.5)
+project(OpenPhySyn VERSION 1.7.0)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -391,23 +391,37 @@ opendp
 )
 endif()
 
+
+
+add_custom_command(OUTPUT ${PSN_WRAP}
+  COMMAND ${SWIG_EXECUTABLE} ${SWIG_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_WRAP} ${PSN_SWIG_FILES}
+  WORKING_DIRECTORY ${PSN_HOME}
+  DEPENDS ${PSN_SWIG_FILES}
+)
+
+
+
+set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
+  ${PSN_WRAP}
+)
+
+if(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED)
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/external/StandardTransforms")
+    set(OPENPHYSYN_TRANSFORM_TARGETS "")
+    set(OPENPHYSYN_TRANSFORM_HEADER_NAMES "")
+    set(OPENPHYSYN_TRANSFORM_CLASS_NAMES "")
+    set(OPENPHYSYN_TRANSFORM_HEADER_INCLUDES "")
+    include(Transforms)
+    list (APPEND PUBLIC_INCLUDE_DIRS ${OPENPHYSYN_TRANSFORM_HEADER_INCLUDES})
+    include_directories (
+      PRIVATE
+      ${OPENPHYSYN_TRANSFORM_HEADER_INCLUDES}
+    )
+endif()
+
 # Compile all sources into a library.
 add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_WRAP})
 add_executable(Psn ${PSN_SOURCES})  # Name of exec. and location of file.
-
-target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
-target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES}) 
-target_include_directories(Psn PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
-target_link_libraries(Psn PUBLIC ${PUBLIC_EXEC_LIBRARIES} ${PUBLIC_LIBRARIES})
-
-
-
-include_directories (
-  PUBLIC
-  ${PUBLIC_INCLUDE_DIRS}
-  PRIVATE
-  ${PRIVATE_INCLUDE_DIRS}
-)
 
 set_target_properties(
     ${LIBRARY_NAME} Psn
@@ -417,15 +431,20 @@ set_target_properties(
         CXX_EXTENSIONS NO
 )
 
+include_directories (
+  PUBLIC
+  ${PUBLIC_INCLUDE_DIRS}
+  PRIVATE
+  ${PRIVATE_INCLUDE_DIRS}
+)
+
+target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
+target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES}) 
+target_include_directories(Psn PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
+target_link_libraries(Psn PUBLIC ${PUBLIC_EXEC_LIBRARIES} ${PUBLIC_LIBRARIES})
+
 set_property(TARGET ${LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET Psn PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-
-add_custom_command(OUTPUT ${PSN_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} ${SWIG_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_WRAP} ${PSN_SWIG_FILES}
-  WORKING_DIRECTORY ${PSN_HOME}
-  DEPENDS ${PSN_SWIG_FILES}
-)
 
 install(TARGETS Psn DESTINATION bin)
 
@@ -434,14 +453,6 @@ if (${OPENPHYSYN_UNIT_TESTS_ENABLED})
 add_subdirectory(tests)
 endif()
 
-set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
-  ${PSN_WRAP}
-)
-
-if(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED)
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/external/StandardTransforms")
-    include(Transforms)
-endif()
 configure_file (
   "${PROJECT_SOURCE_DIR}/cmake/Config.hpp.in"
   "${PROJECT_BINARY_DIR}/Config.hpp"

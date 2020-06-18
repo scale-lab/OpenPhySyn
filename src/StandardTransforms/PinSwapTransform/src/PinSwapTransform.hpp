@@ -50,11 +50,12 @@ public:
     int powerPinSwap(Psn* psn_inst, int path_count);
 
     int run(Psn* psn_inst, std::vector<std::string> args) override;
-};
 
-DEFINE_TRANSFORM(
-    PinSwapTransform, "pin_swap", "1.1",
-    "Performs timing-driven/power-driven commutative pin swapping optimization",
-    "Usage: transform pin_swap <max_num_optimize_paths> [-power]")
+    DEFINE_TRANSFORM(
+        "pin_swap", "1.1",
+        "Performs timing-driven/power-driven commutative pin swapping "
+        "optimization",
+        "Usage: transform pin_swap <max_num_optimize_paths> [-power]")
+};
 
 } // namespace psn

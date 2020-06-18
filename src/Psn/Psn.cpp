@@ -29,10 +29,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <Config.hpp>
 #include <Psn/Psn.hpp>
 #include <flute.h>
 #include <tcl.h>
+#include "Config.hpp"
 #include "Def/DefReader.hpp"
 #include "Def/DefWriter.hpp"
 #include "Lef/LefReader.hpp"
@@ -352,12 +352,16 @@ Psn::instancePtr()
 int
 Psn::loadTransforms()
 {
+    int load_count = 0;
+
+    OPENPHYSYN_LOAD_TRANSFORMS(transforms_, transforms_info_, load_count);
+
+#ifdef OPENPHYSYN_ENABLE_DYNAMIC_TRANSFORM_LIBRARY
     std::string transforms_paths(
         FileUtils::joinPath(FileUtils::homePath(), ".OpenPhySyn/transforms") +
         ":" + FileUtils::joinPath(exec_path_, "transforms") + ":" +
         std::string(PSN_TRANSFORM_INSTALL_FULL_PATH));
-    const char* env_path   = std::getenv("PSN_TRANSFORM_PATH");
-    int         load_count = 0;
+    const char* env_path = std::getenv("PSN_TRANSFORM_PATH");
 
     if (env_path)
     {
@@ -409,6 +413,7 @@ Psn::loadTransforms()
                 tr_name);
         }
     }
+#endif
     PSN_LOG_INFO("Loaded {} transforms.", load_count);
     return load_count;
 }

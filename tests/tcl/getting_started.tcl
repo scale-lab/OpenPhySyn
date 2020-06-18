@@ -30,4 +30,7 @@ report_tns
 
 puts "Final area: [expr round([design_area] * 10E12) ] um2"
 
+puts "Export optimized design"
+export_def optimized.def
+
 exit 0

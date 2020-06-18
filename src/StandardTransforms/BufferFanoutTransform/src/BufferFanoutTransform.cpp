@@ -344,4 +344,5 @@ BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
 
     return -1;
 }
+
 } // namespace psn
