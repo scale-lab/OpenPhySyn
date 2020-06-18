@@ -55,6 +55,6 @@ public:
 DEFINE_TRANSFORM(
     PinSwapTransform, "pin_swap", "1.1",
     "Performs timing-driven/power-driven commutative pin swapping optimization",
-    "Usage: transform pin_swap <max_num_optimize_paths> [-optimize_power]")
+    "Usage: transform pin_swap <max_num_optimize_paths> [-power]")
 
 } // namespace psn

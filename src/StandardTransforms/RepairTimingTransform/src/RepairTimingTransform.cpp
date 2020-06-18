@@ -339,7 +339,7 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                 }
                 // Try to resize before inserting the buffers
                 // 4. Upsize till no violations
-                if (!is_fixed && options->repair_by_upsize)
+                if (!is_fixed && options->repair_by_resize)
                 {
                     auto driver_types = handler.equivalentCells(
                         handler.libraryCell(driver_cell));
@@ -444,7 +444,7 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                     }
                 }
                 // 6. Resize again if not fixed by buffering
-                if (options->repair_by_upsize && !is_fixed && !is_slack_repair)
+                if (options->repair_by_resize && !is_fixed && !is_slack_repair)
                 {
                     auto driver_types = handler.equivalentCells(
                         handler.libraryCell(driver_cell));
@@ -914,7 +914,7 @@ RepairTimingTransform::repairTiming(
     PSN_LOG_INFO("Buffering: {}",
                  !options->disable_buffering ? "enabled" : "disabled");
     PSN_LOG_INFO("Driver sizing: {}",
-                 options->repair_by_upsize ? "enabled" : "disabled");
+                 options->repair_by_resize ? "enabled" : "disabled");
     PSN_LOG_INFO("Pin-swapping: {}",
                  options->repair_by_pinswap ? "enabled" : "disabled");
     PSN_LOG_INFO("Mode: {}",
@@ -1058,10 +1058,6 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
     options->repair_capacitance_violations = false;
     options->repair_negative_slack         = false;
     options->repair_transition_violations  = false;
-    options->repair_by_pinswap             = false;
-    options->repair_by_upsize              = false;
-    options->repair_by_resynthesis         = false;
-    options->driver_resize                 = false;
     options->minimize_cluster_buffers      = true;
 
     std::unordered_set<std::string> buffer_lib_names;
@@ -1081,7 +1077,7 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
                                          // buffer selection
          "-buffer_disabled",             // Disable all buffering
          "-minimum_cost_buffer_enabled", // Enable minimum cost buffering
-         "-upsize_enabled",              // Enable repair by upsizing
+         "-resize_enabled",              // Enable repair by upsizing
          "-downsize_enabled",            // Enable repair by downsizing
          "-pin_swap_enabled",            // Enable pin-swapping
          "-legalize_eventually",     // Legalize at the end of the optimization
@@ -1089,8 +1085,9 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
          "-post_place",              // Post placement phase mode
          "-post_route", // Post routing phase mode (not currently supported)
          "-legalization_frequency", // Legalize after how many edit
-         "-fast"}); // Trade-off runtime versus optimization quality by
-                    // aggressive pruning
+         "-pessimism_factor",       // Cap/slew limit scaling factor
+         "-high_effort"}); // Trade-off runtime versus optimization quality by
+                           // weaker pruning
 
     if (args.size() < 2)
     {
@@ -1104,6 +1101,8 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
             args[i] = args[i].substr(1);
         }
     }
+    bool high_effort         = false;
+    bool custom_upstream_res = false;
     for (size_t i = 0; i < args.size(); i++) // Capture the user arguments
     {
         if (args[i] == "-buffers")
@@ -1173,23 +1172,23 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
             {
                 if (args[i] == "single")
                 {
-                    options->cluster_threshold = 1.0;
+                    options->cluster_threshold = PSN_CLUSTER_SIZE_SINGLE;
                 }
                 else if (args[i] == "small")
                 {
-                    options->cluster_threshold = 3.0 / 4.0;
+                    options->cluster_threshold = PSN_CLUSTER_SIZE_SMALL;
                 }
                 else if (args[i] == "medium")
                 {
-                    options->cluster_threshold = 1.0 / 4.0;
+                    options->cluster_threshold = PSN_CLUSTER_SIZE_MEDIUM;
                 }
                 else if (args[i] == "large")
                 {
-                    options->cluster_threshold = 1.0 / 12.0;
+                    options->cluster_threshold = PSN_CLUSTER_SIZE_LARGE;
                 }
                 else if (args[i] == "all")
                 {
-                    options->cluster_threshold = 0.0;
+                    options->cluster_threshold = PSN_CLUSTER_SIZE_ALL;
                 }
                 else
                 {
@@ -1274,6 +1273,20 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
                 options->area_penalty = atof(args[i].c_str());
             }
         }
+        else if (args[i] == "-upstream_resistance")
+        {
+            i++;
+            if (i >= args.size() || !StringUtils::isNumber(args[i]))
+            {
+                PSN_LOG_ERROR(help());
+                return -1;
+            }
+            else
+            {
+                options->minimum_upstream_resistance = atof(args[i].c_str());
+                custom_upstream_res                  = true;
+            }
+        }
         else if (args[i] == "-buffer_disabled")
         {
             options->disable_buffering = true;
@@ -1282,13 +1295,13 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
         {
             options->minimum_cost = true;
         }
-        else if (args[i] == "-pin_swap_enabled")
+        else if (args[i] == "-pin_swap_disabled")
         {
-            options->repair_by_pinswap = true;
+            options->repair_by_pinswap = false;
         }
-        else if (args[i] == "-upsize_enabled")
+        else if (args[i] == "-resize_disabled")
         {
-            options->repair_by_upsize = true;
+            options->repair_by_resize = false;
         }
         else if (args[i] == "-downsize_enabled")
         {
@@ -1313,9 +1326,9 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
                 "Post-routing optimization is not currently supported.");
             return -1;
         }
-        else if (args[i] == "-fast")
+        else if (args[i] == "-high_effort")
         {
-            options->minimum_upstream_resistance = 600;
+            high_effort = true;
         }
         else
         {
@@ -1323,22 +1336,31 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
             return -1;
         }
     }
-    if (options->legalization_frequency &&
-        (options->phase == DesignPhase::PostPlace))
+    if (!custom_upstream_res)
     {
-        PSN_LOG_WARN(
-            "Incremental legalization enabled in global placement phase");
+        if (high_effort)
+        {
+            options->minimum_upstream_resistance = 120;
+        }
+        else
+        {
+            options->minimum_upstream_resistance = 600;
+        }
     }
 
-    else if (!options->repair_capacitance_violations &&
-             !options->repair_transition_violations &&
-             !options->repair_negative_slack)
+    if (!options->repair_capacitance_violations &&
+        !options->repair_transition_violations &&
+        !options->repair_negative_slack)
     {
         options->repair_transition_violations  = true;
         options->repair_capacitance_violations = true;
         options->repair_negative_slack         = true;
     }
-
+    if (!options->cluster_buffers && !buffer_lib_names.size())
+    {
+        options->cluster_buffers   = true;
+        options->cluster_threshold = PSN_CLUSTER_SIZE_SMALL;
+    }
     PSN_LOG_DEBUG("repair_timing {}", StringUtils::join(args, " "));
 
     return repairTiming(psn_inst, options, buffer_lib_names,

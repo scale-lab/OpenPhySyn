@@ -35,7 +35,10 @@ file(MAKE_DIRECTORY ${TRANSFORMS_BUILD_DIR})
 
 
 set(PSN_HOME ${CMAKE_CURRENT_SOURCE_DIR} CACHE FILEPATH "The path to OpenPhySyn includes")
-set(PSN_TRANSFORM_INSTALL_PATH "$ENV{HOME}/.OpenPhySyn/transforms" CACHE FILEPATH "Default path for transforms installation")
+set(PSN_TRANSFORM_INSTALL_PATH lib/openphysyn/transforms)
+set(PSN_TRANSFORM_INSTALL_FULL_PATH ${CMAKE_INSTALL_PREFIX}/lib/openphysyn/transforms)
+
+message(STATUS "OpenPhySyn Transforms installation path: ${PSN_TRANSFORM_INSTALL_FULL_PATH}")
 
 if (${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
 add_subdirectory(src/StandardTransforms/HelloTransform)

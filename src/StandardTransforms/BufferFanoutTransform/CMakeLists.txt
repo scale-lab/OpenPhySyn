@@ -16,7 +16,7 @@ if(NOT DEFINED OPENDB_HOME)
 endif()
 
 if(NOT DEFINED OPENSTA_HOME)
-  set(OPENSTA_HOME ${PSN_HOME}/external/OpenSTA  CACHE FILEPATH "The path to OpenSTA" )
+  set(OPENSTA_HOME ${PSN_HOME}/external/OpenSTA CACHE FILEPATH "The path to OpenSTA" )
 endif()
 
 IF(NOT EXISTS ${OPENDB_HOME})
@@ -59,12 +59,3 @@ endif()
 target_compile_features(${TRANSFORM_NAME} PRIVATE cxx_range_for cxx_auto_type)
 target_compile_options(${TRANSFORM_NAME} PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
 set_property(TARGET ${TRANSFORM_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-
-set(PSN_TRANSFORM_INSTALL_PATH "$ENV{HOME}/.OpenPhySyn/transforms" CACHE STRING "Default path for transforms installation")
-
-
-install(
-  TARGETS ${TRANSFORM_NAME}
-  DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
-)

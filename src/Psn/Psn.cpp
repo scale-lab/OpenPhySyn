@@ -354,13 +354,15 @@ Psn::loadTransforms()
 {
     std::string transforms_paths(
         FileUtils::joinPath(FileUtils::homePath(), ".OpenPhySyn/transforms") +
-        ":" + FileUtils::joinPath(exec_path_, "./transforms"));
+        ":" + FileUtils::joinPath(exec_path_, "transforms") + ":" +
+        std::string(PSN_TRANSFORM_INSTALL_FULL_PATH));
     const char* env_path   = std::getenv("PSN_TRANSFORM_PATH");
     int         load_count = 0;
 
     if (env_path)
     {
-        transforms_paths = std::string(env_path);
+        transforms_paths =
+            transforms_paths + std::string(":") + std::string(env_path);
     }
 
     std::vector<std::string> transforms_dirs =
@@ -376,6 +378,7 @@ Psn::loadTransforms()
         {
             continue;
         }
+        PSN_LOG_DEBUG("Searching for transforms at {}", transform_parent_path);
         std::vector<std::string> transforms_paths =
             FileUtils::readDirectory(transform_parent_path, true);
         for (auto& path : transforms_paths)
@@ -401,7 +404,7 @@ Psn::loadTransforms()
         }
         else
         {
-            PSN_LOG_WARN(
+            PSN_LOG_DEBUG(
                 "Transform {} was already loaded, discarding subsequent loads",
                 tr_name);
         }

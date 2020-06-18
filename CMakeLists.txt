@@ -27,6 +27,7 @@ option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
 option(OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED "Build Constant Propagation transform" ON)
 option(OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED "Build Timing Buffer transform" ON)
 option(OPENPHYSYN_TRANSFORM_REPAIR_TIMING_ENABLED "Build Repair Timing transform" ON)
+option(OPENPHYSYN_ENABLE_DYNAMIC_TRANSFORM_LIBRARY "Support dynamic linking for transform libraries" OFF)
 option(OPENPHYSYN_READLINE_ENABLED "Enable Tcl Readline" ON)
 option(OPENPHYSYN_OPENDP_ENABLED "Enable OpenDP" OFF)
 
@@ -441,3 +442,7 @@ if(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/external/StandardTransforms")
     include(Transforms)
 endif()
+configure_file (
+  "${PROJECT_SOURCE_DIR}/cmake/Config.hpp.in"
+  "${PROJECT_BINARY_DIR}/Config.hpp"
+)

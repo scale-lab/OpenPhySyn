@@ -53,9 +53,12 @@ TEST_CASE("testing pin_swap transform")
         CHECK(psn_inst.database()->getChip() != nullptr);
         CHECK(psn_inst.hasTransform("pin_swap"));
         handler.createClock("core_clock", {"clk"}, 10E-09);
+        auto initWNS = psn_inst.handler()->worstSlack();
         auto result =
-            psn_inst.runTransform("pin_swap", std::vector<std::string>({}));
+            psn_inst.runTransform("pin_swap", std::vector<std::string>({"50"}));
+        auto finalWNS = psn_inst.handler()->worstSlack();
         CHECK(result);
+        CHECK(finalWNS > initWNS);
     }
     catch (PsnException& e)
     {
