@@ -174,10 +174,10 @@ The `repair_timing` command repairs negative slack, maximum capacitance and tran
 -   `[-pin_swap_disabled]`: Disable pin-swapping.
 -   `[-pessimism_factor factor]` Scaling factor for transition and capacitance violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic (default is 1.0).
 -   `[-minimum_cost_buffer_enabled]`: Enable minimum cost buffering.
--   `[-legalization_frequency <num_edits>]`: Legalize after how many edits.
--   `[-legalize_eventually]`: Legalize at the end of the optimization.
--   `[-legalize_each_iteration]`: Legalize after each iteration.
--   `[-post_place|-post_route]`: Post-placement phase mode or post-routing phase mode (not currently supported).
+-   `[-legalization_frequency <num_edits>]`: Legalize after how many edits (has no effect without plugging a legalizer).
+-   `[-legalize_eventually]`: Legalize at the end of the optimization (has no effect without plugging a legalizer).
+-   `[-legalize_each_iteration]`: Legalize after each iteration (has no effect without plugging a legalizer).
+-   `[-post_place|-post_route]`: Post-placement phase mode or post-routing phase mode (post-routing is not currently supported).
 -   `[-min_gain <unit_time>]`: Minimum slack gain to accept an optimization.
 -   `[-high_effort]`: Trade-off runtime versus optimization quality by weaker pruning.
 
@@ -205,12 +205,15 @@ Psn ./tests/tcl/getting_started.tcl
 
 OpenPhySyn depends on the following libraries:
 
+-   [gcc (8.3.0 or higher)](https://gcc.gnu.org) or clang
 -   [CPP TaskFlow](https://github.com/cpp-taskflow/cpp-taskflow) [included, optional]
 -   [Flute](https://github.com/The-OpenROAD-Project/flute3) [included]
 -   [OpenSTA](https://github.com/The-OpenROAD-Project/OpenSTA) [included]
 -   [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) [included]
 -   [cxxopts](https://github.com/jarro2783/cxxopts) [included]
--   [SWIG](http://www.swig.org/Doc1.3/Tcl.html)
+-   [SWIG (4.0 or higher)](http://www.swig.org/Doc1.3/Tcl.html)
+-   [Tcl (8.6)](https://www.tcl.tk)
+-   [CMake (3.9 or higher)](https://cmake.org)
 -   [Doxygen](http://www.doxygen.nl) [included, optional]
 -   [Doctests](https://github.com/onqtam/doctest) [included, optional]
 
