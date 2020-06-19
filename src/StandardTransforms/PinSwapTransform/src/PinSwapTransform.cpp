@@ -100,7 +100,7 @@ PinSwapTransform::powerPinSwap(psn::Psn* psn_inst, int path_count)
             }
         }
     }
-
+    psn_inst->handler()->notifyDesignAreaChanged();
     return swap_count_;
 }
 int
@@ -158,13 +158,6 @@ PinSwapTransform::timingPinSwap(psn::Psn* psn_inst, int path_count)
                                 else
                                 {
                                     handler.swapPins(swap_pin, cp);
-                                    // handler.sta()->vertexRequired(
-                                    //     handler.vertex(swap_pin),
-                                    //     sta::MinMax::min());
-                                    // handler.sta()->findDelays(handler.vertex(swap_pin));
-                                    // handler.sta()->vertexRequired(handler.vertex(cp),
-                                    //                               sta::MinMax::min());
-                                    // handler.sta()->findDelays(handler.vertex(cp));
                                 }
                             }
                         }
@@ -191,6 +184,7 @@ PinSwapTransform::timingPinSwap(psn::Psn* psn_inst, int path_count)
             }
         }
     }
+    psn_inst->handler()->notifyDesignAreaChanged();
     return swap_count_;
 }
 

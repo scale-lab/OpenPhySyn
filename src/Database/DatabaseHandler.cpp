@@ -64,6 +64,7 @@
 #include "sta/TimingModel.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Transition.hh"
+#include "sta/Units.hh"
 
 namespace psn
 {
@@ -91,6 +92,7 @@ DatabaseHandler::DatabaseHandler(Psn* psn_inst, DatabaseSta* sta)
     dont_use_callback_           = nullptr;
     compute_parasitics_callback_ = nullptr;
     maximum_area_callback_       = nullptr;
+    update_design_area_callback_ = nullptr;
     resetDelays();
 }
 
@@ -1741,29 +1743,52 @@ DatabaseHandler::setLocation(Instance* inst, Point pt)
     dinst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     dinst->setLocation(pt.getX(), pt.getY());
 }
+
 float
 DatabaseHandler::area(Instance* inst) const
 {
     odb::dbInst*   dinst  = network()->staToDb(inst);
     odb::dbMaster* master = dinst->getMaster();
-    return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
+    if (master->isCoreAutoPlaceable())
+    {
+        return dbuToMeters(master->getWidth()) *
+               dbuToMeters(master->getHeight());
+    }
+    return 0.0;
 }
 float
 DatabaseHandler::area(LibraryCell* cell) const
 {
     odb::dbMaster* master = db_->findMaster(name(cell).c_str());
-    return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
+    if (master->isCoreAutoPlaceable())
+    {
+        return dbuToMeters(master->getWidth()) *
+               dbuToMeters(master->getHeight());
+    }
+    return 0.0;
 }
 
 float
 DatabaseHandler::area() const
 {
     float total_area = 0.0;
-    for (auto inst : instances())
+    for (auto inst : top()->getInsts())
     {
-        total_area += area(inst);
+        auto master = inst->getMaster();
+        if (master->isCoreAutoPlaceable())
+        {
+            total_area += dbuToMeters(master->getWidth()) *
+                          dbuToMeters(master->getHeight());
+        }
     }
     return total_area;
+}
+
+std::string
+DatabaseHandler::unitScaledArea(float ar) const
+{
+    auto unit = network()->units()->distanceUnit();
+    return std::string(unit->asString(ar / unit->scale(), 0));
 }
 float
 DatabaseHandler::power(std::vector<Instance*>& insts)
@@ -1863,7 +1888,8 @@ DatabaseHandler::largestLibraryCell(LibraryCell* cell)
 double
 DatabaseHandler::dbuToMeters(int dist) const
 {
-    return static_cast<double>(dist) * 1e-6 / db_->getTech()->getLefUnits();
+    return static_cast<double>(dist) /
+           (db_->getTech()->getDbUnitsPerMicron() * 1E6);
 }
 double
 DatabaseHandler::dbuToMicrons(int dist) const
@@ -3666,11 +3692,38 @@ DatabaseHandler::setMaximumArea(MaxAreaCallback maximum_area_callback)
     maximum_area_callback_ = maximum_area_callback;
     maximum_area_valid_    = true;
 }
+void
+DatabaseHandler::setUpdateDesignArea(
+    UpdateDesignAreaCallback update_design_area_callback)
+{
+    update_design_area_callback_ = update_design_area_callback;
+}
+void
+DatabaseHandler::notifyDesignAreaChanged(float new_area)
+{
+    if (update_design_area_callback_ != nullptr)
+    {
+        update_design_area_callback_(new_area);
+    }
+}
+void
+DatabaseHandler::notifyDesignAreaChanged()
+{
+    if (update_design_area_callback_ != nullptr)
+    {
+        update_design_area_callback_(area());
+    }
+}
 bool
 DatabaseHandler::hasMaximumArea() const
 {
+    if (maximum_area_callback_ != nullptr)
+    {
+        return maximum_area_callback_();
+    }
     return maximum_area_valid_;
 }
+
 float
 DatabaseHandler::maximumArea() const
 {

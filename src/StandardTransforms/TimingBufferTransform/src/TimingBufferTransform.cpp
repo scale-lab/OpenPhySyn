@@ -660,8 +660,9 @@ TimingBufferTransform::timingBuffer(
             break;
         }
     }
-    PSN_LOG_INFO("Initial area: {}", (int)(options->initial_area * 10E12));
-    PSN_LOG_INFO("New area: {}", (int)(current_area_ * 10E12));
+    PSN_LOG_INFO("Initial area: {}",
+                 handler.unitScaledArea(options->initial_area));
+    PSN_LOG_INFO("New area: {}", handler.unitScaledArea(current_area_));
     if (options->repair_capacitance_violations)
     {
         PSN_LOG_INFO("Found {} maximum capacitance violations",
@@ -680,6 +681,7 @@ TimingBufferTransform::timingBuffer(
                      timerless_rebuffer_count_);
     }
     PSN_LOG_INFO("Buffered {} nets", net_count_);
+    psn_inst->handler()->notifyDesignAreaChanged();
     return buffer_count_ + resize_count_;
 }
 
