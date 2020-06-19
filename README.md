@@ -207,6 +207,8 @@ The `repair_timing` command repairs negative slack, maximum capacitance and tran
 -   `[-min_gain <unit_time>]`: Minimum slack gain to accept an optimization.
 -   `[-high_effort]`: Trade-off runtime versus optimization quality by weaker pruning.
 
+> Note: you should run the design through an external legalization pass after the optimization when running without plugging a legalizer or using legalization flags.
+
 ## Example Code
 
 Refer to the provided [tests directory](https://github.com/scale-lab/OpenPhySyn/tree/master/tests) for C++ example code.

@@ -40,12 +40,6 @@ message(STATUS "OpenPhySyn transforms installation path: ${PSN_TRANSFORM_INSTALL
 # For example, to add a new transform use: DEFINETRANSFORM(mytransform MyTransform.cpp MyTransform.hpp)
 # You should not need to update this MACRO
 MACRO(DEFINETRANSFORM TRANSFORM_NAME SOURCES HEADER CLASSNAME)
-  set(PSN_LIB_PATH "" CACHE STRING "Set OpenPhySyn built library path" 0)
-
-  if(NOT PSN_LIB_PATH STREQUAL 0)
-    link_directories(${PSN_LIB_PATH})
-  endif()
-
   add_library(${TRANSFORM_NAME} ${SOURCES})
 
   target_link_libraries(${TRANSFORM_NAME}

@@ -106,7 +106,7 @@ public:
 
     // Run the transform and capture user configurations
     int run(Psn* psn_inst, std::vector<std::string> args) override;
-    DEFINE_TRANSFORM(
+    OPENPHYSYN_DEFINE_TRANSFORM(
         "repair_timing", "1.0",
         "Repair design timing and electrical violations",
         "Usage: transform repair_timing [-capacitance_violations] "

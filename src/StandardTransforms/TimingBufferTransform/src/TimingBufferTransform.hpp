@@ -87,7 +87,7 @@ public:
     TimingBufferTransform();
 
     int run(Psn* psn_inst, std::vector<std::string> args) override;
-    DEFINE_TRANSFORM(
+    OPENPHYSYN_DEFINE_TRANSFORM(
         "timing_buffer", "1.5",
         "Performs several variations of buffering and resizing to fix timing "
         "violations",
