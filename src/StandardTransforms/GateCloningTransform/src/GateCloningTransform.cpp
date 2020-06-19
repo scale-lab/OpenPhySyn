@@ -64,6 +64,7 @@ GateCloningTransform::gateClone(Psn* psn_inst, float cap_factor,
             cloneTree(psn_inst, inst, cap_factor, clone_largest_only);
         }
     }
+    psn_inst->handler()->notifyDesignAreaChanged();
     return clone_count_;
 }
 void

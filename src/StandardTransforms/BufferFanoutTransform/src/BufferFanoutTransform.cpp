@@ -260,6 +260,7 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
         }
     }
     PSN_LOG_INFO("Added {} buffers", create_buffer_count);
+    psn_inst->handler()->notifyDesignAreaChanged();
 
     return create_buffer_count;
 }

@@ -609,6 +609,7 @@ ConstantPropagationTransform::propagateConstants(
             }
         }
     }
+    psn_inst->handler()->notifyDesignAreaChanged();
 
     return prop_count_;
 }

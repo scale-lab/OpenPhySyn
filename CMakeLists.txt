@@ -253,9 +253,6 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Sta/DatabaseStaNetwork.cpp
 )
 
-
-
-
 set(PSN_SOURCES_NO_MAIN
     ${PSN_SOURCES_NO_MAIN_NO_WRAP}
     ${PSN_WRAP}
@@ -366,7 +363,6 @@ ${TCL_LIBRARY}
 dl
 )
 
-
 CHECK_SYMBOL_EXISTS(std::filesystem::path::preferred_separator filesystem cxx17fs)
 
 if(cxx17fs AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9.2)
@@ -403,13 +399,6 @@ spdlog::spdlog
 ${PUBLIC_LIBRARIES}
 )
 
-# Sometimes linking issues occur when linking OpenSTA with CUDD..
-if (CUDD_LIB)
-set(PUBLIC_LIBRARIES
-${PUBLIC_LIBRARIES}
-${CUDD_LIB}
-)
-endif()
 
 if (${OPENPHYSYN_OPENDP_ENABLED})
 set(PRIVATE_INCLUDE_DIRS
@@ -422,15 +411,11 @@ opendp
 )
 endif()
 
-
-
 add_custom_command(OUTPUT ${PSN_WRAP}
   COMMAND ${SWIG_EXECUTABLE} ${SWIG_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_WRAP} ${PSN_SWIG_FILES}
   WORKING_DIRECTORY ${PSN_HOME}
   DEPENDS ${PSN_SWIG_FILES}
 )
-
-
 
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
   ${PSN_WRAP}

@@ -69,6 +69,7 @@ typedef std::function<float()>            ParasticsCallback;
 typedef std::function<bool(LibraryCell*)> DontUseCallback;
 typedef std::function<void(Net*)>         ComputeParasiticsCallback;
 typedef std::function<float()>            MaxAreaCallback;
+typedef std::function<void(float)>        UpdateDesignAreaCallback;
 
 enum ElectircalViolation
 {
@@ -152,6 +153,11 @@ public:
     virtual void  setMaximumArea(float area);
     virtual void  setMaximumArea(MaxAreaCallback maximum_area_callback);
     virtual float maximumArea() const;
+    virtual std::string unitScaledArea(float ar) const;
+    virtual void
+                  setUpdateDesignArea(UpdateDesignAreaCallback update_design_area_callback);
+    virtual void  notifyDesignAreaChanged(float new_area);
+    virtual void  notifyDesignAreaChanged();
     virtual bool  hasMaximumArea() const;
     virtual float gateDelay(Instance* inst, InstanceTerm* to, float in_slew = 0,
                             LibraryTerm* from = nullptr,
@@ -423,9 +429,7 @@ private:
     std::unordered_map<LibraryTerm*, std::unordered_set<LibraryTerm*>>
         commutative_pins_cache_;
 
-    std::unordered_map<float, float>
-        penalty_cache_; // TODO Convert into indexing table
-
+    std::unordered_map<float, float> penalty_cache_;
     std::unordered_map<std::string, std::shared_ptr<LibraryCellMapping>>
                                                   library_cell_mappings_;
     std::unordered_map<LibraryCell*, std::string> truth_tables_;
@@ -485,6 +489,7 @@ private:
     DontUseCallback     dont_use_callback_;
     ComputeParasiticsCallback compute_parasitics_callback_;
     MaxAreaCallback           maximum_area_callback_;
+    UpdateDesignAreaCallback  update_design_area_callback_;
 };
 
 } // namespace psn
