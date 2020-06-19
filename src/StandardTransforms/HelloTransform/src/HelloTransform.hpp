@@ -43,7 +43,7 @@ private:
 public:
     int addWire(Psn* psn_inst, std::string name);
     int run(Psn* psn_inst, std::vector<std::string> args) override;
-    DEFINE_TRANSFORM(
+    OPENPHYSYN_DEFINE_TRANSFORM(
         "hello_transform", "1.0",
         "Hello transform, a toy transform that adds an unconnected net",
         "Usage:\n transform hello_transform "

@@ -68,7 +68,7 @@ public:
 
     int run(Psn* psn_inst, std::vector<std::string> args) override;
 
-    DEFINE_TRANSFORM(
+    OPENPHYSYN_DEFINE_TRANSFORM(
         "constant_propagation", "1.0",
         "Performs design optimization through constant propagation",
         "Usage: transform constant_propagation [enable-inverter-replacement] "

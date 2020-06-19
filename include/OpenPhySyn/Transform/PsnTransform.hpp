@@ -51,8 +51,8 @@ public:
 };
 } // namespace psn
 
-#define DEFINE_TRANSFORM(transformName, transformVersion,                      \
-                         transformDescription, transformHelp)                  \
+#define OPENPHYSYN_DEFINE_TRANSFORM(transformName, transformVersion,           \
+                                    transformDescription, transformHelp)       \
                                                                                \
     const char* name() override                                                \
     {                                                                          \
@@ -72,8 +72,9 @@ public:
         return transformDescription;                                           \
     }
 
-#define DEFINE_DYNAMIC_TRANSFORM(classType, transformName, transformVersion,   \
-                                 transformDescription, transformHelp)          \
+#define OPENPHYSYN_DEFINE_DYNAMIC_TRANSFORM(                                   \
+    classType, transformName, transformVersion, transformDescription,          \
+    transformHelp)                                                             \
     extern "C"                                                                 \
     {                                                                          \
         std::shared_ptr<psn::PsnTransform>                                     \

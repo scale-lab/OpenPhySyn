@@ -61,9 +61,10 @@ public:
     int gateClone(Psn* psn_inst, float cap_factor, bool clone_largest_only);
 
     int run(Psn* psn_inst, std::vector<std::string> args) override;
-    DEFINE_TRANSFORM("gate_clone", "1.0", "Performs load-driven gate cloning",
-                     "Usage: transform gate_clone "
-                     "<float: max-cap-factor> <boolean: clone-gates-only>")
+    OPENPHYSYN_DEFINE_TRANSFORM(
+        "gate_clone", "1.0", "Performs load-driven gate cloning",
+        "Usage: transform gate_clone "
+        "<float: max-cap-factor> <boolean: clone-gates-only>")
 };
 
 } // namespace psn
