@@ -17,6 +17,32 @@ Psn
 make test # Runs the unit tests
 ```
 
+## Dependencies
+
+OpenPhySyn depends on the following libraries:
+
+-   [gcc (8.3.0 or higher)](https://gcc.gnu.org) or [clang](https://clang.llvm.org)
+-   [CPP TaskFlow](https://github.com/cpp-taskflow/cpp-taskflow) [included, optional]
+-   [Flute](https://github.com/The-OpenROAD-Project/flute3) [included]
+-   [OpenSTA](https://github.com/The-OpenROAD-Project/OpenSTA) [included]
+-   [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) [included]
+-   [cxxopts](https://github.com/jarro2783/cxxopts) [included]
+-   [SWIG (4.0 or higher)](http://www.swig.org/Doc1.3/Tcl.html)
+-   [Tcl (8.6)](https://www.tcl.tk)
+-   [CMake (3.9 or higher)](https://cmake.org)
+-   [Doxygen](http://www.doxygen.nl) [included, optional]
+-   [Doctests](https://github.com/onqtam/doctest) [included, optional]
+
+## Docker Instructions
+
+You can run OpenPhySyn inside Docker using the provided Dockerfile
+
+```sh
+docker build -t scale/openphysyn .
+docker run --rm -itu $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenPhySyn scale/openphysyn bash
+Psn ./tests/tcl/getting_started.tcl
+```
+
 ## Getting Started
 
 ### Read design and run a transform:
@@ -190,32 +216,6 @@ You can also refer to the [tcl tests directory](https://github.com/scale-lab/Ope
 ## Building Custom Transforms
 
 For examples to add new transforms, check the [standard transforms directory](https://github.com/scale-lab/OpenPhySyn/tree/master/src/StandardTransforms) and the corresponding project [configuration](https://github.com/scale-lab/OpenPhySyn/blob/master/cmake/Transforms.cmake).
-
-## Docker Instructions
-
-You can run OpenPhySyn inside Docker using the provided Dockerfile
-
-```sh
-docker build -t scale/openphysyn .
-docker run --rm -itu $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenPhySyn scale/openphysyn bash
-Psn ./tests/tcl/getting_started.tcl
-```
-
-## Dependencies
-
-OpenPhySyn depends on the following libraries:
-
--   [gcc (8.3.0 or higher)](https://gcc.gnu.org) or [clang](https://clang.llvm.org)
--   [CPP TaskFlow](https://github.com/cpp-taskflow/cpp-taskflow) [included, optional]
--   [Flute](https://github.com/The-OpenROAD-Project/flute3) [included]
--   [OpenSTA](https://github.com/The-OpenROAD-Project/OpenSTA) [included]
--   [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB) [included]
--   [cxxopts](https://github.com/jarro2783/cxxopts) [included]
--   [SWIG (4.0 or higher)](http://www.swig.org/Doc1.3/Tcl.html)
--   [Tcl (8.6)](https://www.tcl.tk)
--   [CMake (3.9 or higher)](https://cmake.org)
--   [Doxygen](http://www.doxygen.nl) [included, optional]
--   [Doctests](https://github.com/onqtam/doctest) [included, optional]
 
 ## Issues
 

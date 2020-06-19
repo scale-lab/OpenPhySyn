@@ -1,4 +1,2 @@
-
-
-project(TimingBufferTransform VERSION 1.0.0 LANGUAGES CXX)
+project(OpenPhySynTimingBufferTransform VERSION 1.0.0 LANGUAGES CXX)
 DEFINETRANSFORM(timing_buffer src/TimingBufferTransform.cpp src/TimingBufferTransform.hpp TimingBufferTransform)
