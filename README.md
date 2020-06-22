@@ -198,7 +198,8 @@ The `repair_timing` command repairs negative slack, maximum capacitance and tran
 -   `[-buffer_disabled]`: Disable all buffering.
 -   `[-resize_disabled]`: Disable driver sizing.
 -   `[-pin_swap_disabled]`: Disable pin-swapping.
--   `[-pessimism_factor factor]` Scaling factor for transition and capacitance violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic (default is 1.0).
+-   `[-transition_pessimism_factor factor]` Scaling factor for transition violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic (default is 1.0).
+-   `[-capacitance_pessimism_factor factor]` Scaling factor for capacitance violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic (default is 1.0).
 -   `[-minimum_cost_buffer_enabled]`: Enable minimum cost buffering.
 -   `[-legalization_frequency <num_edits>]`: Legalize after how many edits (has no effect without plugging a legalizer).
 -   `[-legalize_eventually]`: Legalize at the end of the optimization (has no effect without plugging a legalizer).
@@ -206,6 +207,7 @@ The `repair_timing` command repairs negative slack, maximum capacitance and tran
 -   `[-post_place|-post_route]`: Post-placement phase mode or post-routing phase mode (post-routing is not currently supported).
 -   `[-min_gain <unit_time>]`: Minimum slack gain to accept an optimization.
 -   `[-high_effort]`: Trade-off runtime versus optimization quality by weaker pruning.
+-   `[-pins pin_names]`: Manually select the pins to optimize.
 
 > Note: you should run the design through an external legalization pass after the optimization when running without plugging a legalizer or using legalization flags.
 

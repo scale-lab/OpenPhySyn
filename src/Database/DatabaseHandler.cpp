@@ -1611,7 +1611,8 @@ DatabaseHandler::isCommutative(LibraryTerm* first, LibraryTerm* second) const
     return true;
 }
 std::vector<InstanceTerm*>
-DatabaseHandler::levelDriverPins(bool reverse) const
+DatabaseHandler::levelDriverPins(
+    bool reverse, std::unordered_set<InstanceTerm*> filter_pins) const
 {
     sta_->ensureGraph();
     sta_->ensureLevelized();
@@ -1637,7 +1638,11 @@ DatabaseHandler::levelDriverPins(bool reverse) const
         });
     for (auto& v : vertices)
     {
-        terms.push_back(v->pin());
+        auto pn = v->pin();
+        if (!filter_pins.size() || filter_pins.count(pn))
+        {
+            terms.push_back(v->pin());
+        }
     }
     if (reverse)
     {
@@ -2195,6 +2200,12 @@ DatabaseHandler::port(const char* name) const
     return network()->findPin(network()->topInstance(), name);
 }
 
+InstanceTerm*
+DatabaseHandler::pin(const char* name) const
+{
+    return network()->findPin(name);
+}
+
 Instance*
 DatabaseHandler::instance(InstanceTerm* term) const
 {
@@ -2293,7 +2304,7 @@ DatabaseHandler::filterPins(std::vector<InstanceTerm*>& terms,
 }
 
 void
-DatabaseHandler::setLegalizer(Legalizer& legalizer)
+DatabaseHandler::setLegalizer(Legalizer legalizer)
 {
     legalizer_ = legalizer;
 }
@@ -2907,7 +2918,8 @@ DatabaseHandler::violatesMaximumTransition(InstanceTerm* term,
 
 ElectircalViolation
 DatabaseHandler::hasElectricalViolation(InstanceTerm* pin,
-                                        float         limit_scale_factor)
+                                        float         cap_scale_factor,
+                                        float         trans_sacle_factor)
 {
     auto pin_net   = net(pin);
     auto net_pins  = pins(pin_net);
@@ -2915,7 +2927,7 @@ DatabaseHandler::hasElectricalViolation(InstanceTerm* pin,
     bool vio_cap   = false;
     for (auto connected_pin : net_pins)
     {
-        if (violatesMaximumTransition(connected_pin, limit_scale_factor))
+        if (violatesMaximumTransition(connected_pin, trans_sacle_factor))
         {
             vio_trans = true;
             if (vio_cap)
@@ -2923,7 +2935,7 @@ DatabaseHandler::hasElectricalViolation(InstanceTerm* pin,
                 break;
             }
         }
-        else if (violatesMaximumCapacitance(connected_pin, limit_scale_factor))
+        else if (violatesMaximumCapacitance(connected_pin, cap_scale_factor))
         {
             vio_cap = true;
             if (vio_trans)
@@ -3463,8 +3475,6 @@ DatabaseHandler::buildLibraryMappings(int                        max_length,
                         auto node_table_id = chain[m];
                         auto node_random_cell =
                             *(function_to_cell_[node_table_id].begin());
-                        // PSN_LOG_INFO("CHN NEXT {}",
-                        // name(node_random_cell));
 
                         auto node_input_pins =
                             libraryInputPins(node_random_cell);
