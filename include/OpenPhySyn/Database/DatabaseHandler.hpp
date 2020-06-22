@@ -385,7 +385,7 @@ public:
     virtual void        calculateParasitics();
     virtual void        calculateParasitics(Net* net);
     virtual void        resetCache();
-    virtual void        setLegalizer(Legalizer& legalizer);
+    virtual void        setLegalizer(Legalizer legalizer);
     virtual bool        legalize(int max_displacement = 0);
     virtual float bufferFixedInputSlew(LibraryCell* buffer_cell, float cap);
 
