@@ -337,7 +337,8 @@ DatabaseHandler::inverterCells() const
             auto output_pins = libraryOutputPins(cell);
             auto input_pins  = libraryInputPins(cell);
 
-            if (isSingleOutputCombinational(cell) && input_pins.size() == 1)
+            if (!dontUse(cell) && isSingleOutputCombinational(cell) &&
+                input_pins.size() == 1)
             {
                 auto           output_pin  = output_pins[0];
                 sta::FuncExpr* output_func = output_pin->function();
@@ -376,7 +377,13 @@ DatabaseHandler::bufferCells() const
     for (auto& lib : all_libs)
     {
         auto buff_libs = lib->buffers();
-        cells.insert(cells.end(), buff_libs->begin(), buff_libs->end());
+        for (auto& cell : *buff_libs)
+        {
+            if (!dontUse(cell))
+            {
+                cells.push_back(cell);
+            }
+        }
     }
     return cells;
 }
