@@ -205,8 +205,11 @@ The `repair_timing` command repairs negative slack, maximum capacitance and tran
 -   `[-legalize_eventually]`: Legalize at the end of the optimization (has no effect without plugging a legalizer).
 -   `[-legalize_each_iteration]`: Legalize after each iteration (has no effect without plugging a legalizer).
 -   `[-post_place|-post_route]`: Post-placement phase mode or post-routing phase mode (post-routing is not currently supported).
--   `[-min_gain <unit_time>]`: Minimum slack gain to accept an optimization.
+-   `[-minimum_gain <unit_time>]`: Minimum slack gain to accept an optimization.
 -   `[-high_effort]`: Trade-off runtime versus optimization quality by weaker pruning.
+-   `[-no_resize_for_negative_slack]`: Disable resizing when solving negative slack violations (enhances runtime).
+-   `[-maximum_negative_slack_paths count]`: Maximum number of negative slack paths to try to optimize.
+-   `[-maximum_negative_slack_path_depth count]`: Maximum depth per negative slack path to try to optimize.
 -   `[-pins pin_names]`: Manually select the pins to optimize.
 
 > Note: you should run the design through an external legalization pass after the optimization when running without plugging a legalizer or using legalization flags.
