@@ -198,7 +198,9 @@ public:
     OptimizationOptions() : buffer_lib_lookup(0), inverter_lib_lookup(0)
     {
         max_iterations                   = 1;
-        min_gain                         = 0;
+        minimum_gain                     = 0;
+        max_negative_slack_paths         = 0;
+        max_negative_slack_path_depth    = 0;
         area_penalty                     = 0.0;
         cluster_buffers                  = false;
         cluster_inverters                = false;
@@ -214,10 +216,11 @@ public:
         legalization_frequency           = 0;
         repair_by_buffer                 = true;
         repair_by_resize                 = true;
+        repair_by_pinswap                = true;
         repair_by_downsize               = false;
         repair_by_resynthesis            = false;
-        repair_by_pinswap                = true;
         repair_by_move                   = false;
+        resize_for_negative_slack        = true;
         minimum_cost                     = false;
         phase                            = DesignPhase::PostPlace;
         use_best_solution_threshold      = true;
@@ -233,7 +236,11 @@ public:
     float initial_area;             // Area before the optimization
     int   max_iterations;           // Maximum number of optimization iterations
     int   current_iteration;        // Current optimization iteration
-    float min_gain;                 // Minimum slack gain to accept a solution
+    int   max_negative_slack_paths; // Maximum number of negative slack paths to
+                                    // check (0 for no limit)
+    int max_negative_slack_path_depth; // Maximum vertices in the negative slack
+                                       // path to check (0 for no limit)
+    float minimum_gain;             // Minimum slack gain to accept a solution
     float area_penalty;             // Area penalty for driver sizing
     bool  cluster_buffers;          // Auto-select buffer library
     bool  cluster_inverters;        // Include inverters in the buffer library
@@ -257,17 +264,19 @@ public:
     IntervalMap<int, LibraryCell*>   buffer_lib_lookup;
     IntervalMap<int, LibraryCell*>   inverter_lib_lookup;
     bool                             repair_by_buffer; // Use buffer for repair
-    bool        repair_by_resize;      // Use driver upsizing for optimization
-    bool        repair_by_downsize;    // Use driver downsizing for optimization
-    bool        repair_by_resynthesis; // Use resynthesis for optimization
-    bool        repair_by_pinswap;     // Repair by commutative pin-swap
-    bool        repair_by_move;        // Repair by cell movement
-    bool        minimum_cost;          // Use minimum-cost buffering
-    DesignPhase phase;                 // Design optimizatin phase
-    bool use_best_solution_threshold;  // Use lower cost solution for minimal
-                                       // degradation
-    float best_solution_threshold;     // Specify use_best_solution_threshold
-                                       // threshold
+    bool repair_by_resize;            // Use driver upsizing for optimization
+    bool repair_by_downsize;          // Use driver downsizing for optimization
+    bool repair_by_resynthesis;       // Use resynthesis for optimization
+    bool repair_by_pinswap;           // Repair by commutative pin-swap
+    bool repair_by_move;              // Repair by cell movement
+    bool resize_for_negative_slack;   // Enable resizing when solving negative
+                                      // slack violations
+    bool        minimum_cost;         // Use minimum-cost buffering
+    DesignPhase phase;                // Design optimizatin phase
+    bool use_best_solution_threshold; // Use lower cost solution for minimal
+                                      // degradation
+    float best_solution_threshold;    // Specify use_best_solution_threshold
+                                      // threshold
     size_t
         best_solution_threshold_range; // Number of lower cost solutions to test
     float

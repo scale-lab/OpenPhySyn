@@ -261,7 +261,7 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
             }
 
             if (buff_tree->cost() <= std::numeric_limits<float>::epsilon() ||
-                std::fabs(gain - options->min_gain) >=
+                std::fabs(gain - options->minimum_gain) >=
                     -std::numeric_limits<float>::epsilon())
             {
                 bool is_fixed = false;
@@ -339,7 +339,8 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                 }
                 // Try to resize before inserting the buffers
                 // 4. Upsize till no violations
-                if (!is_fixed && options->repair_by_resize)
+                if (!is_fixed && options->repair_by_resize &&
+                    (!is_slack_repair || options->resize_for_negative_slack))
                 {
                     auto driver_types = handler.equivalentCells(
                         handler.libraryCell(driver_cell));
@@ -647,9 +648,13 @@ RepairTimingTransform::fixNegativeSlack(
 
     // NOTE: This can be done in parallel..
     int unfixed_paths = 0;
-    for (size_t i = 0; i < negative_slack_paths.size(); i++)
+    for (size_t i = 0; i < negative_slack_paths.size() &&
+                       (!options->max_negative_slack_paths ||
+                        i < options->max_negative_slack_paths);
+         i++)
     {
-        auto& pth = negative_slack_paths[i];
+        int   fixed_pin_count = 0;
+        auto& pth             = negative_slack_paths[i];
         std::reverse(pth.begin(), pth.end());
         auto end_pin = pth[0].pin();
         // Refresh path
@@ -666,8 +671,12 @@ RepairTimingTransform::fixNegativeSlack(
                 if ((!filter_pins.size() || filter_pins.count(pin)) &&
                     !buffered_pins.count(pin))
                 {
-                    if (handler.isAnyOutput(pin))
+                    if (handler.isAnyOutput(pin) &&
+                        (!options->max_negative_slack_path_depth ||
+                         fixed_pin_count <
+                             options->max_negative_slack_path_depth))
                     {
+                        fixed_pin_count++;
                         repairPin(psn_inst, pin, RepairTarget::RepairSlack,
                                   options);
                         if (options->legalization_frequency >
@@ -1087,36 +1096,42 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
     std::unordered_set<std::string> buffer_lib_names;
     std::unordered_set<std::string> inverter_lib_names;
     std::unordered_set<std::string> pin_names;
-    std::unordered_set<std::string> keywords({
-        "-capacitance_violations",    // Repair capacitance violations
-        "-transition_violations",     // Repair transition violations
-        "-negative_slack_violations", // Repair paths with negative slacks
-        "-iterations",                // Maximum number of iterations
-        "-buffers",                   // Manually specify buffer cells to use
-        "-inverters",                 // Manually specify inverter cells to use
-        "-min_gain",            // Minimum slack gain to accept an optimization
-        "-auto_buffer_library", // Auto-select buffer library
-        "-auto_buffer_library_inverters_enabled", // Include inverters in the
-                                                  // selected buffer library
-        "-no_minimize_buffer_library",  // Do not run initial pruning phase for
-                                        // buffer selection
-        "-buffer_disabled",             // Disable all buffering
-        "-minimum_cost_buffer_enabled", // Enable minimum cost buffering
-        "-resize_enabled",              // Enable repair by upsizing
-        "-downsize_enabled",            // Enable repair by downsizing
-        "-pin_swap_enabled",            // Enable pin-swapping
-        "-legalize_eventually",     // Legalize at the end of the optimization
-        "-legalize_each_iteration", // Legalize after each iteration
-        "-post_place",              // Post placement phase mode
-        "-post_route", // Post routing phase mode (not currently supported)
-        "-legalization_frequency",       // Legalize after how many edit
-        "-capacitance_pessimism_factor", // Cap limit scaling factor
-        "-transition_pessimism_factor",  // Transition limit scaling factor
-        "-high_effort", // Trade-off runtime versus optimization quality by
-                        // weaker pruning
-        "-pins"         // Repair selected pins only
-    });
-
+    std::unordered_set<std::string> keywords(
+        {"-capacitance_violations",    // Repair capacitance violations
+         "-transition_violations",     // Repair transition violations
+         "-negative_slack_violations", // Repair paths with negative slacks
+         "-iterations",                // Maximum number of iterations
+         "-buffers",                   // Manually specify buffer cells to use
+         "-inverters",                 // Manually specify inverter cells to use
+         "-minimum_gain",        // Minimum slack gain to accept an optimization
+         "-auto_buffer_library", // Auto-select buffer library
+         "-auto_buffer_library_inverters_enabled", // Include inverters in the
+                                                   // selected buffer library
+         "-no_minimize_buffer_library",  // Do not run initial pruning phase for
+                                         // buffer selection
+         "-buffer_disabled",             // Disable all buffering
+         "-minimum_cost_buffer_enabled", // Enable minimum cost buffering
+         "-resize_disabled",             // Disable repair by resizing
+         "-downsize_enabled",            // Enable repair by downsizing
+         "-pin_swap_disabled",           // Enable pin-swapping
+         "-no_resize_for_negative_slack", // Disable resizing when solving
+                                          // negative slack violation
+         "-maximum_negative_slack_paths", // Maximum number of negative slack
+                                          // paths to check (0 for no limit)
+         "-maximum_negative_slack_path_depth", // Maximum vertices in the
+                                               // negative slack path to check
+                                               // (0 for no limit)
+         "-legalize_eventually",     // Legalize at the end of the optimization
+         "-legalize_each_iteration", // Legalize after each iteration
+         "-post_place",              // Post placement phase mode
+         "-post_route", // Post routing phase mode (not currently supported)
+         "-legalization_frequency",       // Legalize after how many edit
+         "-capacitance_pessimism_factor", // Cap limit scaling factor
+         "-transition_pessimism_factor",  // Transition limit scaling factor
+         "-high_effort", // Trade-off runtime versus optimization quality by
+                         // weaker pruning
+         "-upstream_resistance"}); // Override default minimum upstream
+                                   // resistance
     for (size_t i = 0; i < args.size(); i++)
     {
         if (args[i].size() > 2 && args[i][0] == '-' && args[i][1] == '-')
@@ -1268,7 +1283,7 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
                 options->max_iterations = atoi(args[i].c_str());
             }
         }
-        else if (args[i] == "-min_gain")
+        else if (args[i] == "-maximum_negative_slack_paths")
         {
             i++;
             if (i >= args.size() || !StringUtils::isNumber(args[i]))
@@ -1278,7 +1293,33 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
             }
             else
             {
-                options->min_gain = atof(args[i].c_str());
+                options->max_negative_slack_paths = atoi(args[i].c_str());
+            }
+        }
+        else if (args[i] == "-maximum_negative_slack_path_depth")
+        {
+            i++;
+            if (i >= args.size() || !StringUtils::isNumber(args[i]))
+            {
+                PSN_LOG_ERROR(help());
+                return -1;
+            }
+            else
+            {
+                options->max_negative_slack_path_depth = atoi(args[i].c_str());
+            }
+        }
+        else if (args[i] == "-minimum_gain")
+        {
+            i++;
+            if (i >= args.size() || !StringUtils::isNumber(args[i]))
+            {
+                PSN_LOG_ERROR(help());
+                return -1;
+            }
+            else
+            {
+                options->minimum_gain = atof(args[i].c_str());
             }
         }
         else if (args[i] == "-capacitance_pessimism_factor")
@@ -1369,6 +1410,10 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
         else if (args[i] == "-downsize_enabled")
         {
             options->repair_by_downsize = true;
+        }
+        else if (args[i] == "-no_resize_for_negative_slack")
+        {
+            options->resize_for_negative_slack = false;
         }
         else if (args[i] == "-legalize_eventually")
         {
