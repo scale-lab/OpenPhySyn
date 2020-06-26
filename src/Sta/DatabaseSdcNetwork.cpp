@@ -1,3 +1,6 @@
+/////////////////////////////////////////////////////////////////////////////
+// Original author: James Cherry, Parallax Software, Inc.
+// Naming adjustments by: Ahmed A. Agiza (Ph.D. advisors: Sherief Reda)
 // Resizer, LEF/DEF gate resizer
 // Copyright (c) 2019, Parallax Software, Inc.
 //
@@ -13,7 +16,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-// This code is originally written by James Cherry and adapted for OpenPhySyn
 
 #include "DatabaseSdcNetwork.hpp"
 #include "OpenSTA/util/Machine.hh"
