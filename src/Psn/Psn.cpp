@@ -453,8 +453,6 @@ Psn::runTransform(std::string transform_name, std::vector<std::string> args)
 
             PSN_LOG_INFO("Invoking {} transform", transform_name);
             int rc = transforms_[transform_name]->run(this, args);
-            sta_->ensureLevelized();
-            handler()->resetDelays();
             PSN_LOG_INFO("Finished {} transform ({})", transform_name, rc);
             return rc;
         }
@@ -473,7 +471,7 @@ Psn::setupLegalizer()
     ord::makeOpendp();
     psn_instance_->setLegalizer([=](int max_displacment) -> bool {
         opendp::Opendp* opendp = opendp::Opendp::instance;
-        // opendp->detailedPlacement(max_displacment);
+        opendp->detailedPlacement(max_displacment);
         return true;
     });
 #endif

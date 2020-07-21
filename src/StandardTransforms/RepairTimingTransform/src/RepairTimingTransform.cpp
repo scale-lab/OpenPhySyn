@@ -260,64 +260,107 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                 };
             }
 
-            if (buff_tree->cost() <= std::numeric_limits<float>::epsilon() ||
-                std::fabs(gain - options->minimum_gain) >=
-                    -std::numeric_limits<float>::epsilon())
+            bool is_fixed = false;
+            // 3. Run pin-swap
+            if (!is_fixed && options->repair_by_pinswap &&
+                options->current_iteration == 0)
             {
-                bool is_fixed = false;
-                // 3. Run pin-swap
-                if (!is_fixed && options->repair_by_pinswap &&
-                    options->current_iteration == 0)
+                handler.sta()->ensureLevelized();
+                handler.sta()->vertexRequired(handler.vertex(pin),
+                                              sta::MinMax::min());
+                handler.sta()->findDelays(handler.vertex(pin));
+                auto wp = handler.worstSlackPath(pin, true);
+                if (wp.size() > 1)
                 {
-                    handler.sta()->ensureLevelized();
-                    handler.sta()->vertexRequired(handler.vertex(pin),
-                                                  sta::MinMax::min());
-                    handler.sta()->findDelays(handler.vertex(pin));
-                    auto wp = handler.worstSlackPath(pin, true);
-                    if (wp.size() > 1)
+                    auto inpin      = wp[wp.size() - 2].pin();
+                    auto swap_pin   = inpin;
+                    auto commu_pins = handler.commutativePins(inpin);
+                    if (commu_pins.size())
                     {
-                        auto inpin      = wp[wp.size() - 2].pin();
-                        auto swap_pin   = inpin;
-                        auto commu_pins = handler.commutativePins(inpin);
-                        if (commu_pins.size())
-                        {
-                            auto pre_swap_wp =
-                                handler.worstSlackPath(pin, true);
-                            float pre_swap_slack = handler.worstSlack(
-                                pre_swap_wp[pre_swap_wp.size() - 1].pin());
+                        auto  pre_swap_wp = handler.worstSlackPath(pin, true);
+                        float pre_swap_slack = handler.worstSlack(
+                            pre_swap_wp[pre_swap_wp.size() - 1].pin());
 
-                            for (auto& cp : commu_pins)
+                        for (auto& cp : commu_pins)
+                        {
+                            handler.swapPins(swap_pin, cp);
+                            handler.sta()->ensureLevelized();
+                            handler.sta()->vertexRequired(handler.vertex(pin),
+                                                          sta::MinMax::min());
+                            handler.sta()->findDelays(handler.vertex(pin));
+                            auto post_swap_wp =
+                                handler.worstSlackPath(pin, true);
+                            if (post_swap_wp.size())
                             {
-                                handler.swapPins(swap_pin, cp);
-                                handler.sta()->ensureLevelized();
-                                handler.sta()->vertexRequired(
-                                    handler.vertex(pin), sta::MinMax::min());
-                                handler.sta()->findDelays(handler.vertex(pin));
-                                auto post_swap_wp =
-                                    handler.worstSlackPath(pin, true);
-                                if (post_swap_wp.size())
+                                float post_swap_slack = handler.worstSlack(
+                                    post_swap_wp[post_swap_wp.size() - 1].pin());
+                                if (post_swap_slack > pre_swap_slack)
                                 {
-                                    float post_swap_slack = handler.worstSlack(
-                                        post_swap_wp[post_swap_wp.size() - 1]
-                                            .pin());
-                                    if (post_swap_slack > pre_swap_slack)
-                                    {
-                                        pre_swap_slack = post_swap_slack;
-                                        swap_pin       = cp;
-                                    }
-                                    else
-                                    {
-                                        handler.swapPins(swap_pin, cp);
-                                        handler.sta()
-                                            ->search()
-                                            ->findAllArrivals();
-                                        handler.sta()->search()->findRequireds();
-                                    }
+                                    pre_swap_slack = post_swap_slack;
+                                    swap_pin       = cp;
+                                }
+                                else
+                                {
+                                    handler.swapPins(swap_pin, cp);
+                                    handler.sta()->search()->findAllArrivals();
+                                    handler.sta()->search()->findRequireds();
                                 }
                             }
-                            if (swap_pin != inpin)
+                        }
+                        if (swap_pin != inpin)
+                        {
+                            pin_swap_count_++;
+                            std::vector<Net*> fanin_nets;
+                            for (auto& fpin : handler.inputPins(driver_cell))
                             {
-                                pin_swap_count_++;
+                                fanin_nets.push_back(handler.net(fpin));
+                            }
+                            affected_nets.insert(handler.net(pin));
+                            affected_nets.insert(fanin_nets.begin(),
+                                                 fanin_nets.end());
+                            for (auto& net : affected_nets)
+                            {
+                                handler.calculateParasitics(net);
+                            }
+                            affected_nets.clear();
+                            is_fixed = !vio_check_func(pin);
+                        }
+                    }
+                }
+            }
+            // Try to resize before inserting the buffers
+            // 4. Upsize till no violations
+            if (!is_fixed && options->repair_by_resize &&
+                (!is_slack_repair || options->resize_for_negative_slack))
+            {
+                auto driver_types =
+                    handler.equivalentCells(handler.libraryCell(driver_cell));
+                float current_area    = handler.area(driver_lib);
+                auto  replaced_driver = driver_lib;
+                int   attmepts        = 0;
+                for (auto& driver_size : driver_types)
+                {
+                    float new_driver_area = handler.area(driver_size);
+                    // Only test larger drivers for now
+                    if ((new_driver_area - current_area) < buff_tree->cost() &&
+                        handler.area(driver_size) > current_area)
+                    {
+                        handler.replaceInstance(driver_cell, driver_size);
+                        handler.sta()->vertexRequired(handler.vertex(pin),
+                                                      sta::MinMax::min());
+                        handler.sta()->findDelays(handler.vertex(pin));
+                        is_fixed =
+                            !handler.hasElectricalViolation(
+                                pin, options->capacitance_pessimism_factor,
+                                options->transition_pessimism_factor) &&
+                            !vio_check_func(pin);
+                        replaced_driver = driver_size;
+                        attmepts++;
+                        // Only try three upsizes
+                        if (is_fixed || attmepts > 5)
+                        {
+                            if (is_fixed)
+                            {
                                 std::vector<Net*> fanin_nets;
                                 for (auto& fpin :
                                      handler.inputPins(driver_cell))
@@ -327,83 +370,35 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                                 affected_nets.insert(handler.net(pin));
                                 affected_nets.insert(fanin_nets.begin(),
                                                      fanin_nets.end());
-                                for (auto& net : affected_nets)
-                                {
-                                    handler.calculateParasitics(net);
-                                }
-                                affected_nets.clear();
-                                is_fixed = !vio_check_func(pin);
                             }
+                            break;
                         }
                     }
                 }
-                // Try to resize before inserting the buffers
-                // 4. Upsize till no violations
-                if (!is_fixed && options->repair_by_resize &&
-                    (!is_slack_repair || options->resize_for_negative_slack))
+                if (!is_fixed)
                 {
-                    auto driver_types = handler.equivalentCells(
-                        handler.libraryCell(driver_cell));
-                    float current_area    = handler.area(driver_lib);
-                    auto  replaced_driver = driver_lib;
-                    int   attmepts        = 0;
-                    for (auto& driver_size : driver_types)
-                    {
-                        float new_driver_area = handler.area(driver_size);
-                        // Only test larger drivers for now
-                        if ((new_driver_area - current_area) <
-                                buff_tree->cost() &&
-                            handler.area(driver_size) > current_area)
-                        {
-                            handler.replaceInstance(driver_cell, driver_size);
-                            handler.sta()->vertexRequired(handler.vertex(pin),
-                                                          sta::MinMax::min());
-                            handler.sta()->findDelays(handler.vertex(pin));
-                            is_fixed =
-                                !handler.hasElectricalViolation(
-                                    pin, options->capacitance_pessimism_factor,
-                                    options->transition_pessimism_factor) &&
-                                !vio_check_func(pin);
-                            replaced_driver = driver_size;
-                            attmepts++;
-                            // Only try three upsizes
-                            if (is_fixed || attmepts > 5)
-                            {
-                                if (is_fixed)
-                                {
-                                    std::vector<Net*> fanin_nets;
-                                    for (auto& fpin :
-                                         handler.inputPins(driver_cell))
-                                    {
-                                        fanin_nets.push_back(handler.net(fpin));
-                                    }
-                                    affected_nets.insert(handler.net(pin));
-                                    affected_nets.insert(fanin_nets.begin(),
-                                                         fanin_nets.end());
-                                }
-                                break;
-                            }
-                        }
-                    }
-                    if (!is_fixed)
-                    {
-                        // Return to the original size
-                        handler.replaceInstance(driver_cell, driver_lib);
-                        replaced_driver = driver_lib;
-                    }
-                    if (driver_lib != replaced_driver)
-                    {
-                        current_area_ -= handler.area(driver_lib);
-                        current_area_ += handler.area(replaced_driver);
-                        resize_up_count_++;
-                    }
-                    handler.sta()->vertexRequired(handler.vertex(pin),
-                                                  sta::MinMax::min());
-                    handler.sta()->findDelays(handler.vertex(pin));
+                    // Return to the original size
+                    handler.replaceInstance(driver_cell, driver_lib);
+                    replaced_driver = driver_lib;
                 }
-                // 5. Buffer if not fixed by resizing
+                if (driver_lib != replaced_driver)
+                {
+                    current_area_ -= handler.area(driver_lib);
+                    current_area_ += handler.area(replaced_driver);
+                    resize_up_count_++;
+                }
+                handler.sta()->vertexRequired(handler.vertex(pin),
+                                              sta::MinMax::min());
+                handler.sta()->findDelays(handler.vertex(pin));
+            }
+            // 5. Buffer if not fixed by resizing
+            if (!is_slack_repair ||
+                (gain &&
+                 (buff_tree->cost() == 0 || gain - options->minimum_gain > 0)))
+            {
                 if (!is_fixed && !options->disable_buffering)
                 {
+
                     BufferSolution::topDown(
                         psn_inst, pin, buff_tree, current_area_, net_index_,
                         buff_index_, added_buffers, affected_nets);
@@ -447,88 +442,83 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                         }
                     }
                 }
-                // 6. Resize again if not fixed by buffering
-                if (options->repair_by_resize && !is_fixed && !is_slack_repair)
+            }
+            // 6. Resize again if not fixed by buffering
+            if (options->repair_by_resize && !is_fixed && !is_slack_repair)
+            {
+                auto driver_types =
+                    handler.equivalentCells(handler.libraryCell(driver_cell));
+                float current_area    = handler.area(driver_lib);
+                auto  replaced_driver = driver_lib;
+                is_fixed              = !vio_check_func(pin);
+                int attempts          = 0;
+                for (auto& driver_size : driver_types)
                 {
-                    auto driver_types = handler.equivalentCells(
-                        handler.libraryCell(driver_cell));
-                    float current_area    = handler.area(driver_lib);
-                    auto  replaced_driver = driver_lib;
-                    is_fixed              = !vio_check_func(pin);
-                    int attempts          = 0;
-                    for (auto& driver_size : driver_types)
+                    // Only test larger drivers for now
+                    if (handler.area(driver_size) > current_area)
                     {
-                        // Only test larger drivers for now
-                        if (handler.area(driver_size) > current_area)
+                        handler.replaceInstance(driver_cell, driver_size);
+                        is_fixed        = !vio_check_func(pin);
+                        replaced_driver = driver_size;
+                        attempts++;
+                        // Only try three upsizes
+                        if (is_fixed || attempts > 3)
                         {
-                            handler.replaceInstance(driver_cell, driver_size);
-                            is_fixed        = !vio_check_func(pin);
-                            replaced_driver = driver_size;
-                            attempts++;
-                            // Only try three upsizes
-                            if (is_fixed || attempts > 3)
+                            if (is_fixed)
                             {
-                                if (is_fixed)
+                                std::vector<Net*> fanin_nets;
+                                for (auto& fpin :
+                                     handler.inputPins(driver_cell))
                                 {
-                                    std::vector<Net*> fanin_nets;
-                                    for (auto& fpin :
-                                         handler.inputPins(driver_cell))
-                                    {
-                                        fanin_nets.push_back(handler.net(fpin));
-                                    }
-                                    affected_nets.insert(handler.net(pin));
-                                    affected_nets.insert(fanin_nets.begin(),
-                                                         fanin_nets.end());
+                                    fanin_nets.push_back(handler.net(fpin));
                                 }
-
-                                break;
+                                affected_nets.insert(handler.net(pin));
+                                affected_nets.insert(fanin_nets.begin(),
+                                                     fanin_nets.end());
                             }
+
+                            break;
                         }
                     }
-                    if (!is_fixed && !is_slack_repair)
-                    {
-                        // Return to the original size
-                        replaced_driver = driver_lib;
-                        handler.replaceInstance(driver_cell, driver_lib);
-                    }
-                    if (driver_lib != replaced_driver)
-                    {
-                        current_area_ -= handler.area(driver_lib);
-                        current_area_ += handler.area(replaced_driver);
-                        resize_up_count_++;
-                    }
                 }
-
-                if (replace_driver)
+                if (!is_fixed && !is_slack_repair)
                 {
-                    handler.replaceInstance(driver_cell, replace_driver);
+                    // Return to the original size
+                    replaced_driver = driver_lib;
+                    handler.replaceInstance(driver_cell, driver_lib);
+                }
+                if (driver_lib != replaced_driver)
+                {
                     current_area_ -= handler.area(driver_lib);
-                    current_area_ += handler.area(replace_driver);
+                    current_area_ += handler.area(replaced_driver);
                     resize_up_count_++;
-                    std::vector<Net*> fanin_nets;
-                    for (auto& fpin : handler.inputPins(driver_cell))
-                    {
-                        fanin_nets.push_back(handler.net(fpin));
-                    }
-                    affected_nets.insert(handler.net(pin));
-                    affected_nets.insert(fanin_nets.begin(), fanin_nets.end());
                 }
-                for (auto& net : affected_nets)
-                {
-                    handler.calculateParasitics(net);
-                }
-                is_fixed = !vio_check_func(pin);
-                if (is_fixed)
-                {
-                    resizeDown(psn_inst, pin, options);
-                }
-                return added_buffers;
             }
-            else
+
+            if (replace_driver)
             {
-                PSN_LOG_DEBUG("Discarding weak solution: ");
-                buff_tree->logDebug();
+                handler.replaceInstance(driver_cell, replace_driver);
+                current_area_ -= handler.area(driver_lib);
+                current_area_ += handler.area(replace_driver);
+                resize_up_count_++;
+                std::vector<Net*> fanin_nets;
+                for (auto& fpin : handler.inputPins(driver_cell))
+                {
+                    fanin_nets.push_back(handler.net(fpin));
+                }
+                affected_nets.insert(handler.net(pin));
+                affected_nets.insert(fanin_nets.begin(), fanin_nets.end());
             }
+            for (auto& net : affected_nets)
+            {
+                handler.calculateParasitics(net);
+            }
+            is_fixed = !vio_check_func(pin);
+            if (is_fixed)
+            {
+                resizeDown(psn_inst, pin, options);
+            }
+            return added_buffers;
         }
     }
     return added_buffers;
@@ -1021,6 +1011,7 @@ RepairTimingTransform::repairTiming(
             handler.setWireRC(handler.resistancePerMicron(),
                               handler.capacitancePerMicron(), false);
         }
+        handler.resetDelays();
         if (!hasVio)
         {
             PSN_LOG_INFO(

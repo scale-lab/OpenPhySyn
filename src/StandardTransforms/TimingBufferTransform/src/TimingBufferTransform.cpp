@@ -731,6 +731,10 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     }
     for (size_t i = 0; i < args.size(); i++)
     {
+        if (!args[i].size())
+        {
+            continue;
+        }
         if (args[i] == "-buffers")
         {
             i++;
