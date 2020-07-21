@@ -1134,6 +1134,10 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
     bool custom_upstream_res = false;
     for (size_t i = 0; i < args.size(); i++) // Capture the user arguments
     {
+        if (!args[i].size())
+        {
+            continue;
+        }
         if (args[i] == "-buffers")
         {
             i++;
