@@ -2794,6 +2794,7 @@ void
 DatabaseHandler::setWireRC(float res_per_micron, float cap_per_micron,
                            bool reset_delays)
 {
+    sta_->parasitics()->clear();
     if (reset_delays)
     {
         sta_->ensureGraph();
