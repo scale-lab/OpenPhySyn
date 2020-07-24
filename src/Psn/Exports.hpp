@@ -70,6 +70,7 @@ bool  has_design();
 bool  has_liberty();
 std::vector<std::string> capacitance_violations();
 std::vector<std::string> transition_violations();
+std::vector<std::string> fanout_violations();
 std::vector<std::string> cluster_buffer_names(float cluster_threshold,
                                               bool  find_superior = true);
 std::vector<std::string> cluster_inverter_names(float cluster_threshold,

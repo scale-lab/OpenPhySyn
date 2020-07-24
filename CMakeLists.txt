@@ -37,7 +37,7 @@ cmake_policy(SET CMP0086 NEW)
 endif()
 
 
-project(OpenPhySyn VERSION 1.7.4)
+project(OpenPhySyn VERSION 1.8.0)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -312,6 +312,14 @@ if (${OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED})
   ${PROJECT_SOURCE_DIR}/tests/TimingBuffer.cpp
   ${PROJECT_SOURCE_DIR}/tests/TimingBufferWithSizing.cpp
   ${PROJECT_SOURCE_DIR}/tests/TimingInvertingBuffer.cpp
+)
+endif()
+
+if (${OPENPHYSYN_TRANSFORM_REPAIR_TIMING_ENABLED})
+  set(PSN_TESTFILES
+  ${PSN_TESTFILES}
+  ${PROJECT_SOURCE_DIR}/tests/RepairTiming.cpp
+  ${PROJECT_SOURCE_DIR}/tests/RepairTimingFanoutOnly.cpp
 )
 endif()
 

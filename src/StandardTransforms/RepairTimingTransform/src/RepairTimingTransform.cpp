@@ -107,6 +107,7 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
     bool is_slack_repair = target == RepairTarget::RepairSlack;
     bool is_trans_repair = target == RepairTarget::RepairMaxTransition;
     bool is_cap_repair   = target == RepairTarget::RepairMaxCapacitance;
+    bool is_fo_repair    = target == RepairTarget::RepairMaxFanout;
 
     auto driver_point = st_tree->driverPoint();
     auto driver_pin   = st_tree->pin(driver_point);
@@ -246,17 +247,23 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                         pin, options->transition_pessimism_factor);
                 };
             }
-            if (is_cap_repair)
+            else if (is_cap_repair)
             {
                 vio_check_func = [&](InstanceTerm* pin) -> bool {
                     return handler.violatesMaximumCapacitance(
                         pin, options->capacitance_pessimism_factor);
                 };
             }
-            if (is_slack_repair)
+            else if (is_slack_repair)
             {
                 vio_check_func = [&](InstanceTerm* pin) -> bool {
                     return handler.worstSlack(pin) < 0.0;
+                };
+            }
+            else if (is_fo_repair)
+            {
+                vio_check_func = [&](InstanceTerm* pin) -> bool {
+                    return handler.violatesMaximumFanout(pin);
                 };
             }
 
@@ -586,8 +593,7 @@ RepairTimingTransform::fixTransitionViolations(
         if (pin_net && !clock_nets.count(pin_net) &&
             !handler.isSpecial(pin_net))
         {
-            auto net_pins = handler.pins(pin_net);
-            auto vio      = handler.hasElectricalViolation(
+            auto vio = handler.hasElectricalViolation(
                 pin, options->capacitance_pessimism_factor,
                 options->transition_pessimism_factor);
             if (vio == ElectircalViolation::Transition ||
@@ -597,6 +603,49 @@ RepairTimingTransform::fixTransitionViolations(
                               handler.name(pin));
                 auto added_buffers = repairPin(
                     psn_inst, pin, RepairTarget::RepairMaxTransition, options);
+
+                if (options->legalization_frequency > 0 &&
+                    (getEditCount() - last_edit_count >=
+                     options->legalization_frequency))
+                {
+                    last_edit_count = getEditCount();
+                    handler.legalize();
+                }
+                if (handler.hasMaximumArea() &&
+                    current_area_ > handler.maximumArea())
+                {
+                    PSN_LOG_WARN("Maximum utilization reached");
+                    return getEditCount();
+                }
+            }
+        }
+    }
+    return getEditCount();
+}
+int
+RepairTimingTransform::fixFanoutViolations(
+    Psn* psn_inst, std::vector<InstanceTerm*>& driver_pins,
+    std::unique_ptr<OptimizationOptions>& options)
+{
+    PSN_LOG_DEBUG("Fixing fanout violations");
+    DatabaseHandler& handler = *(psn_inst->handler());
+    handler.resetDelays();
+    auto clock_nets      = handler.clockNets();
+    int  last_edit_count = getEditCount();
+    for (auto& pin : driver_pins)
+    {
+        auto pin_net = handler.net(pin);
+
+        if (pin_net && !clock_nets.count(pin_net) &&
+            !handler.isSpecial(pin_net))
+        {
+            auto vio = handler.violatesMaximumFanout(pin);
+            if (vio)
+            {
+                PSN_LOG_DEBUG("Fixing fanout violations for pin {}",
+                              handler.name(pin));
+                auto added_buffers = repairPin(
+                    psn_inst, pin, RepairTarget::RepairMaxFanout, options);
 
                 if (options->legalization_frequency > 0 &&
                     (getEditCount() - last_edit_count >=
@@ -640,7 +689,7 @@ RepairTimingTransform::fixNegativeSlack(
     int unfixed_paths = 0;
     for (size_t i = 0; i < negative_slack_paths.size() &&
                        (!options->max_negative_slack_paths ||
-                        i < options->max_negative_slack_paths);
+                        i < (size_t)options->max_negative_slack_paths);
          i++)
     {
         int   fixed_pin_count = 0;
@@ -985,6 +1034,24 @@ RepairTimingTransform::repairTiming(
             }
             driver_pins = handler.levelDriverPins(true, pins);
         }
+        if (options->repair_fanout_violations)
+        {
+            pre_fix_count = getEditCount();
+            // Run fanout violation correction  pass
+            fixFanoutViolations(psn_inst, driver_pins, options);
+            if (pre_fix_count != getEditCount())
+            {
+                hasVio = true;
+            }
+
+            if (options->legalization_frequency > 0)
+            {
+                handler.legalize(1);
+                handler.setWireRC(handler.resistancePerMicron(),
+                                  handler.capacitancePerMicron(), false);
+            }
+            driver_pins = handler.levelDriverPins(true, pins);
+        }
 
         if (options->repair_negative_slack)
         {
@@ -1051,6 +1118,7 @@ RepairTimingTransform::repairTiming(
     PSN_LOG_INFO("Resize down: {}", resize_down_count_);
     PSN_LOG_INFO("Pin Swap: {}", pin_swap_count_);
     PSN_LOG_INFO("Buffered nets: {}", net_count_);
+    PSN_LOG_INFO("Fanout violations: {}", fanout_violations_);
     PSN_LOG_INFO("Transition violations: {}", transition_violations_);
     PSN_LOG_INFO("Capacitance violations: {}", capacitance_violations_);
     PSN_LOG_INFO("Slack gain: {}", saved_slack_);
@@ -1075,13 +1143,15 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
         psn_inst->handler()->maximumCapacitanceViolations().size();
     transition_violations_ =
         psn_inst->handler()->maximumTransitionViolations().size();
+    fanout_violations_ = psn_inst->handler()->maximumFanoutViolations().size();
 
     std::unique_ptr<OptimizationOptions> options(new OptimizationOptions);
 
     options->initial_area                  = current_area_;
     options->repair_capacitance_violations = false;
-    options->repair_negative_slack         = false;
     options->repair_transition_violations  = false;
+    options->repair_fanout_violations      = false;
+    options->repair_negative_slack         = false;
     options->minimize_cluster_buffers      = true;
 
     std::unordered_set<std::string> buffer_lib_names;
@@ -1090,6 +1160,7 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
     std::unordered_set<std::string> keywords(
         {"-capacitance_violations",    // Repair capacitance violations
          "-transition_violations",     // Repair transition violations
+         "-fanout_violations",         // Repair fanout violations
          "-negative_slack_violations", // Repair paths with negative slacks
          "-iterations",                // Maximum number of iterations
          "-buffers",                   // Manually specify buffer cells to use
@@ -1347,6 +1418,10 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
         {
             options->repair_capacitance_violations = true;
         }
+        else if (args[i] == "-fanout_violations")
+        {
+            options->repair_fanout_violations = true;
+        }
         else if (args[i] == "-transition_violations")
         {
             options->repair_transition_violations = true;
@@ -1453,10 +1528,11 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
 
     if (!options->repair_capacitance_violations &&
         !options->repair_transition_violations &&
-        !options->repair_negative_slack)
+        !options->repair_fanout_violations && !options->repair_negative_slack)
     {
         options->repair_transition_violations  = true;
         options->repair_capacitance_violations = true;
+        options->repair_fanout_violations      = true;
         options->repair_negative_slack         = true;
     }
     if (!options->cluster_buffers && !buffer_lib_names.size())

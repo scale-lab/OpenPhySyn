@@ -190,6 +190,21 @@ capacitance_violations()
     }
     return names;
 }
+std::vector<std::string>
+fanout_violations()
+{
+    std::vector<std::string> names;
+    if (!Psn::instance().hasDesign())
+    {
+        PSN_LOG_ERROR("Could not find any loaded design.");
+        return names;
+    }
+    for (auto& pin : Psn::instance().handler()->maximumFanoutViolations())
+    {
+        names.push_back(Psn::instance().handler()->name(pin));
+    }
+    return names;
+}
 
 std::vector<std::string>
 cluster_buffer_names(float cluster_threshold, bool find_superior)
