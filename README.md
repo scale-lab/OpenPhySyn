@@ -188,6 +188,7 @@ The `repair_timing` command repairs negative slack, maximum capacitance and tran
 
 -   `[-capacitance_violations]`: Repair capacitance violations.
 -   `[-transition_violations]`: Repair transition violations.
+-   `[-fanout_violations]`: Repair fanout violations.
 -   `[-negative_slack_violations]`: Repair paths with negative slacks.
 -   `[-iterations iterations]`: Maximum number of iterations.
 -   `[-buffers buffer_cells]`: Manually specify buffer cells to use.

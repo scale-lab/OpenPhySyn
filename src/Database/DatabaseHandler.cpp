@@ -47,6 +47,7 @@
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/EquivCells.hh"
 #include "sta/FuncExpr.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
@@ -78,7 +79,9 @@ DatabaseHandler::DatabaseHandler(Psn* psn_inst, DatabaseSta* sta)
       has_wire_rc_(false),
       maximum_area_valid_(false),
       has_library_cell_mappings_(false),
-      slew_limits_initialized_(false)
+      capacitance_limits_initialized_(false),
+      slew_limits_initialized_(false),
+      fanout_limits_initialized_(false)
 {
     // Use default corner for now
     corner_                      = sta_->findCorner("default");
@@ -2400,6 +2403,13 @@ DatabaseHandler::createClock(const char*             clock_name,
                     const_cast<char*>(comment));
 }
 void
+DatabaseHandler::setMaximumFanout(int max_fanout)
+{
+    sta_->setFanoutLimit(network()->cell(network()->topInstance()),
+                         sta::MinMax::max(), max_fanout);
+}
+
+void
 DatabaseHandler::createClock(const char*              clock_name,
                              std::vector<std::string> port_names, float period)
 {
@@ -2878,18 +2888,23 @@ DatabaseHandler::capacitanceLimit(InstanceTerm* term) const
 
 bool
 DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term,
-                                            float limit_scale_factor) const
+                                            float         limit_scale_factor)
 {
     float load_cap = loadCapacitance(term);
     return violatesMaximumCapacitance(term, load_cap, limit_scale_factor);
 }
 bool
 DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term, float load_cap,
-                                            float limit_scale_factor) const
+                                            float limit_scale_factor)
 {
     const sta::Corner*   corner;
     const sta::RiseFall* rf;
     float                cap, limit, ignore;
+    if (!capacitance_limits_initialized_)
+    {
+        sta_->checkCapacitanceLimitPreamble();
+        capacitance_limits_initialized_ = true;
+    }
 
     sta_->checkCapacitance(term, nullptr, sta::MinMax::max(), corner, rf, cap,
                            limit, ignore);
@@ -2915,6 +2930,27 @@ DatabaseHandler::violatesMaximumTransition(InstanceTerm* term,
                     limit, ignore);
     float diff = (limit_scale_factor * limit) - slew;
     return diff < 0.0 && limit > 0.0;
+}
+
+bool
+DatabaseHandler::violatesMaximumFanout(InstanceTerm* term, int max_fanout)
+{
+    const sta::Corner* corner;
+    float              fo, limit, diff;
+    if (!fanout_limits_initialized_)
+    {
+        sta_->checkFanoutLimitPreamble();
+        fanout_limits_initialized_ = true;
+    }
+    sta_->checkFanout(term, sta::MinMax::max(), fo, limit, diff);
+    if (max_fanout)
+    {
+        return fo > max_fanout;
+    }
+    else
+    {
+        return diff < 0 && !sta::fuzzyInf(diff);
+    }
 }
 
 ElectircalViolation
@@ -2971,11 +3007,19 @@ DatabaseHandler::maximumTransitionViolations(float limit_scale_factor)
     return std::vector<InstanceTerm*>(vio_pins->begin(), vio_pins->end());
 }
 std::vector<InstanceTerm*>
-DatabaseHandler::maximumCapacitanceViolations(float limit_scale_factor) const
+DatabaseHandler::maximumCapacitanceViolations(float limit_scale_factor)
 {
-    sta_->findDelays();
     auto vio_pins =
         sta_->pinCapacitanceLimitViolations(corner_, sta::MinMax::max());
+    capacitance_limits_initialized_ = true;
+    return std::vector<InstanceTerm*>(vio_pins->begin(), vio_pins->end());
+}
+std::vector<InstanceTerm*>
+DatabaseHandler::maximumFanoutViolations(int max_fanout)
+{
+    auto vio_pins = sta_->pinFanoutLimitViolations(sta::MinMax::max());
+
+    fanout_limits_initialized_ = true;
     return std::vector<InstanceTerm*>(vio_pins->begin(), vio_pins->end());
 }
 
@@ -3021,12 +3065,14 @@ DatabaseHandler::allLibs() const
 void
 DatabaseHandler::resetCache()
 {
-    has_equiv_cells_           = false;
-    has_buffer_inverter_seq_   = false;
-    has_target_loads_          = false;
-    has_library_cell_mappings_ = false;
-    maximum_area_valid_        = false;
-    slew_limits_initialized_   = false;
+    has_equiv_cells_                = false;
+    has_buffer_inverter_seq_        = false;
+    has_target_loads_               = false;
+    has_library_cell_mappings_      = false;
+    maximum_area_valid_             = false;
+    slew_limits_initialized_        = false;
+    capacitance_limits_initialized_ = false;
+    fanout_limits_initialized_      = false;
     target_load_map_.clear();
     resetLibraryMapping();
 }
@@ -4246,6 +4292,11 @@ DatabaseHandler::calculateParasitics(Net* net)
                 }
             }
         }
+        sta::ReduceParasiticsTo red = sta::ReduceParasiticsTo::pi_elmore;
+        auto cond = sta_->sdc()->operatingConditions(sta::MinMax::max());
+        sta_->parasitics()->reduceTo(parasitic, net, red, cond, corner_,
+                                     sta::MinMax::max(), parasitics_ap_);
+        sta_->parasitics()->deleteParasiticNetwork(net, parasitics_ap_);
     }
 }
 sta::ParasiticNode*

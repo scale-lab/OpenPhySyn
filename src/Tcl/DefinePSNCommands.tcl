@@ -356,7 +356,7 @@ namespace eval psn {
 
 
     define_cmd_args "repair_timing" {[-capacitance_violations]\
-        [-transition_violations]\
+        [-transition_violations] [-fanout_violations]\
         [-negative_slack_violations] [-iterations iteration_count] [-buffers buffer_cells]\
         [-inverters inverter cells] [-minimum_gain gain] [-auto_buffer_library size]\
         [-no_minimize_buffer_library] [-auto_buffer_library_inverters_enabled]\
