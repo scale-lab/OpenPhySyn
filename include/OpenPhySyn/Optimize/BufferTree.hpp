@@ -60,7 +60,6 @@ enum RepairTarget
 enum DesignPhase
 {
     PostPlace,
-    PostDetailedPlace,
     PostRoute
 };
 
