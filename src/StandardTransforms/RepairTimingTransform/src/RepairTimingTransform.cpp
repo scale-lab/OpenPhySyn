@@ -900,7 +900,7 @@ RepairTimingTransform::repairTiming(
         auto pin = handler.pin(pin_name.c_str());
         if (!pin)
         {
-            PSN_LOG_ERROR("Pin {} not found in the design");
+            PSN_LOG_ERROR("Pin {} not found in the design", pin_name);
             return -1;
         }
         pins.insert(pin);

@@ -924,10 +924,8 @@ Psn::setWireRC(const char* layer_name)
     auto  width          = handler()->dbuToMicrons(width_dbu);
     float res_per_micron = (layer->getResistance() / width) * 1E6;
     float cap_per_micron =
-        (handler()->dbuToMicrons(1) * ((width_dbu * layer->getCapacitance()) +
-                                       (2.0 * layer->getEdgeCapacitance()))) *
-        1E-12 * 1E6;
-
+        (width * layer->getCapacitance() + 2 * layer->getEdgeCapacitance()) *
+        1E-6;
     handler()->setWireRC(res_per_micron, cap_per_micron);
     return 1;
 }
