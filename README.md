@@ -225,11 +225,6 @@ You can also refer to the [tcl tests directory](https://github.com/scale-lab/Ope
 
 For examples to add new transforms, check the [standard transforms directory](https://github.com/scale-lab/OpenPhySyn/tree/master/src/StandardTransforms) and the corresponding project [configuration](https://github.com/scale-lab/OpenPhySyn/blob/master/cmake/Transforms.cmake).
 
-## Reference
-
-If you use OpenPhySyn in your research or exeperimental evaluation please cite:
-
-`Ahmed Agiza and Sherief Reda, “OpenPhySyn: An Open-Source Physical Synthesis Optimization Toolkit”, Article No. 53, Workshop on Open-Source EDA Technology (WOSET), 2020`
 
 ## Issues
 
