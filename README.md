@@ -2,6 +2,13 @@
 
 OpenPhySyn is a physical synthesis optimization kit developed at [Brown University SCALE lab](http://scale.engin.brown.edu) as part of the [OpenROAD](https://theopenroadproject.org/) flow.
 
+
+## Reference
+
+If you use OpenPhySyn in your research or exeperimental evaluation please cite:
+
+`Ahmed Agiza and Sherief Reda, “OpenPhySyn: An Open-Source Physical Synthesis Optimization Toolkit”, Workshop on Open-Source EDA Technology (WOSET), 2020`
+
 ## Building
 
 Clone and build OpenPhySyn using the following commands:
