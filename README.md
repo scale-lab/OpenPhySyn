@@ -5,7 +5,7 @@ OpenPhySyn is a physical synthesis optimization kit developed at [Brown Universi
 
 ## Reference
 
-If you use OpenPhySyn in your research or exeperimental evaluation please cite:
+If you use OpenPhySyn in your research or exeperimental evaluation, please cite:
 
 `Ahmed Agiza and Sherief Reda, “OpenPhySyn: An Open-Source Physical Synthesis Optimization Toolkit”, Workshop on Open-Source EDA Technology (WOSET), 2020`
 
