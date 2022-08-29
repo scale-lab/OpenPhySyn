@@ -102,6 +102,18 @@ print_liberty_cells()
     }
     return 1;
 }
+float pin_max_arrival(const char* pin_name) {
+    auto handler = Psn::instance().handler();
+    auto pin     = handler->pin(pin_name);
+    float arr    = handler->arrival(pin);
+    return arr;
+}
+float pin_load_cap(const char* pin_name) {
+    auto handler = Psn::instance().handler();
+    auto pin     = handler->pin(pin_name);
+    float cap = handler->loadCapacitance(pin);
+    return cap;
+}
 
 bool
 has_transform(const char* transform_name)

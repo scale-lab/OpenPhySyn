@@ -309,13 +309,13 @@ namespace eval psn {
             set ilist $keys(-inverters)
             set inverters_flag "-inverters $ilist"
         }
-        set minimuze_buf_lib_flag ""
+        set minimize_buf_lib_flag ""
         if {[info exists flags(-minimize_buffer_library)]} {
             if {!$has_auto_buff} {
                 sta::sta_error "-minimize_buffer_library can only be used with -auto_buffer_library"
                 return
             }
-            set minimuze_buf_lib_flag  "-minimize_buffer_library"
+            set minimize_buf_lib_flag  "-minimize_buffer_library"
         }
         set use_inv_buf_lib_flag ""
         if {[info exists flags(-use_inverting_buffer_library)]} {
@@ -345,7 +345,7 @@ namespace eval psn {
         if {[info exists keys(-iterations)]} {
             set iterations "$keys(-iterations)"
         }
-        set bufargs "$repair_target_flag $fast_mode_flag $mode_flag $auto_buf_flag $minimuze_buf_lib_flag $use_inv_buf_lib_flag $legalization_freq_flag $buffer_lib_flag $inverters_flag $minimum_gain_flag $resize_flag $area_penalty_flag -iterations $iterations"
+        set bufargs "$repair_target_flag $fast_mode_flag $mode_flag $auto_buf_flag $minimize_buf_lib_flag $use_inv_buf_lib_flag $legalization_freq_flag $buffer_lib_flag $inverters_flag $minimum_gain_flag $resize_flag $area_penalty_flag -iterations $iterations"
         set affected [transform timing_buffer {*}$bufargs]
         if {$affected < 0} {
             puts "Timing buffer failed"

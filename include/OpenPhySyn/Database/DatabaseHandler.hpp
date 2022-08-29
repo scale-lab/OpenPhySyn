@@ -310,6 +310,7 @@ public:
     float worstSlack() const;
     float worstSlack(InstanceTerm* term) const;
     float arrival(InstanceTerm* term, int ap_index, bool is_rise = true) const;
+    float arrival(InstanceTerm* term) const;
     float slew(InstanceTerm* term) const;
     float slew(InstanceTerm* term, bool is_rise) const;
     float slew(LibraryTerm* term, float cap, float* tr_slew = nullptr);
