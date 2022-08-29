@@ -77,7 +77,8 @@ std::vector<std::string> cluster_inverter_names(float cluster_threshold,
                                                 bool  find_superior = true);
 int                      transform_internal(std::string              transform_name,
                                             std::vector<std::string> args);
-
+float            pin_max_arrival(const char* pin_name);
+float            pin_load_cap(const char* pin_name);
 DatabaseHandler& get_handler();
 DatabaseHandler& get_database_handler();
 Database&        get_database();

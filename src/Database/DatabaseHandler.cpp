@@ -1384,6 +1384,19 @@ DatabaseHandler::arrival(InstanceTerm* term, int ap_index, bool is_rise) const
         sta_->corners()->findPathAnalysisPt(ap_index));
 }
 float
+DatabaseHandler::arrival(InstanceTerm* term) const
+{
+    float worst_arrival = 0.0;
+    for (auto path_ap : sta_->corners()->pathAnalysisPts()) {
+            for (auto rf : sta::RiseFall::range())
+            {
+                worst_arrival = std::max(worst_arrival, sta_->vertexArrival(vertex(term), rf, path_ap));
+            }
+
+    }
+    return worst_arrival;
+}
+float
 DatabaseHandler::required(InstanceTerm* term) const
 {
     auto vert = network()->graph()->pinLoadVertex(term);
