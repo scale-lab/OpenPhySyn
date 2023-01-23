@@ -37,7 +37,7 @@ cmake_policy(SET CMP0086 NEW)
 endif()
 
 
-project(OpenPhySyn VERSION 1.8.1)
+project(OpenPhySyn VERSION 1.8.2)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
