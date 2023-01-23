@@ -146,8 +146,8 @@ public:
                                     float tr_slew = 0.0);
 
     LibraryTerm*                 libraryPin() const;
-    std::shared_ptr<BufferTree>& left();
-    std::shared_ptr<BufferTree>& right();
+    std::shared_ptr<BufferTree>  left();
+    std::shared_ptr<BufferTree>  right();
     void                         setLeft(std::shared_ptr<BufferTree> left);
     void                         setRight(std::shared_ptr<BufferTree> right);
     bool                         hasUpstreamBufferCell() const;
@@ -296,6 +296,9 @@ class BufferSolution
     BufferMode                               mode_;
 
 public:
+    ~BufferSolution() {
+        
+    }
     BufferSolution(BufferMode buffer_mode = BufferMode::TimingDriven);
     BufferSolution(Psn* psn_inst, std::shared_ptr<BufferSolution>& left,
                    std::shared_ptr<BufferSolution>& right, Point location,

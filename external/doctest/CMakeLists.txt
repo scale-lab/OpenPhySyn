@@ -11,24 +11,33 @@ endif()
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/scripts/version.txt ver)
 project(doctest VERSION ${ver} LANGUAGES CXX)
 
-option(DOCTEST_WITH_TESTS               "Build tests/examples" ON)
+# Determine if doctest is built as a subproject (using add_subdirectory) or if it is the main project.
+set(MAIN_PROJECT OFF)
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    set(MAIN_PROJECT ON)
+endif()
+
+option(DOCTEST_WITH_TESTS               "Build tests/examples" ${MAIN_PROJECT})
 option(DOCTEST_WITH_MAIN_IN_STATIC_LIB  "Build a static lib (cmake target) with a default main entry point" ON)
 option(DOCTEST_NO_INSTALL  "Skip the installation process" OFF)
+option(DOCTEST_USE_STD_HEADERS  "Use std headers" OFF)
 
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-if(NOT CMAKE_VERSION VERSION_LESS 3.8) 
+if(NOT CMAKE_VERSION VERSION_LESS 3.8)
     target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_11)
 endif()
 
 set(doctest_parts_folder "${CMAKE_CURRENT_SOURCE_DIR}/doctest/parts")
+set(doctest_folder "${CMAKE_CURRENT_SOURCE_DIR}/") # in order to have the mpi extension files, not included into the doctest.h single header
 
-if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+if(MAIN_PROJECT)
     # use a special hidden version of the header which directly includes the 2 parts - proper reporting of file/line locations during dev
     target_include_directories(${PROJECT_NAME} INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/scripts/development_only/>
-        $<BUILD_INTERFACE:${doctest_parts_folder}>)
+        $<BUILD_INTERFACE:${doctest_parts_folder}>
+        $<BUILD_INTERFACE:${doctest_folder}>)
 
     # add a custom target that assembles the single header when any of the parts are touched
     add_custom_command(
@@ -50,29 +59,32 @@ if(DEFINED DOCTEST_THREAD_LOCAL)
         DOCTEST_THREAD_LOCAL=${DOCTEST_THREAD_LOCAL})
 endif()
 
+if(DOCTEST_USE_STD_HEADERS)
+    target_compile_definitions(${PROJECT_NAME} INTERFACE DOCTEST_CONFIG_USE_STD_HEADERS)
+endif()
+
 ################################################################################
 ## TESTS/EXAMPLES/HELPERS
 ################################################################################
 
 if(${DOCTEST_WITH_MAIN_IN_STATIC_LIB})
     add_library(${PROJECT_NAME}_with_main STATIC EXCLUDE_FROM_ALL ${doctest_parts_folder}/doctest.cpp)
+    add_library(${PROJECT_NAME}::${PROJECT_NAME}_with_main ALIAS ${PROJECT_NAME}_with_main)
     target_compile_definitions(${PROJECT_NAME}_with_main PRIVATE
         DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN)
     set_target_properties(${PROJECT_NAME}_with_main PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON)
     target_link_libraries(${PROJECT_NAME}_with_main PUBLIC ${PROJECT_NAME})
 endif()
 
-if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR AND DOCTEST_WITH_TESTS)
+if(MAIN_PROJECT AND DOCTEST_WITH_TESTS)
     include(scripts/cmake/common.cmake)
 
     add_subdirectory(examples/all_features)
-
-    # for code coverage we want exactly one binary to be produced and exercised
-    if(NOT DEFINED ENV{CODE_COVERAGE})
-        add_subdirectory(examples/exe_with_static_libs)
-        add_subdirectory(examples/executable_dll_and_plugin)
-        add_subdirectory(scripts/playground)
-    endif()
+    add_subdirectory(examples/exe_with_static_libs)
+    add_subdirectory(examples/executable_dll_and_plugin)
+    add_subdirectory(examples/combining_the_same_tests_built_differently_in_multiple_shared_objects)
+    add_subdirectory(scripts/playground)
+    add_subdirectory(examples/mpi)
 endif()
 
 ################################################################################

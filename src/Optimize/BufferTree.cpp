@@ -349,12 +349,12 @@ BufferTree::libraryPin() const
 {
     return library_pin_;
 }
-std::shared_ptr<BufferTree>&
+std::shared_ptr<BufferTree>
 BufferTree::left()
 {
     return left_;
 }
-std::shared_ptr<BufferTree>&
+std::shared_ptr<BufferTree>
 BufferTree::right()
 {
     return right_;
@@ -550,8 +550,7 @@ BufferSolution::mergeBranches(Psn*                             psn_inst,
                               float minimum_upstream_res_or_max_slew)
 {
     buffer_trees_.resize(left->bufferTrees().size() *
-                             right->bufferTrees().size(),
-                         std::make_shared<BufferTree>());
+                             right->bufferTrees().size());
     int index = 0;
     for (auto& left_branch : left->bufferTrees())
     {
