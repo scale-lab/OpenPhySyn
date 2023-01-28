@@ -37,7 +37,7 @@ cmake_policy(SET CMP0086 NEW)
 endif()
 
 
-project(OpenPhySyn VERSION 1.8.2)
+project(OpenPhySyn VERSION 1.8.3)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -202,6 +202,7 @@ endif()
 
 
 message(STATUS "OpenPhySyn version: ${PROJECT_VERSION}")
+
 
 list(APPEND CMAKE_MODULE_PATH "${OPENSTA_HOME}/cmake")
 include(GetGitRevisionDescription) # Utility available from OpenSTA
