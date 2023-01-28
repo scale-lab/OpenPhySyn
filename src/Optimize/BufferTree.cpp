@@ -1117,7 +1117,7 @@ BufferSolution::optimalDriverTree(Psn* psn_inst, InstanceTerm* driver_pin,
         return nullptr;
     }
 
-    std::sort(buffer_trees_.begin(), buffer_trees_.end(),
+    std::stable_sort(buffer_trees_.begin(), buffer_trees_.end(),
               [psn_inst, driver_pin](const std::shared_ptr<BufferTree>& a,
                   const std::shared_ptr<BufferTree>& b) -> bool {
                   float a_delay = psn_inst->handler()->gateDelay(
