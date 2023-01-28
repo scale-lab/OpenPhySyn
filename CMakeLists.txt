@@ -203,6 +203,7 @@ endif()
 
 message(STATUS "OpenPhySyn version: ${PROJECT_VERSION}")
 
+
 list(APPEND CMAKE_MODULE_PATH "${OPENSTA_HOME}/cmake")
 include(GetGitRevisionDescription) # Utility available from OpenSTA
 get_git_head_revision(GIT_REFSPEC OPENPHYSYN_GIT_SHA1)

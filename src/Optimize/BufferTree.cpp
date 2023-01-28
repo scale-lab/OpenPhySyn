@@ -668,7 +668,7 @@ BufferSolution::addLeafTrees(Psn* psn_inst, InstanceTerm*, Point pt,
     else
     {
         std::sort(buffer_trees_.begin(), buffer_trees_.end(),
-                  [&](const std::shared_ptr<BufferTree>& a,
+                  [](const std::shared_ptr<BufferTree>& a,
                       const std::shared_ptr<BufferTree>& b) -> bool {
                       return a->cost() < b->cost();
                   });
@@ -722,7 +722,7 @@ BufferSolution::addLeafTrees(Psn* psn_inst, InstanceTerm*, Point pt,
         buffer_trees_.erase(
             std::remove_if(
                 buffer_trees_.begin(), buffer_trees_.end(),
-                [&](const std::shared_ptr<BufferTree>& t) -> bool {
+                [psn_inst, slew_limit](const std::shared_ptr<BufferTree>& t) -> bool {
                     if ((t->isBufferNode() &&
                          std::sqrt(std::pow(t->totalRequiredOrSlew(), 2) +
                                    std::pow(psn_inst->handler()->bufferDelay(
@@ -971,7 +971,7 @@ BufferSolution::optimalDriverTreeWithResynthesis(Psn*          psn_inst,
 
     auto first_tree = buffer_trees_[0];
     std::sort(buffer_trees_.begin(), buffer_trees_.end(),
-              [&](const std::shared_ptr<BufferTree>& a,
+              [psn_inst, driver_pin](const std::shared_ptr<BufferTree>& a,
                   const std::shared_ptr<BufferTree>& b) -> bool {
                   float a_delay = psn_inst->handler()->gateDelay(
                       driver_pin, a->totalCapacitance());
@@ -998,7 +998,7 @@ BufferSolution::optimalDriverTreeWithResynthesis(Psn*          psn_inst,
     float orig_penalty  = handler.bufferChainDelayPenalty(orig_max_cap) +
                          area_penalty * handler.area(original_lib);
     std::sort(original_libs.begin(), original_libs.end(),
-              [&](LibraryCell* a, LibraryCell* b) -> bool {
+              [handler](LibraryCell* a, LibraryCell* b) -> bool {
                   return handler.area(a) > handler.area(b);
               });
 
@@ -1089,7 +1089,7 @@ BufferSolution::optimalTimerlessDriverTree(Psn*          psn_inst,
         return nullptr;
     }
     std::sort(buffer_trees_.begin(), buffer_trees_.end(),
-              [&](const std::shared_ptr<BufferTree>& a,
+              [](const std::shared_ptr<BufferTree>& a,
                   const std::shared_ptr<BufferTree>& b) -> bool {
                   return a->cost() < b->cost();
               });
@@ -1120,7 +1120,7 @@ BufferSolution::optimalDriverTree(Psn* psn_inst, InstanceTerm* driver_pin,
 
     auto first_tree = buffer_trees_[0];
     std::sort(buffer_trees_.begin(), buffer_trees_.end(),
-              [&](const std::shared_ptr<BufferTree>& a,
+              [psn_inst, driver_pin](const std::shared_ptr<BufferTree>& a,
                   const std::shared_ptr<BufferTree>& b) -> bool {
                   float a_delay = psn_inst->handler()->gateDelay(
                       driver_pin, a->totalCapacitance());
@@ -1174,7 +1174,7 @@ BufferSolution::optimalCapacitanceTree(
 
     auto first_tree = buffer_trees_[0];
     std::sort(buffer_trees_.begin(), buffer_trees_.end(),
-              [&](const std::shared_ptr<BufferTree>& a,
+              [](const std::shared_ptr<BufferTree>& a,
                   const std::shared_ptr<BufferTree>& b) -> bool {
                   return a->cost() < b->cost();
               });
@@ -1203,7 +1203,7 @@ BufferSolution::optimalSlewTree(Psn* psn_inst, InstanceTerm* driver_pin,
 
     auto first_tree = buffer_trees_[0];
     std::sort(buffer_trees_.begin(), buffer_trees_.end(),
-              [&](const std::shared_ptr<BufferTree>& a,
+              [](const std::shared_ptr<BufferTree>& a,
                   const std::shared_ptr<BufferTree>& b) -> bool {
                   return a->cost() < b->cost();
               });
@@ -1234,7 +1234,7 @@ BufferSolution::optimalCostTree(Psn* psn_inst, InstanceTerm* driver_pin,
 
     auto first_tree = buffer_trees_[0];
     std::sort(buffer_trees_.begin(), buffer_trees_.end(),
-              [&](const std::shared_ptr<BufferTree>& a,
+              [](const std::shared_ptr<BufferTree>& a,
                   const std::shared_ptr<BufferTree>& b) -> bool {
                   return a->cost() < b->cost();
               });
@@ -1334,7 +1334,7 @@ BufferSolution::prune(Psn* psn_inst, LibraryCell* upstream_res_cell,
         }
 
         std::sort(buffer_trees_.begin(), buffer_trees_.end(),
-                  [&](const std::shared_ptr<BufferTree>& a,
+                  [psn_inst, upstream_res_cell](const std::shared_ptr<BufferTree>& a,
                       const std::shared_ptr<BufferTree>& b) -> bool {
                       float left_req =
                           a->bufferRequired(psn_inst, upstream_res_cell);
@@ -1395,7 +1395,7 @@ BufferSolution::prune(Psn* psn_inst, LibraryCell* upstream_res_cell,
     {
         buffer_trees_.erase(
             std::remove_if(buffer_trees_.begin(), buffer_trees_.end(),
-                           [&](const std::shared_ptr<BufferTree>& t) -> bool {
+                           [minimum_upstream_res_or_max_slew, cap_prune_threshold](const std::shared_ptr<BufferTree>& t) -> bool {
                                return isGreaterOrEqual(
                                    t->totalRequiredOrSlew(),
                                    minimum_upstream_res_or_max_slew,
