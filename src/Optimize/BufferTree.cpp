@@ -969,7 +969,6 @@ BufferSolution::optimalDriverTreeWithResynthesis(Psn*          psn_inst,
     }
     DatabaseHandler& handler = *(psn_inst->handler());
 
-    auto first_tree = buffer_trees_[0];
     std::sort(buffer_trees_.begin(), buffer_trees_.end(),
               [psn_inst, driver_pin](const std::shared_ptr<BufferTree>& a,
                   const std::shared_ptr<BufferTree>& b) -> bool {
@@ -1118,7 +1117,6 @@ BufferSolution::optimalDriverTree(Psn* psn_inst, InstanceTerm* driver_pin,
         return nullptr;
     }
 
-    auto first_tree = buffer_trees_[0];
     std::sort(buffer_trees_.begin(), buffer_trees_.end(),
               [psn_inst, driver_pin](const std::shared_ptr<BufferTree>& a,
                   const std::shared_ptr<BufferTree>& b) -> bool {
@@ -1172,7 +1170,6 @@ BufferSolution::optimalCapacitanceTree(
         return nullptr;
     }
 
-    auto first_tree = buffer_trees_[0];
     std::sort(buffer_trees_.begin(), buffer_trees_.end(),
               [](const std::shared_ptr<BufferTree>& a,
                   const std::shared_ptr<BufferTree>& b) -> bool {
@@ -1201,7 +1198,6 @@ BufferSolution::optimalSlewTree(Psn* psn_inst, InstanceTerm* driver_pin,
     }
     DatabaseHandler& handler = *(psn_inst->handler());
 
-    auto first_tree = buffer_trees_[0];
     std::sort(buffer_trees_.begin(), buffer_trees_.end(),
               [](const std::shared_ptr<BufferTree>& a,
                   const std::shared_ptr<BufferTree>& b) -> bool {
@@ -1232,7 +1228,6 @@ BufferSolution::optimalCostTree(Psn* psn_inst, InstanceTerm* driver_pin,
     }
     DatabaseHandler& handler = *(psn_inst->handler());
 
-    auto first_tree = buffer_trees_[0];
     std::sort(buffer_trees_.begin(), buffer_trees_.end(),
               [](const std::shared_ptr<BufferTree>& a,
                   const std::shared_ptr<BufferTree>& b) -> bool {

@@ -242,27 +242,27 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
             std::function<bool(InstanceTerm * pin)> vio_check_func;
             if (is_trans_repair)
             {
-                vio_check_func = [&](InstanceTerm* pin) -> bool {
+                vio_check_func = [&handler, &options](InstanceTerm* pin) -> bool {
                     return handler.violatesMaximumTransition(
                         pin, options->transition_pessimism_factor);
                 };
             }
             else if (is_cap_repair)
             {
-                vio_check_func = [&](InstanceTerm* pin) -> bool {
+                vio_check_func = [&handler, &options](InstanceTerm* pin) -> bool {
                     return handler.violatesMaximumCapacitance(
                         pin, options->capacitance_pessimism_factor);
                 };
             }
             else if (is_slack_repair)
             {
-                vio_check_func = [&](InstanceTerm* pin) -> bool {
+                vio_check_func = [&handler, &options](InstanceTerm* pin) -> bool {
                     return handler.worstSlack(pin) < 0.0;
                 };
             }
             else if (is_fo_repair)
             {
-                vio_check_func = [&](InstanceTerm* pin) -> bool {
+                vio_check_func = [&handler](InstanceTerm* pin) -> bool {
                     return handler.violatesMaximumFanout(pin);
                 };
             }
@@ -826,7 +826,7 @@ RepairTimingTransform::resizeDown(Psn* psn_inst, InstanceTerm* pin,
                 auto area = handler.area(d_type);
                 std::sort(options->buffer_lib.begin(),
                           options->buffer_lib.end(),
-                          [&](LibraryCell* a, LibraryCell* b) -> bool {
+                          [handler](LibraryCell* a, LibraryCell* b) -> bool {
                               return handler.area(a) > handler.area(b);
                           });
                 if (area < current_area &&
@@ -961,11 +961,11 @@ RepairTimingTransform::repairTiming(
         options->inverter_lib.begin(), options->inverter_lib.end());
 
     std::sort(options->buffer_lib.begin(), options->buffer_lib.end(),
-              [&](LibraryCell* a, LibraryCell* b) -> bool {
+              [&handler](LibraryCell* a, LibraryCell* b) -> bool {
                   return handler.area(a) < handler.area(b);
               });
     std::sort(options->inverter_lib.begin(), options->inverter_lib.end(),
-              [&](LibraryCell* a, LibraryCell* b) -> bool {
+              [&handler](LibraryCell* a, LibraryCell* b) -> bool {
                   return handler.area(a) < handler.area(b);
               });
 

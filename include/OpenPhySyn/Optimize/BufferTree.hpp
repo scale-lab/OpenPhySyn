@@ -101,6 +101,10 @@ public:
                BufferMode buffer_mode = BufferMode::TimingDriven);
     BufferTree(Psn* psn_inst, std::shared_ptr<BufferTree> left,
                std::shared_ptr<BufferTree> right, Point location);
+    BufferTree (const BufferTree&) = delete;
+    BufferTree& operator= (const BufferTree&) = delete;
+    BufferTree(BufferTree&&) = delete;
+    BufferTree& operator=(BufferTree&&) = delete;
     float         totalCapacitance() const;
     float         capacitance() const;
     float         requiredOrSlew() const;
@@ -305,7 +309,10 @@ public:
                    LibraryCell* upstream_res_cell,
                    float        minimum_upstream_res_or_max_slew,
                    BufferMode   buffer_mode = BufferMode::TimingDriven);
-
+    BufferSolution (const BufferSolution&) = delete;
+    BufferSolution& operator= (const BufferSolution&) = delete;
+    BufferSolution(BufferSolution&&) = delete;
+    BufferSolution& operator=(BufferSolution&&) = delete;
     // van Ginneken buffer algorithm bottom-up
     static std::shared_ptr<BufferSolution>
     bottomUp(Psn* psn_inst, InstanceTerm* driver_pin, SteinerPoint pt,
