@@ -7,8 +7,14 @@ OpenPhySyn is a physical synthesis optimization kit developed at [Brown Universi
 
 If you use OpenPhySyn in your research or exeperimental evaluation, please cite [OpenPhySyn's paper](https://woset-workshop.github.io/PDFs/2020/a09.pdf) as:
 
-`Ahmed Agiza and Sherief Reda, “OpenPhySyn: An Open-Source Physical Synthesis Optimization Toolkit”, Article No. 9, Workshop on Open-Source EDA Technology (WOSET), 2020.`
-
+```
+@inproceedings{agiza2020openphysyn,
+  title={Openphysyn: An open-source physical synthesis optimization toolkit},
+  author={Agiza, Ahmed and Reda, Sherief},
+  booktitle={2020 Workshop on Open-Source EDA Technology (WOSET)},
+  year={2020}
+}
+```
 ## Building
 
 Clone and build OpenPhySyn using the following commands:
